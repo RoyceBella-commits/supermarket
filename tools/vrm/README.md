@@ -1,0 +1,96 @@
+# VRM 角色生成器（tools/vrm）
+
+纯代码生成原创 Q 版角色（VRM 1.0）：几何体全部用 three.js 的数学在 Node 里拼出来，没有贴图，
+颜色都是材质色，五官是贴在脸上的小圆片（带表情 morph）。生成结果可以在任何支持 VRM 1.0 的软件里打开。
+
+## 常用命令
+
+项目在 exFAT 盘上、没有 npm bin 链接，所以直接用 node 跑（Node 22.18+ / 23.6+ 能直接执行 `.ts`（类型擦除，所以本目录只用可擦除的 TS 语法、import 带 `.ts` 后缀），开发时用的是 24）：
+
+```bash
+node tools/vrm/build.ts                # 生成 src/data/avatars.ts 里的全部角色 → public/models/<id>.vrm
+node tools/vrm/build.ts --only=player  # 只生成一个
+node tools/vrm/build.ts --variants     # 另外生成各种发型/服装组合到 tools/vrm/work/（不进仓库，测试用）
+node tools/vrm/validate.ts             # 校验 public/models 下的角色（加 --variants 连测试组合一起）
+node tools/vrm/validate.ts some.vrm    # 校验任意 VRM 文件
+node node_modules/typescript/bin/tsc -p tools/vrm   # 类型检查本目录
+```
+
+预览页（先 `npm run dev`）：<http://127.0.0.1:5173/tools/vrm/preview.html>
+
+- 按钮可以切表情（blink / happy / aa / surprised …）、姿势（T-pose、放下手、挥手、屈膝、走路、转头）、视角（含"第一人称"：模拟游戏里头部隐藏后的视角）。
+- URL 参数：`?variants` 一起加载 tools/vrm/work/ 下的测试组合；`?only=player` 只看一个；`?pose=walk` 初始姿势；`?nopanel` 隐藏面板（截图用）。
+- 控制台里有 `window.__preview`（setExpr / setPose / setView / camera …）方便自动化检查。
+
+`validate.ts` 检查：Khronos glTF Validator 0 error；three.js `GLTFLoader` + `@pixiv/three-vrm` 在 Node 里能加载为 VRM 1.0；
+必需人形骨骼齐全且都是"只有平移"（旋转为单位、缩放为 1）；T-pose；表情齐全；所有网格都是 MToon；
+第一人称标注存在，且 `firstPerson.setup()` 之后头/脸网格只在 thirdPersonOnly 图层、第一人称相机离可见几何至少 0.18 m；
+包围盒高度 = spec.height、脚底在 y=0；脸在 +Z 一侧、blinkLeft 只动 +X 一侧的眼睛。
+
+## 加一个角色
+
+在 `src/data/avatars.ts` 的 `avatars` 数组里加一项，然后跑 build + validate：
+
+```ts
+{
+  id: 'cafe-01',                       // → public/models/cafe-01.vrm
+  displayName: { zh: '咖啡店店员', en: 'Café staff' },
+  height: 1.46,                        // 总高（鞋底到头发/发髻顶），米
+  skinColor: '#f3c9a8',
+  hair: 'bob',                         // short | bob | ponytail | buzz | bun
+  hairColor: '#6b3f2a',
+  eyeColor: '#2b201c',
+  top: 'apron',                        // hoodie | tshirt | shirt | apron（衬衫 + 围裙）
+  topColor: '#8a5a3b',                 // apron 时是围裙颜色
+  innerColor: '#fbf6ec',               // 卫衣口袋/罗纹、T 恤领口、衬衫纽扣；apron 时是里面衬衫的颜色
+  bottom: 'pants',                     // pants | skirt | shorts
+  bottomColor: '#2b2b33',
+  shoeColor: '#3b2f2a',
+  soleColor: '#d8cfc2',                // 可选
+  sockColor: '#ffffff',                // 可选（裙子/短裤时露出来）
+  accessory: 'glasses',                // cap | glasses | none
+  accessoryColor: '#3b2a24',           // 可选：帽子/镜框颜色，马尾/发髻的发圈也用它
+  blush: 0.5,                          // 可选：腮红 0–1
+}
+```
+
+颜色写 sRGB 十六进制，生成时自动转成线性色，并推出 MToon 的阴影色（更暖、略暗）和描边色（同色系深色）。
+
+玩家默认模型是 `PLAYER_AVATAR_ID`（= `player`）→ `public/models/player.vrm`。游戏只认这个路径，
+用户可以直接换成任意 VRM 1.0 文件。
+
+## 坐标与骨骼约定
+
+- 单位米，Y 向上，**角色面向 +Z**，角色的左手在 **+X**，脚底在 y=0。
+- 骨骼是 **T-pose**（手臂沿 ±X 伸直），所有骨骼节点只有平移（旋转为单位四元数、缩放为 1）。
+- 人形骨骼：hips、spine、chest、neck、head、left/right Shoulder、UpperArm、LowerArm、Hand、UpperLeg、LowerLeg、Foot。
+  另有非人形骨：`HairTail1–4`（马尾）、`StringLeft/Right1–3`（卫衣抽绳），都挂了 `VRMC_springBone`。
+- 一个 Skin 覆盖全部骨骼；三个蒙皮网格：
+  - `Body`（身体、衣服、手、腿、鞋）— firstPerson `both`
+  - `Head`（头、耳朵、鼻子、脖子、头发、帽子/眼镜）— `thirdPersonOnly`
+  - `Face`（眼睛、高光、眉毛、嘴、腮红，带 morph target）— `thirdPersonOnly`
+- 蒙皮基本是每个部件刚性绑定到一块骨骼，关节处用圆球/胶囊圆头遮住接缝；躯干在 Hips→Spine→Chest 之间线性过渡。
+- `lookAt` 用 expression 方式（lookUp/Down/Left/Right 是移动眼睛的 morph），`offsetFromHeadBone` 指向两眼中点。
+- 表情（preset）：happy、angry、sad、relaxed、surprised、aa、ih、ou、ee、oh、blink、blinkLeft、blinkRight、lookUp、lookDown、lookLeft、lookRight。
+  情绪类表情的 `overrideBlink` 是 `blend`（笑眯眼时不会再叠一次眨眼）。
+
+## 代码结构
+
+```
+build.ts        入口：遍历 avatars → buildAvatar → 写文件
+validate.ts     校验（glTF Validator + three-vrm 加载检查）
+preview.html/ts 浏览器预览页
+variants.ts     测试组合（只写到 work/）
+lib/rig.ts      骨骼与基准尺寸（基准身高约 1.5 m，最后整体等比缩放到 spec.height）
+lib/geom.ts     几何工具：网格曲面、旋转体、胶囊、圆环、扫掠管、镜像、法线
+lib/head.ts     头型（下半略收窄的椭球）、脸部投影
+lib/hair.ts     发型（"发壳"按列生成截面：外表面 → 卷边 → 收进头皮；可下垂做波波头）、刘海阴影、帽子
+lib/face.ts     五官与 16 个 morph target
+lib/body.ts     身体和服装
+lib/avatar.ts   组装：材质（MToon 参数）、蒙皮权重、缩放、写 glTF 文档、表情/第一人称/spring bone
+lib/vrmExt.ts   gltf-transform 自定义扩展：VRMC_vrm、VRMC_materials_mtoon、VRMC_springBone
+lib/colors.ts   sRGB/线性转换，阴影色与描边色
+```
+
+所有角色都是原创生成，meta 里的授权：允许所有人使用、允许企业商用、允许再分发和修改再分发、无需署名，
+作者 `Mall Wander (generated)`。

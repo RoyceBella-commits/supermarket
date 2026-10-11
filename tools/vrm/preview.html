@@ -1,0 +1,73 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>VRM 角色预览</title>
+    <style>
+      html,
+      body {
+        margin: 0;
+        height: 100%;
+        background: #f4efe6;
+        font-family: system-ui, -apple-system, 'PingFang SC', sans-serif;
+        overflow: hidden;
+      }
+      #app {
+        position: fixed;
+        inset: 0;
+      }
+      #panel {
+        position: fixed;
+        left: 12px;
+        top: 12px;
+        max-width: min(560px, calc(100vw - 24px));
+        background: rgba(255, 255, 255, 0.86);
+        border-radius: 12px;
+        padding: 10px 12px;
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.08);
+        font-size: 13px;
+        color: #3a3330;
+      }
+      #panel .row {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 6px;
+        align-items: center;
+        margin: 4px 0;
+      }
+      #panel .label {
+        width: 44px;
+        color: #8a7f78;
+      }
+      button {
+        border: 1px solid #e0d6cc;
+        background: #fff;
+        border-radius: 8px;
+        padding: 3px 9px;
+        font-size: 12px;
+        cursor: pointer;
+        color: #3a3330;
+      }
+      button.on {
+        background: #f2a93b;
+        border-color: #e0952a;
+        color: #fff;
+      }
+      #status {
+        color: #8a7f78;
+        font-size: 12px;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="app"></div>
+    <div id="panel">
+      <div class="row"><b>VRM 角色预览</b> <span id="status">加载中…</span></div>
+      <div class="row" id="expr"><span class="label">表情</span></div>
+      <div class="row" id="pose"><span class="label">姿势</span></div>
+      <div class="row" id="view"><span class="label">视角</span></div>
+    </div>
+    <script type="module" src="./preview.ts"></script>
+  </body>
+</html>

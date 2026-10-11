@@ -1,0 +1,10 @@
+{
+  // 只用于类型检查 tools/vrm：node node_modules/typescript/bin/tsc -p tools/vrm
+  "extends": "../../tsconfig.json",
+  "compilerOptions": {
+    "types": [],
+    "erasableSyntaxOnly": true,
+    "noEmit": true
+  },
+  "include": ["./*.ts", "./lib/*.ts", "./types/*.d.ts", "../../src/data/avatars.ts"]
+}

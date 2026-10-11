@@ -4,7 +4,7 @@ import { COLLIDE_PLAYER, type PhysicsWorld } from '../systems/physics/PhysicsWor
 
 /** 手感参数（试玩后可调）。身体尺寸会按 VRM 角色的身高调整（configureBody）。 */
 export const PLAYER = {
-  radius: 0.28,
+  radius: 0.26,
   height: 1.7,
   eyeHeight: 1.6,
   walkSpeed: 4.5,
