@@ -5,6 +5,7 @@ import { OUTSIDE_FLOOR } from './StaticBatch.ts';
 import { LOCKER_HEIGHT, SERVICE_PANEL_HEIGHT, amenityFrame, facingVector } from './amenities.ts';
 import { stairDoor } from './stairs.ts';
 import { drawLogoSign } from './logos.ts';
+import type { BackLogo } from './interiors/index.ts';
 
 // 招牌：Canvas 画贴图贴到平面上。店铺招牌是原创 logo（品类图标徽章 + 英文字标，见 logos.ts）；
 // 设施和楼梯的牌子中英双语，不随界面语言变化。
@@ -22,13 +23,14 @@ interface SignStyle {
   sub?: string; // 第二行小字
 }
 
-export function buildSigns(layout: MallLayout): THREE.Group {
+export function buildSigns(layout: MallLayout, backLogos: BackLogo[] = []): THREE.Group {
   const group = new THREE.Group();
   group.name = 'signs';
   const b = layout.building;
   const H = b.floorHeight;
   const offset = 0.03;
 
+  const logoTextures = new Map<string, THREE.CanvasTexture>();
   for (const s of layout.shops) {
     const entry = s.entrances[0];
     if (!entry) continue;
@@ -36,6 +38,7 @@ export function buildSigns(layout: MallLayout): THREE.Group {
     const y = s.floor * H;
     const openH = entry.height ?? (entry.kind === 'storefront' ? b.storefrontHeight : b.doorHeight);
     const texture = canvasTexture(drawLogoSign(s, Math.round(0.95 * PX_PER_M)));
+    logoTextures.set(s.id, texture);
     // 门外上方的大招牌
     addTextureSign(group, `sign:${s.id}`, texture, 0.95, Math.max(4, Math.min(entry.width + 2, 12)), c.x + c.outX * offset, y + openH + 0.75, c.z + c.outZ * offset, c.outX, c.outZ, s.floor);
     // 门内上方的小招牌（室外区域没有）
@@ -72,6 +75,12 @@ export function buildSigns(layout: MallLayout): THREE.Group {
       const label = floorByLevel(layout, L).label;
       addSign(group, `${label}  Stairs 楼梯`, { bg: '#2f3e46', fg: '#ffffff', accent: '#84a98c', height: 0.5, maxWidth: 4 }, d.x + d.outX * offset, L * H + b.doorHeight + 0.45, d.z + d.outZ * offset, d.outX, d.outZ, L);
     }
+  }
+
+  // 店内后墙的 logo 灯箱（复用门头的贴图）
+  for (const l of backLogos) {
+    const texture = logoTextures.get(l.shopId);
+    if (texture) addTextureSign(group, `sign-back:${l.shopId}`, texture, l.height, l.maxWidth, l.x, l.y, l.z, Math.sin(l.yaw), Math.cos(l.yaw), l.floor);
   }
 
   // 设施的牌子：寄存柜挂在柜顶上方，服务台挂在背景板上

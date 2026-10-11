@@ -74,6 +74,7 @@ export class NpcSystem {
         prompt: () => (this.active === n ? i18n.t('npc.next') : `${i18n.t('npc.talk')} · ${i18n.pick(def.name)}`),
         position: () => n.home,
         radius: TALK_RADIUS,
+        priority: 1.2,
         isAvailable: () => true,
         interact: () => this.talk(n),
       });

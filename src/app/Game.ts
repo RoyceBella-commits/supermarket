@@ -74,6 +74,7 @@ export class Game {
   private npcs: NpcSystem | null = null;
   private npcSpots = new Map<string, { x: number; z: number; yaw: number }>();
   private products: THREE.Group | null = null;
+  private interiorIssues: string[] = [];
   private seated: Seat | null = null;
 
   constructor(container: HTMLElement) {
@@ -85,13 +86,13 @@ export class Game {
     this.physics = await PhysicsWorld.create();
     this.layout = devFlags.testbed ? null : mallLayout;
 
-    if (this.layout && import.meta.env.DEV) this.reportLayoutProblems(this.layout);
-
     let world: THREE.Group;
     if (this.layout) {
       const built = buildMall(this.layout, this.physics);
       world = built.root;
       this.seats.addAll(built.seats);
+      this.interiorIssues = built.issues;
+      if (import.meta.env.DEV) this.reportLayoutProblems(this.layout);
       this.npcSpots = built.npcSpots;
       this.products = built.products;
       // 装饰图异步加载，和商品一样按楼层显示
@@ -383,6 +384,7 @@ export class Game {
       prompt: () => i18n.t('seat.stand'),
       position: () => this.player.curr.clone(),
       radius: 5,
+      priority: 10,
       isAvailable: () => this.seated !== null,
       interact: () => this.standUp(),
     });
@@ -498,7 +500,7 @@ export class Game {
   }
 
   private reportLayoutProblems(layout: MallLayout) {
-    const problems = validateLayout(layout);
+    const problems = [...validateLayout(layout), ...this.interiorIssues];
     if (problems.length === 0) return;
     console.warn('[layout]', problems);
     const box = document.createElement('div');
@@ -579,6 +581,9 @@ export class Game {
         game.interaction.interact();
         return game.npcs?.talkingTo?.def.lines[game.npcs.talkingTo.lineIndex] ?? null;
       },
+      get interiorIssues() {
+        return game.interiorIssues;
+      },
       get seats() {
         return game.seats.seats;
       },
@@ -603,6 +608,57 @@ export class Game {
         c.height = Math.round((src.height / src.width) * width);
         c.getContext('2d')!.drawImage(src, 0, 0, c.width, c.height);
         const res = await fetch(`/__shot?name=${encodeURIComponent(name)}`, { method: 'POST', body: c.toDataURL('image/jpeg', 0.85) });
+        return res.text();
+      },
+      /** 店内俯瞰：相机放在店门一角的高处、斜看向对角，看整家店的布置（调试用） */
+      async overview(ids: string[], name: string) {
+        const layout = game.layout;
+        if (!layout) return null;
+        const cam = game.renderer.camera;
+        const cw = 640;
+        const ch = 380;
+        const cols = 2;
+        const out = document.createElement('canvas');
+        out.width = cols * cw;
+        out.height = Math.ceil(ids.length / cols) * (ch + 22);
+        const x = out.getContext('2d')!;
+        x.fillStyle = '#222';
+        x.fillRect(0, 0, out.width, out.height);
+        const fov = cam.fov;
+        ids.forEach((id, i) => {
+          const s = layout.shops.find((sh) => sh.id === id);
+          if (!s) return;
+          const H = layout.building.floorHeight;
+          const y = s.floor * H;
+          const door = s.entrances[0];
+          const c = openingCenter(s.rect, door);
+          const r = s.rect;
+          // 站在门内、开口一侧的高处，看向店铺另一侧的远角
+          const inX = -c.outX;
+          const inZ = -c.outZ;
+          const px = c.x + inX * 0.6 + (inZ !== 0 ? -0.35 * r.w : 0);
+          const pz = c.z + inZ * 0.6 + (inX !== 0 ? -0.35 * r.d : 0);
+          const tx = r.x + r.w / 2 + inX * r.w * 0.2 + (inZ !== 0 ? 0.25 * r.w : 0);
+          const tz = r.z + r.d / 2 + inZ * r.d * 0.2 + (inX !== 0 ? 0.25 * r.d : 0);
+          hooks.teleport(px, y + 0.05, pz, 0);
+          hooks.renderOnce();
+          for (const m of game.products?.children ?? []) m.visible = Math.abs((m.userData.floor as number) - s.floor) <= 1;
+          cam.fov = 80;
+          cam.updateProjectionMatrix();
+          cam.position.set(px, y + 5.0, pz);
+          cam.lookAt(tx, y, tz);
+          game.avatar.setVisible(false);
+          game.renderer.render(1 / 60);
+          const px0 = (i % cols) * cw;
+          const py0 = Math.floor(i / cols) * (ch + 22);
+          x.drawImage(game.renderer.canvas, px0, py0 + 22, cw, ch);
+          x.fillStyle = '#fff';
+          x.font = '15px sans-serif';
+          x.fillText(id, px0 + 6, py0 + 16);
+        });
+        cam.fov = fov;
+        cam.updateProjectionMatrix();
+        const res = await fetch(`/__shot?name=${encodeURIComponent(name)}`, { method: 'POST', body: out.toDataURL('image/jpeg', 0.85) });
         return res.text();
       },
       /** 店内总览图：依次走进每家店门内一点、拍一张，拼成 3 列的图存到 tools/.shots/<name>.jpg */

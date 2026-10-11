@@ -85,39 +85,51 @@ export class ShopFrame {
   }
 }
 
-/** 商品小盒子（一家店一个 InstancedMesh） */
+/** 商品和小道具（一家店一个方块 InstancedMesh + 一个圆柱 InstancedMesh） */
 export class ProductSet {
-  private readonly items: number[] = [];
-  private readonly colors: THREE.Color[] = [];
+  private readonly boxes: { m: THREE.Matrix4; c: THREE.Color }[] = [];
+  private readonly cyls: { m: THREE.Matrix4; c: THREE.Color }[] = [];
 
   add(x: number, y: number, z: number, sx: number, sy: number, sz: number, color: string | THREE.Color) {
-    this.items.push(x, y, z, sx, sy, sz);
-    this.colors.push(color instanceof THREE.Color ? color : new THREE.Color(color));
+    const m = new THREE.Matrix4().makeScale(sx, sy, sz).setPosition(x, y, z);
+    this.boxes.push({ m, c: color instanceof THREE.Color ? color : new THREE.Color(color) });
+  }
+
+  /** 圆柱：中心 (x,y,z)，半径 r、长 len；axis 是圆柱轴向（y 竖直，x/z 横放） */
+  addCyl(x: number, y: number, z: number, r: number, len: number, color: string, axis: 'x' | 'y' | 'z' = 'y') {
+    const m = new THREE.Matrix4().makeScale(r * 2, len, r * 2);
+    if (axis === 'x') m.premultiply(new THREE.Matrix4().makeRotationZ(Math.PI / 2));
+    if (axis === 'z') m.premultiply(new THREE.Matrix4().makeRotationX(Math.PI / 2));
+    m.setPosition(x, y, z);
+    this.cyls.push({ m, c: new THREE.Color(color) });
   }
 
   get count() {
-    return this.colors.length;
+    return this.boxes.length + this.cyls.length;
   }
 
-  build(material: THREE.Material, name: string): THREE.InstancedMesh | null {
-    const n = this.colors.length;
-    if (n === 0) return null;
-    const mesh = new THREE.InstancedMesh(UNIT_BOX, material, n);
-    const m = new THREE.Matrix4();
-    for (let i = 0; i < n; i++) {
-      const k = i * 6;
-      m.makeScale(this.items[k + 3], this.items[k + 4], this.items[k + 5]);
-      m.setPosition(this.items[k], this.items[k + 1], this.items[k + 2]);
-      mesh.setMatrixAt(i, m);
-      mesh.setColorAt(i, this.colors[i]);
+  build(material: THREE.Material, name: string): THREE.InstancedMesh[] {
+    const out: THREE.InstancedMesh[] = [];
+    for (const [list, geo, suffix] of [
+      [this.boxes, UNIT_BOX, 'box'],
+      [this.cyls, UNIT_CYL, 'cyl'],
+    ] as const) {
+      if (list.length === 0) continue;
+      const mesh = new THREE.InstancedMesh(geo, material, list.length);
+      list.forEach((it, i) => {
+        mesh.setMatrixAt(i, it.m);
+        mesh.setColorAt(i, it.c);
+      });
+      mesh.computeBoundingSphere();
+      mesh.name = `${name}:${suffix}`;
+      out.push(mesh);
     }
-    mesh.computeBoundingSphere();
-    mesh.name = name;
-    return mesh;
+    return out;
   }
 }
 
 const UNIT_BOX = new THREE.BoxGeometry(1, 1, 1);
+const UNIT_CYL = new THREE.CylinderGeometry(0.5, 0.5, 1, 14);
 let productMaterial: THREE.Material | null = null;
 export function getProductMaterial(): THREE.Material {
   return (productMaterial ??= new THREE.MeshToonMaterial({ color: '#ffffff', gradientMap: toonGradient() }));
@@ -145,8 +157,23 @@ export interface NpcSpot {
 /**
  * 一家店的布置工具。h 系列参数都是离本层地面的高度。
  */
+/** 局部矩形 [u0, v0, u1, v1] */
+export type LRect = [number, number, number, number];
+
 export class Kit {
   npcSpot: NpcSpot | null = null;
+  /** 店员站位（局部坐标，连通检查用） */
+  staffLocal: [number, number] | null = null;
+  /** 本店座位的局部坐标（连通检查用） */
+  readonly seatLocal: [number, number][] = [];
+  /** 每件家具的占地（局部），用于重叠检查和连通检查 */
+  readonly solids: LRect[] = [];
+  /** 预留的通道和留空区：模板放家具前用 fits() 检查 */
+  readonly reserved: LRect[] = [];
+  /** 生成时发现的问题（开发模式下显示） */
+  readonly issues: string[] = [];
+  /** 模板已经在后墙做了吸引物（菜单板、厨房、攀岩墙……），就不再挂 logo 灯箱 */
+  backFeature = false;
 
   constructor(
     readonly f: ShopFrame,
@@ -202,7 +229,48 @@ export class Kit {
 
   /** 整件家具的碰撞体（只挡，不显示） */
   solid(u0: number, v0: number, u1: number, v1: number, h1: number) {
-    this.box(u0, v0, u1, v1, 0, h1, 'prop', undefined, 'invisible');
+    const r: LRect = [Math.min(u0, u1), Math.min(v0, v1), Math.max(u0, u1), Math.max(v0, v1)];
+    const tol = 0.05;
+    for (const o of this.solids) {
+      if (overlap(r, o, tol)) {
+        this.issues.push(`家具重叠 (${r[0].toFixed(1)}, ${r[1].toFixed(1)})`);
+        break;
+      }
+    }
+    for (const o of this.reserved) {
+      if (overlap(r, o, tol)) {
+        this.issues.push(`家具占了预留通道 (${r[0].toFixed(1)}, ${r[1].toFixed(1)})`);
+        break;
+      }
+    }
+    this.solids.push(r);
+    this.box(r[0], r[1], r[2], r[3], 0, h1, 'prop', undefined, 'invisible');
+  }
+
+  /** 预留一块地方（通道、门口留空、员工门前） */
+  reserve(u0: number, v0: number, u1: number, v1: number) {
+    this.reserved.push([Math.min(u0, u1), Math.min(v0, v1), Math.max(u0, u1), Math.max(v0, v1)]);
+  }
+
+  /** 这块地方能不能放家具：在店内、不占预留区、不压已有家具（留 gap 的间隙） */
+  fits(u0: number, v0: number, u1: number, v1: number, gap = 0) {
+    const r: LRect = [Math.min(u0, u1) - gap, Math.min(v0, v1) - gap, Math.max(u0, u1) + gap, Math.max(v0, v1) + gap];
+    if (r[0] < this.f.walls.left || r[2] > this.W - this.f.walls.right || r[1] < 0.15 || r[3] > this.D - this.f.walls.back) return false;
+    for (const o of this.reserved) if (overlap(r, o, 0)) return false;
+    for (const o of this.solids) if (overlap(r, o, 0)) return false;
+    return true;
+  }
+
+  /** 圆柱道具：底面中心 (u, v, h)；axis 'y' 竖直，'u'/'v' 沿局部轴横放（此时 h 是轴心高度） */
+  cyl(u: number, v: number, h: number, r: number, len: number, color: string, axis: 'y' | 'u' | 'v' = 'y') {
+    const f = this.f;
+    if (axis === 'y') {
+      this.products.addCyl(f.x(u, v), f.y + h + len / 2, f.z(u, v), r, len, color, 'y');
+      return;
+    }
+    const uAlongX = Math.abs(f.x(1, 0) - f.x(0, 0)) > 0.5;
+    const worldAxis = (axis === 'u') === uAlongX ? 'x' : 'z';
+    this.products.addCyl(f.x(u, v), f.y + h, f.z(u, v), r, len, color, worldAxis);
   }
 
   product(u: number, v: number, h: number, w: number, hh: number, d: number, alongU: boolean, color: string) {
@@ -298,6 +366,69 @@ export class Kit {
   /** 店员站在 (u, v)，面朝局部方向 (du, dv) */
   staff(u: number, v: number, du: number, dv: number) {
     this.npcSpot = { x: this.f.x(u, v), z: this.f.z(u, v), yaw: this.f.yaw(du, dv) };
+    this.staffLocal = [u, v];
+  }
+
+  /** 后墙上的员工门（G12），门前 1 m 预留 */
+  staffDoor(u: number) {
+    const back = this.D - this.f.walls.back;
+    this.box(u - 0.5, back - 0.03, u + 0.5, back, 0, 2.2, 'prop', '#b9b1a3');
+    this.box(u - 0.42, back - 0.05, u + 0.42, back - 0.03, 0, 2.1, 'prop', '#d8d2c6');
+    this.box(u - 0.25, back - 0.06, u + 0.25, back - 0.05, 1.55, 1.7, 'prop', '#3d405b');
+    this.box(u + 0.28, back - 0.1, u + 0.36, back - 0.05, 0.95, 1.0, 'metal');
+    this.reserve(u - 0.6, back - 1.0, u + 0.6, back);
+  }
+
+  /** 人台（G8）：底座 + 腿 + 身体 + 头，衣服用主题色 */
+  mannequin(u: number, v: number, color: string, h0 = 0, solid = true) {
+    this.box(u - 0.2, v - 0.2, u + 0.2, v + 0.2, h0, h0 + 0.04, 'metal');
+    this.box(u - 0.025, v - 0.025, u + 0.025, v + 0.025, h0 + 0.04, h0 + 0.75, 'metal');
+    this.box(u - 0.14, v - 0.08, u + 0.14, v + 0.08, h0 + 0.75, h0 + 1.05, 'prop', shade(color, 0.8));
+    this.box(u - 0.2, v - 0.11, u + 0.2, v + 0.11, h0 + 1.05, h0 + 1.5, 'prop', color);
+    this.box(u - 0.05, v - 0.05, u + 0.05, v + 0.05, h0 + 1.5, h0 + 1.58, 'prop', '#f1ece4');
+    this.box(u - 0.1, v - 0.1, u + 0.1, v + 0.1, h0 + 1.58, h0 + 1.8, 'prop', '#f1ece4');
+    if (solid) this.solid(u - 0.22, v - 0.22, u + 0.22, v + 0.22, h0 + 1.8);
+  }
+
+  /** 门口的大雕像（积木角色、IP 公仔、吉祥物）：几段彩色方块叠起来 */
+  statue(u: number, v: number, size: number, colors: string[]) {
+    const s = size / 2;
+    this.box(u - s * 1.1, v - s * 1.1, u + s * 1.1, v + s * 1.1, 0, 0.15, 'prop', '#e9e2d4');
+    let h = 0.15;
+    const parts = [
+      [0.8, 0.55],
+      [1.0, 0.7],
+      [0.9, 0.6],
+      [0.35, 0.15],
+    ];
+    parts.forEach(([k, hh], i) => {
+      this.box(u - s * k, v - s * k, u + s * k, v + s * k, h, h + hh * size, 'prop', colors[i % colors.length]);
+      h += hh * size;
+    });
+    // 两只耳朵/角
+    this.box(u - s * 0.75, v - s * 0.2, u - s * 0.35, v + s * 0.2, h, h + 0.25 * size, 'prop', colors[0]);
+    this.box(u + s * 0.35, v - s * 0.2, u + s * 0.75, v + s * 0.2, h, h + 0.25 * size, 'prop', colors[0]);
+    this.solid(u - s * 1.1, v - s * 1.1, u + s * 1.1, v + s * 1.1, h);
+  }
+
+  /** 排队隔离带（G13）：沿 axis 从 a0 到 a1，c 是位置 */
+  stanchions(axis: 'u' | 'v', a0: number, a1: number, c: number, band = '#c1121f') {
+    const n = Math.max(2, Math.round((a1 - a0) / 1.6) + 1);
+    for (let i = 0; i < n; i++) {
+      const a = a0 + ((a1 - a0) * i) / (n - 1);
+      if (axis === 'u') this.box(a - 0.04, c - 0.04, a + 0.04, c + 0.04, 0, 0.95, 'metal');
+      else this.box(c - 0.04, a - 0.04, c + 0.04, a + 0.04, 0, 0.95, 'metal');
+    }
+    if (axis === 'u') this.box(a0, c - 0.01, a1, c + 0.01, 0.82, 0.9, 'prop', band);
+    else this.box(c - 0.01, a0, c + 0.01, a1, 0.82, 0.9, 'prop', band);
+    if (axis === 'u') this.solid(a0, c - 0.08, a1, c + 0.08, 0.95);
+    else this.solid(c - 0.08, a0, c + 0.08, a1, 0.95);
+  }
+
+  /** 屏幕/灯箱：竖直的亮色面板，贴在 axis 方向的位置 c，面朝 face */
+  screen(axis: 'u' | 'v', a0: number, a1: number, c: number, face: 1 | -1, h0: number, h1: number, color: string, frame = '#1b1b25') {
+    this.panel(axis, a0 - 0.05, a1 + 0.05, c, face, h0 - 0.05, h1 + 0.05, frame);
+    this.panel(axis, a0, a1, c + face * 0.04, face, h0, h1, color);
   }
 
   /** 桌子（四条腿 + 桌面） */
@@ -349,6 +480,7 @@ export class Kit {
 
   addSeat(cu: number, cv: number, sh: number, du: number, dv: number) {
     const f = this.f;
+    if (cv >= 0) this.seatLocal.push([cu, cv]);
     this.seats.push({
       id: `${f.shop.id}-seat-${this.seats.length}`,
       x: f.x(cu, cv),
@@ -407,6 +539,23 @@ export class Kit {
       const a = a0 + step * (i + 0.5);
       if (axis === 'u') this.addSeat(a, mid, seatH, du, dv);
       else this.addSeat(mid, a, seatH, du, dv);
+    }
+  }
+
+  /** 无靠背长凳/皮墩：沿 axis 从 a0 到 a1，c 是中线，人面朝 (du, dv)；每 0.6 m 一个座位 */
+  bench(axis: 'u' | 'v', a0: number, a1: number, c: number, du: number, dv: number, o: { color?: string; seatH?: number; depth?: number } = {}) {
+    const sh = o.seatH ?? 0.45;
+    const hd = (o.depth ?? 0.45) / 2;
+    const color = o.color ?? '#8d6e63';
+    const [u0, v0, u1, v1] = axis === 'u' ? [a0, c - hd, a1, c + hd] : [c - hd, a0, c + hd, a1];
+    this.box(u0, v0, u1, v1, sh - 0.08, sh, 'prop', color);
+    this.box(u0 + 0.06, v0 + 0.06, u1 - 0.06, v1 - 0.06, 0, sh - 0.08, 'prop', shade(color, 0.7));
+    this.solid(u0, v0, u1, v1, sh);
+    const n = Math.max(1, Math.floor((a1 - a0 + 0.1) / 0.6));
+    for (let i = 0; i < n; i++) {
+      const a = a0 + ((a1 - a0) * (i + 0.5)) / n;
+      if (axis === 'u') this.addSeat(a, c, sh, du, dv);
+      else this.addSeat(c, a, sh, du, dv);
     }
   }
 
@@ -512,6 +661,10 @@ export class Kit {
 export const DEFAULT_PALETTE = ['#ef476f', '#ffd166', '#06d6a0', '#118ab2', '#f78c6b', '#83c5be', '#e5989b', '#b5838d', '#ffffff', '#ffb4a2'];
 export const APPAREL = ['#264653', '#2a9d8f', '#e9c46a', '#f4a261', '#e76f51', '#f1faee', '#a8dadc', '#457b9d', '#d6ccc2', '#6d6875'];
 export const DRINKS = ['#e63946', '#f1faee', '#a8dadc', '#ffb703', '#8ecae6', '#90be6d', '#f8961e', '#ffffff'];
+
+function overlap(a: LRect, b: LRect, tol: number) {
+  return a[0] < b[2] - tol && b[0] < a[2] - tol && a[1] < b[3] - tol && b[1] < a[3] - tol;
+}
 
 export function shade(hex: string, k: number): string {
   const c = new THREE.Color(hex);

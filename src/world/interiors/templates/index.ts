@@ -1,0 +1,68 @@
+import type { ShopCategory } from '../../../data/layoutTypes.ts';
+import { APPAREL, type Template } from './common.ts';
+import * as food from './food.ts';
+import * as leisure from './leisure.ts';
+import * as retail from './retail.ts';
+import * as sports from './sports.ts';
+
+/** 阶段 5 再做（影院、空中花园、卡丁车场）：先不放东西 */
+const later: Template = () => {};
+
+export const TEMPLATES: Record<ShopCategory, Template> = {
+  supermarket: retail.supermarket,
+  consoles: retail.consoles,
+  devices: retail.devices,
+  camera: retail.camera,
+  phoneAccessories: retail.phoneAccessories,
+  bricks: retail.bricks,
+  toys: retail.toys,
+  blindbox: retail.blindbox,
+  capsuleToys: retail.capsuleToys,
+  plush: retail.plush,
+  fanmerch: retail.anime,
+  cards: retail.cards,
+  menswear: retail.apparel({ palette: APPAREL, mannequin: ['#264653', '#e9c46a', '#457b9d'], sofa: '#6d6875', tailor: true }),
+  womenswear: retail.apparel({ palette: ['#ffc8dd', '#ffafcc', '#f1faee', '#cdb4db', '#fefae0', '#e5989b', '#b5838d', '#ffffff'], mannequin: ['#ffafcc', '#f1faee', '#cdb4db'], sofa: '#f4a6b7' }),
+  kidswear: retail.apparel({ palette: ['#ffc8dd', '#bde0fe', '#caffbf', '#fdffb6', '#ffd6a5', '#a2d2ff'], mannequin: ['#caffbf', '#bde0fe'], sofa: '#80ed99', kids: true }),
+  shoes: retail.shoes,
+  bags: retail.bags,
+  accessories: retail.accessories,
+  books: retail.books,
+  stationery: retail.stationery,
+  cosmetics: retail.cosmetics,
+  drugstore: retail.drugstore,
+  eyewear: retail.eyewear,
+  repair: retail.repair,
+  cafe: food.cafe,
+  juiceBar: food.juiceBar,
+  bubbleTea: food.bubbleTea,
+  snacks: food.snacks,
+  crepes: food.crepes,
+  boardGameCafe: food.boardGameCafe,
+  ramen: food.ramen,
+  sushi: food.sushi,
+  italian: food.italian,
+  curry: food.curry,
+  grill: food.grill,
+  foodcourt: food.foodcourt,
+  bakery: food.bakery,
+  sweets: food.sweets,
+  deli: food.deli,
+  arcade: leisure.arcade,
+  vr: leisure.vr,
+  karaoke: leisure.karaoke,
+  escapeRoom: leisure.escapeRoom,
+  photoBooth: leisure.photoBooth,
+  playground: leisure.playground,
+  sports: sports.sports,
+  outdoor: sports.outdoor,
+  running: sports.running,
+  badminton: sports.badminton,
+  bikes: sports.bikes,
+  golf: sports.golf,
+  yoga: sports.yoga,
+  climbing: sports.climbing,
+  karting: later,
+  cinema: later,
+  garden: later,
+};

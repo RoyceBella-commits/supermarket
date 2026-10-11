@@ -27,6 +27,8 @@ export interface BuiltMall {
   products: THREE.Group;
   /** 装饰图位置，图片由 world/decor.ts 在运行时加载 */
   decor: DecorSlot[];
+  /** 开发检查：店内布置的问题 */
+  issues: string[];
 }
 
 /** 根据 mallLayout 生成整座灰盒商场：楼板、外墙、店铺空壳、栏杆、楼梯间、屋顶、广场和招牌。 */
@@ -62,9 +64,9 @@ export function buildMall(layout: MallLayout, physics: PhysicsWorld): BuiltMall 
   buildRoof(layout, top, roofY, batch);
 
   const root = batch.build(createWorldMaterials(), physics);
-  root.add(buildSigns(layout));
+  root.add(buildSigns(layout, interiors.backLogos));
   root.add(interiors.products);
-  return { root, batch, seats, npcSpots: interiors.npcSpots, products: interiors.products, decor: interiors.decor };
+  return { root, batch, seats, npcSpots: interiors.npcSpots, products: interiors.products, decor: interiors.decor, issues: interiors.issues };
 }
 
 function buildGround(layout: MallLayout, batch: StaticBatch) {
