@@ -5,7 +5,7 @@ import type { AudioEngine } from '../audio/AudioEngine.ts';
 import { i18n } from '../../ui/i18n.ts';
 import { toast } from '../../ui/Toast.ts';
 import { Track, type TrackPoint } from './Track.ts';
-import { buildKart, type KartModel } from './kartModel.ts';
+import { buildKart, KART_SCALE, type KartModel } from './kartModel.ts';
 
 // TurboKart 赛车：在登记机租车 → 车出现在发车格 → 3 秒倒计时 → WASD 驾驶。
 // - 街机式运动学模型：油门 / 刹车 / 倒车，低速转向弱、高速转向变钝（进弯要松油门），
@@ -26,8 +26,8 @@ const P = {
   /** 满速时转向能力打的折扣 */
   steerSpeedLoss: 0.42,
   /** 车身半宽 + 余量：中心离赛道边至少这么远 */
-  wallMargin: 0.62,
-  kartRadius: 0.72,
+  wallMargin: 0.52,
+  kartRadius: 0.58,
 };
 const FIXED = 1 / 60;
 const BEST_KEY = 'mall.kartBest';
@@ -42,8 +42,8 @@ interface Driver {
 }
 
 const AI_DRIVERS: Driver[] = [
-  { name: 'Mika', color: '#3a86ff', suit: '#1d3557', helmet: '#ffffff', skill: 0.95, lane: -0.75 },
-  { name: 'Kenta', color: '#fcbf49', suit: '#1b1b1b', helmet: '#fcbf49', skill: 0.9, lane: 0.75 },
+  { name: 'Mika', color: '#3a86ff', suit: '#1d3557', helmet: '#ffffff', skill: 0.95, lane: -0.8 },
+  { name: 'Kenta', color: '#fcbf49', suit: '#1b1b1b', helmet: '#fcbf49', skill: 0.9, lane: 0.8 },
   { name: 'Lena', color: '#06d6a0', suit: '#2b2d42', helmet: '#ff8fab', skill: 0.86, lane: 0 },
 ];
 
@@ -418,22 +418,34 @@ export class KartSystem {
     const look = this.track.segmentAt(k.s + Math.max(2, k.v * 0.5));
     const here = this.track.segmentAt(k.s);
     let target = Math.min(this.profile[look], this.profile[here]) * k.driver.skill;
-    // 前方 5 m 内同一车道有车：跟车、换道超车，里程上至少留 1.6 m，绝不追尾
+    // 前方 5 m 内同一车道有车：跟车、换道超车，里程上至少留 1.4 m，绝不追尾
+    const lim = this.track.half - P.wallMargin - 0.05;
+    const side = P.kartRadius * 2 + 0.15;
     let room = Infinity;
     const ahead = (s: number, lat: number, v: number) => {
       const ds = (s - k.s + L) % L;
       if (ds <= 0.05 || ds > 5) return;
-      if (Math.abs(lat - k.lateral) > 1.5) return;
-      target = Math.min(target, Math.max(0, v - 0.2) + Math.max(0, ds - 2.5) * 1.5);
-      room = Math.min(room, ds - 1.6);
+      if (Math.abs(lat - k.lateral) > side) return;
+      target = Math.min(target, Math.max(0, v - 0.2) + Math.max(0, ds - 2.2) * 1.5);
+      room = Math.min(room, ds - 1.4);
       if (k.laneHold <= 0) {
-        const lim = this.track.half - P.wallMargin - 0.05;
-        k.laneTarget = lat > 0 ? Math.max(-lim, lat - 1.65) : Math.min(lim, lat + 1.65);
+        k.laneTarget = lat > 0 ? Math.max(-lim, lat - side - 0.1) : Math.min(lim, lat + side + 0.1);
         k.laneHold = 3;
       }
     };
     for (const o of this.ai) if (o !== k) ahead(o.s, o.lateral, o.v);
-    if (this.playerProj) ahead(this.playerProj.s, this.playerProj.lateral, Math.max(0, this.v));
+    const pp = this.playerProj;
+    if (pp) {
+      ahead(pp.s, pp.lateral, Math.max(0, this.v));
+      // 玩家从后面追上来、而且更快：让出玩家那一侧，稍微松一点油门
+      const behind = (k.s - pp.s + L) % L;
+      if (behind > 0.2 && behind < 6 && this.v > k.v + 0.3) {
+        const away = pp.lateral > k.lateral + 0.05 ? -1 : pp.lateral < k.lateral - 0.05 ? 1 : k.lateral >= 0 ? 1 : -1;
+        k.laneTarget = away * lim;
+        k.laneHold = 2.5;
+        if (behind < 3) target *= 0.93;
+      }
+    }
     k.laneHold -= dt;
     if (k.laneHold <= 0) k.laneTarget = k.driver.lane;
     k.v += Math.max(-9 * dt, Math.min(5 * dt, target - k.v));
@@ -443,7 +455,14 @@ export class KartSystem {
       adv = Math.max(0, room);
       k.v = Math.min(k.v, adv / dt);
     }
-    k.lateral += Math.max(-1.1 * dt, Math.min(1.1 * dt, k.laneTarget - k.lateral));
+    let dLat = Math.max(-1.1 * dt, Math.min(1.1 * dt, k.laneTarget - k.lateral));
+    // 玩家就在旁边时，不往玩家那边挤
+    if (pp) {
+      const ds = ((pp.s - k.s + L * 1.5) % L) - L / 2;
+      const gap = pp.lateral - k.lateral;
+      if (Math.abs(ds) < 1.8 && Math.sign(dLat) === Math.sign(gap) && Math.abs(gap) < side + 0.3) dLat = 0;
+    }
+    k.lateral += dLat;
     k.s = this.track.wrap(k.s + adv);
     this.placeAi(k);
     const lap = k.timer.step(this.track.wrap(k.s - this.startS), L, this.now);
@@ -537,7 +556,7 @@ export function fmtLap(t: number): string {
 }
 
 function spinWheels(m: KartModel, v: number, steer: number, dt: number) {
-  for (let i = 0; i < m.wheels.length; i++) m.wheels[i].rotation.x += (v * dt) / (i < 2 ? 0.13 : 0.145);
+  for (let i = 0; i < m.wheels.length; i++) m.wheels[i].rotation.x += (v * dt) / ((i < 2 ? 0.13 : 0.145) * KART_SCALE);
   for (const p of m.steer) p.rotation.y = -steer * 0.45;
   m.wheel.rotation.z = steer * 1.2;
 }

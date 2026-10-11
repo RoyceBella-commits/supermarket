@@ -13,6 +13,9 @@ function mat(color: string): THREE.Material {
   return m;
 }
 
+/** 车整体缩放：卡通角色只有 1 m 左右高，按真实尺寸做的车显得太大、赛道上也不好超车 */
+export const KART_SCALE = 0.78;
+
 const BOX = new THREE.BoxGeometry(1, 1, 1);
 const WHEEL = new THREE.CylinderGeometry(1, 1, 1, 16).rotateZ(Math.PI / 2);
 const HUB = new THREE.CylinderGeometry(1, 1, 1, 10).rotateZ(Math.PI / 2);
@@ -120,7 +123,8 @@ export function buildKart(color: string, number: number, driver?: { suit: string
   mergeStatic(root);
   const shadow = blobShadow();
   root.add(shadow);
-  return { root, wheels, steer, wheel, seat: new THREE.Vector3(0, 0.25, -0.3), shadow };
+  root.scale.setScalar(KART_SCALE);
+  return { root, wheels, steer, wheel, seat: new THREE.Vector3(0, 0.25, -0.3).multiplyScalar(KART_SCALE), shadow };
 }
 
 /** 车身上不动的零件按材质合并成少数几个 Mesh（一辆车从约 25 个 draw call 降到约 12 个） */

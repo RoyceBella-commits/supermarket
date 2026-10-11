@@ -1,5 +1,6 @@
 import type { Kit } from '../kit.ts';
 import { floorFinish, type Template } from './common.ts';
+import { KART_SCALE } from '../../../systems/karting/kartModel.ts';
 
 // 3F TurboKart（52×18，门在长边中间）。依据 docs/interior-references.md 第 14 节：
 // 大堂占中轴前部（24×8）：展示赛车、长前台 + 头盔柜（按颜色分层）、登记机、圈速排行榜屏、
@@ -81,10 +82,11 @@ function flat(k: Kit, pts: [number, number][], h: number, color: string) {
   k.batch.quad({ corners, normal: [0, 1, 0], uvAxes: [0, 2], mat: 'prop', floor: f.shop.floor, tint: color });
 }
 
-/** 停着的卡丁车（静态，合并进批次）：中心 (u, v)，车头朝 +v（dir = 1）或 -v（dir = -1） */
-function parkedKart(k: Kit, u: number, v: number, dir: 1 | -1, color: string, h0 = 0) {
-  const V = (dv: number) => v + dv * dir;
-  const B = (u0: number, u1: number, a: number, b: number, z0: number, z1: number, c: string) => k.box(u + u0, Math.min(V(a), V(b)), u + u1, Math.max(V(a), V(b)), h0 + z0, h0 + z1, 'prop', c);
+/** 停着的卡丁车（静态，合并进批次）：中心 (u, v)，车头朝 +v（dir = 1）或 -v（dir = -1）；sc 和赛道上的车一样缩小 */
+function parkedKart(k: Kit, u: number, v: number, dir: 1 | -1, color: string, h0 = 0, sc = KART_SCALE) {
+  const V = (dv: number) => v + dv * dir * sc;
+  const B = (u0: number, u1: number, a: number, b: number, z0: number, z1: number, c: string) =>
+    k.box(u + u0 * sc, Math.min(V(a), V(b)), u + u1 * sc, Math.max(V(a), V(b)), h0 + z0 * sc, h0 + z1 * sc, 'prop', c);
   B(-0.46, 0.46, -0.75, 0.75, 0.08, 0.13, '#2b2d42');
   B(-0.39, 0.39, 0.55, 0.89, 0.12, 0.28, color);
   B(-0.22, 0.22, 0.25, 0.6, 0.18, 0.36, color);
@@ -102,7 +104,7 @@ function parkedKart(k: Kit, u: number, v: number, dir: 1 | -1, color: string, h0
     [-0.52, -0.56, 0.145, 0.2],
     [0.52, -0.56, 0.145, 0.2],
   ])
-    k.cyl(u + du, V(dv), h0 + r, r, w, '#1b1b1b', 'u');
+    k.cyl(u + du * sc, V(dv), h0 + r * sc, r * sc, w * sc, '#1b1b1b', 'u');
 }
 
 export const karting: Template = (k) => {
@@ -229,7 +231,7 @@ export const karting: Template = (k) => {
   const dv = 4.0;
   k.cyl(mid, dv, 0, 1.3, 0.12, '#d62828');
   k.cyl(mid, dv, 0.12, 1.2, 0.1, '#e9ecef');
-  parkedKart(k, mid, dv, -1, '#d62828', 0.22);
+  parkedKart(k, mid, dv, -1, '#d62828', 0.22, 1);
   k.solid(mid - 1.3, dv - 1.3, mid + 1.3, dv + 1.3, 0.75);
   // 长前台（黑色台身、红色灯带）+ 背后头盔柜（按颜色分层）
   const fu0 = lu0 + 1.0;
