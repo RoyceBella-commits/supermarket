@@ -43,6 +43,12 @@ export interface AnimInput {
   grounded: boolean;
   /** 竖直速度 */
   vy: number;
+  /** 坐着 */
+  sit?: boolean;
+  /** 头相对身体的偏转（弧度，正 = 向角色左边转），用于看向玩家 */
+  lookYaw?: number;
+  /** 正在说话：嘴巴开合 */
+  talking?: boolean;
 }
 
 export class ProceduralAnimator {
@@ -53,6 +59,9 @@ export class ProceduralAnimator {
   private walkW = 0;
   private runW = 0;
   private airW = 0;
+  private sitW = 0;
+  private headYaw = 0;
+  private talkT = 0;
   private blinkTimer = 2;
   private blinkT = -1;
 
@@ -72,6 +81,11 @@ export class ProceduralAnimator {
     this.hipsRest.copy(this.bones.get('hips')?.position ?? new THREE.Vector3());
   }
 
+  /** 静止站立时髋部离地高度（坐下时用它把髋部放到座面上） */
+  get hipsHeight(): number {
+    return this.hipsRest.y;
+  }
+
   update(dt: number, input: AnimInput) {
     this.time += dt;
     const h = this.height;
@@ -83,6 +97,8 @@ export class ProceduralAnimator {
     this.walkW = ease(this.walkW, THREE.MathUtils.smoothstep(input.speed, 0.15, 1.6), 10);
     this.runW = ease(this.runW, THREE.MathUtils.smoothstep(input.speed, 4.8, 7.2), 6);
     this.airW = ease(this.airW, input.grounded ? 0 : 1, input.grounded ? 14 : 8);
+    this.sitW = ease(this.sitW, input.sit ? 1 : 0, 9);
+    this.headYaw = ease(this.headYaw, THREE.MathUtils.clamp(input.lookYaw ?? 0, -1.0, 1.0), 6);
 
     let p = mix(IDLE, WALK, this.walkW);
     p = mix(p, RUN, this.runW);
@@ -102,12 +118,12 @@ export class ProceduralAnimator {
     // 躯干：前倾 + 扭转 + 呼吸
     set('spine', rot(X, p.lean * 0.5).multiply(rot(Y, p.twist * sL)));
     set('chest', rot(X, p.lean * 0.4 + breathe));
-    set('neck', rot(X, -p.lean * 0.4));
-    set('head', rot(Y, -p.twist * sL * 0.6));
+    set('neck', rot(X, -p.lean * 0.4).multiply(rot(Y, this.headYaw * 0.4)));
+    set('head', rot(Y, -p.twist * sL * 0.6 + this.headYaw * 0.6));
     const hips = this.bones.get('hips');
     if (hips) {
       hips.position.copy(this.hipsRest);
-      hips.position.y += Math.abs(Math.cos(ph)) * p.bob * h - p.bob * h * 0.5 - this.airW * 0.04 * h;
+      hips.position.y += (Math.abs(Math.cos(ph)) * p.bob * h - p.bob * h * 0.5 - this.airW * 0.04 * h) * (1 - this.sitW);
     }
 
     // 腿
@@ -131,7 +147,40 @@ export class ProceduralAnimator {
     set('leftLowerArm', rot(Y, -p.elbow));
     set('rightLowerArm', rot(Y, p.elbow));
 
+    if (this.sitW > 0.001) this.applySit(this.sitW);
+    this.updateMouth(dt, !!input.talking);
     this.updateBlink(dt);
+  }
+
+  /** 坐姿：大腿向前抬平、小腿垂下，手放在腿上，按权重和当前姿势混合。 */
+  private applySit(w: number) {
+    const blend = (name: VRMHumanBoneName, target: THREE.Quaternion) => {
+      const b = this.bones.get(name);
+      if (b) b.quaternion.slerp(target, w);
+    };
+    const rot = (axis: THREE.Vector3, a: number) => new THREE.Quaternion().setFromAxisAngle(axis, a);
+    blend('leftUpperLeg', rot(X, -1.45).multiply(rot(Z, -0.06)));
+    blend('rightUpperLeg', rot(X, -1.45).multiply(rot(Z, 0.06)));
+    blend('leftLowerLeg', rot(X, 1.35));
+    blend('rightLowerLeg', rot(X, 1.35));
+    blend('leftFoot', rot(X, -0.1));
+    blend('rightFoot', rot(X, -0.1));
+    blend('spine', rot(X, -0.04));
+    blend('chest', rot(X, 0.02 + Math.sin(this.time * 1.8) * 0.012));
+    blend('leftUpperArm', rot(X, -0.5).multiply(rot(Z, -1.3)));
+    blend('rightUpperArm', rot(X, -0.5).multiply(rot(Z, 1.3)));
+    blend('leftLowerArm', rot(Y, -0.7));
+    blend('rightLowerArm', rot(Y, 0.7));
+  }
+
+  /** 说话时嘴巴开合（'aa' 表情），节奏带一点随机 */
+  private updateMouth(dt: number, talking: boolean) {
+    const em = this.vrm.expressionManager;
+    if (!em) return;
+    this.talkT += dt;
+    const target = talking ? Math.max(0, Math.sin(this.talkT * 13) * 0.6 + Math.sin(this.talkT * 7.3) * 0.3 + 0.15) : 0;
+    const cur = em.getValue('aa') ?? 0;
+    em.setValue('aa', cur + (target - cur) * Math.min(1, dt * 20));
   }
 
   private updateBlink(dt: number) {

@@ -2,6 +2,7 @@ import * as THREE from 'three';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import { VRMLoaderPlugin, VRMUtils, type VRM } from '@pixiv/three-vrm';
 import { ProceduralAnimator, type AnimInput } from './ProceduralAnimator.ts';
+import type { Seat } from '../systems/Seats.ts';
 
 export const DEFAULT_AVATAR_URL = `${import.meta.env.BASE_URL}models/player.vrm`;
 
@@ -90,12 +91,27 @@ export class Avatar {
     scene.add(this.root, this.shadow);
   }
 
+  /** 站立时髋部离地高度 */
+  get hipsHeight(): number {
+    return this.animator?.hipsHeight ?? this.height * 0.45;
+  }
+
   /**
-   * feet：插值后的脚底位置；vel：实际水平速度；groundY：脚下地面高度（没有则 null）。
+   * feet：插值后的脚底位置；vel：实际水平速度；groundY：脚下地面高度（没有则 null）；
+   * seat：坐着时的座位（髋部放到座面上、朝座位方向）。
    */
-  update(dt: number, feet: THREE.Vector3, vel: THREE.Vector3, input: AnimInput, groundY: number | null) {
-    this.root.position.copy(feet);
-    const speed = Math.hypot(vel.x, vel.z);
+  update(dt: number, feet: THREE.Vector3, vel: THREE.Vector3, input: AnimInput, groundY: number | null, seat: Seat | null = null) {
+    if (seat) {
+      this.root.position.set(seat.x, seat.y - this.hipsHeight + 0.03, seat.z);
+      this.facing = seat.yaw;
+      this.root.rotation.y = seat.yaw;
+      input = { ...input, speed: 0, grounded: true, sit: true };
+      groundY = seat.y - 0.46;
+      feet = this.root.position;
+    } else {
+      this.root.position.copy(feet);
+    }
+    const speed = seat ? 0 : Math.hypot(vel.x, vel.z);
     if (speed > 0.25) {
       const target = Math.atan2(vel.x, vel.z);
       let d = target - this.facing;

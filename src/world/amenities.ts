@@ -1,5 +1,6 @@
 import type { AmenityDef, MallLayout, Side } from '../data/layoutTypes.ts';
 import type { MatKey, StaticBatch } from './StaticBatch.ts';
+import { seatFacing, type Seat } from '../systems/Seats.ts';
 
 // 公共区设施的灰盒造型（带碰撞）。交互在阶段 4 做。
 // 局部坐标：u 沿设施正面从左到右，v 从正面往里（朝背面），原点在正面左端。
@@ -24,7 +25,9 @@ export function facingVector(side: Side): { x: number; z: number } {
 export const LOCKER_HEIGHT = 2.0;
 export const SERVICE_PANEL_HEIGHT = 3.0;
 
-export function buildAmenities(layout: MallLayout, batch: StaticBatch) {
+/** 生成设施的造型和碰撞，返回其中可以坐的座位（长椅每 0.9 m 一个位子）。 */
+export function buildAmenities(layout: MallLayout, batch: StaticBatch): Seat[] {
+  const seats: Seat[] = [];
   const H = layout.building.floorHeight;
   for (const a of layout.amenities) {
     const y = a.floor * H;
@@ -92,7 +95,13 @@ export function buildAmenities(layout: MallLayout, batch: StaticBatch) {
         lbox(0, 0, W, D - 0.08, 0.38, 0.46, 'prop', '#b5835a');
         lbox(0.1, 0.1, W - 0.1, D - 0.18, 0, 0.38, 'prop', '#6c584c');
         lbox(0, D - 0.08, W, D, 0.38, 0.9, 'prop', '#b5835a');
-        // 碰撞：整体一个 0.46 m 高的块（不能直接走上去，要跳）
+        // 座位：沿长椅每 0.9 m 一个，坐在座面中间偏后，面朝设施正面
+        const n = Math.max(1, Math.floor(W / 0.9));
+        const out = { N: { x: 0, z: -1 }, S: { x: 0, z: 1 }, E: { x: 1, z: 0 }, W: { x: -1, z: 0 } }[a.facing];
+        for (let k = 0; k < n; k++) {
+          const p = map((W * (k + 0.5)) / n, (D - 0.08) * 0.55);
+          seats.push(seatFacing(`${a.id}-${k}`, p.x, y + 0.46, p.z, out.x, out.z, a.floor));
+        }
         break;
       }
       case 'waterFountain': {
@@ -102,4 +111,5 @@ export function buildAmenities(layout: MallLayout, batch: StaticBatch) {
       }
     }
   }
+  return seats;
 }

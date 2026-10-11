@@ -61,17 +61,21 @@ export class CameraRig {
   /**
    * 每帧调用。返回相机到角色的实际距离（第一人称为 0），用来决定是否隐藏角色。
    */
-  update(dt: number, player: PlayerController, alpha: number): number {
+  update(dt: number, player: PlayerController, alpha: number, seated: { pivot: THREE.Vector3; eye: THREE.Vector3 } | null = null): number {
     const cam = this.camera;
     if (this.mode === 'first') {
-      player.eyePosition(alpha, cam.position);
+      if (seated) cam.position.copy(seated.eye);
+      else player.eyePosition(alpha, cam.position);
       cam.rotation.set(player.pitch, player.yaw, 0);
       return 0;
     }
 
-    // 注视点：头和肩膀之间；竖直方向稍微平滑，上下楼梯时镜头不抖
-    player.feetPosition(alpha, tmpPivot);
-    tmpPivot.y += player.height * 0.86;
+    // 注视点：头和肩膀之间（坐着时跟着坐姿）；竖直方向稍微平滑，上下楼梯时镜头不抖
+    if (seated) tmpPivot.copy(seated.pivot);
+    else {
+      player.feetPosition(alpha, tmpPivot);
+      tmpPivot.y += player.height * 0.86;
+    }
     if (!this.pivotReady) {
       this.pivot.copy(tmpPivot);
       this.pivotReady = true;

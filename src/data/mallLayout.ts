@@ -270,6 +270,38 @@ const elevators: ElevatorDef[] = [
   { id: 'glass-elevator', label: { zh: '观光电梯', en: 'Glass Elevator' }, rect: { x: -1.6, z: 2.4, w: 3.2, d: 3.6 }, floors: [-1, 0, 1, 2, 3, 4], doorSide: 'S' },
 ];
 
+// ---------- 公共长椅（每层：商业街中线背靠背成对、中央中庭四周面朝挑空）----------
+function publicBenches(): AmenityDef[] {
+  const out: AmenityDef[] = [];
+  const bench = (id: string, floor: number, x: number, z: number, facing: Side, w = 2): AmenityDef => ({
+    id,
+    kind: 'bench',
+    floor,
+    rect: facing === 'N' || facing === 'S' ? { x: x - w / 2, z, w, d: 0.55 } : { x, z: z - w / 2, w: 0.55, d: w },
+    facing,
+  });
+  for (const L of ABOVE_GROUND) {
+    const f = `${L + 1}f`;
+    // 商业街中线：扶梯挑空两侧的空段，背靠背一对
+    for (const x of [-45, -18, 18, 45]) {
+      out.push(bench(`bench-${f}-st${x}-n`, L, x, -0.6, 'N'));
+      out.push(bench(`bench-${f}-st${x}-s`, L, x, 0.05, 'S'));
+    }
+    if (L === 0) {
+      // 1F 中庭广场北侧，面朝广场
+      for (const x of [-7, 7]) out.push(bench(`bench-${f}-court${x}`, L, x, -9.3, 'S'));
+    } else {
+      // 楼上：挑空南北两侧的走道上，面朝挑空（避开电梯门口）
+      for (const x of [-5.5, 5.5]) {
+        out.push(bench(`bench-${f}-void-s${x}`, L, x, 7.0, 'N'));
+        if (L !== 4) out.push(bench(`bench-${f}-void-n${x}`, L, x, -7.55, 'S'));
+      }
+    }
+  }
+  return out;
+}
+amenities.push(...publicBenches());
+
 const fullIndoor: Rect = { x: X0, z: Z0, w: X1 - X0, d: Z1 - Z0 };
 
 export const mallLayout: MallLayout = {

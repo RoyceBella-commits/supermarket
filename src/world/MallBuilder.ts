@@ -9,6 +9,7 @@ import { buildStairCore, stairHoles } from './stairs.ts';
 import { buildSigns } from './signs.ts';
 import { addSlab, type SurfaceRoom } from './surfaces.ts';
 import { buildAmenities } from './amenities.ts';
+import type { Seat } from '../systems/Seats.ts';
 import { buildEscalatorStatics, escalatorFrame } from './escalators.ts';
 import { buildElevatorShaft } from './elevator.ts';
 
@@ -17,6 +18,7 @@ const SIDES: Side[] = ['N', 'S', 'E', 'W'];
 export interface BuiltMall {
   root: THREE.Group;
   batch: StaticBatch;
+  seats: Seat[];
 }
 
 /** 根据 mallLayout 生成整座灰盒商场：楼板、外墙、店铺空壳、栏杆、楼梯间、屋顶、广场和招牌。 */
@@ -44,14 +46,14 @@ export function buildMall(layout: MallLayout, physics: PhysicsWorld): BuiltMall 
     const outdoorAtTop = !containsRect(floorByLevel(layout, st.floors[1]).indoor, st.rect);
     buildStairCore(batch, st, H, b.slab, outdoorAtTop, b.doorHeight);
   }
-  buildAmenities(layout, batch);
+  const seats = buildAmenities(layout, batch);
   buildEscalatorStatics(layout, batch);
   for (const el of layout.circulation.elevators) buildElevatorShaft(layout, el, batch);
   buildRoof(layout, top, roofY, batch);
 
   const root = batch.build(createWorldMaterials(), physics);
   root.add(buildSigns(layout));
-  return { root, batch };
+  return { root, batch, seats };
 }
 
 function buildGround(layout: MallLayout, batch: StaticBatch) {

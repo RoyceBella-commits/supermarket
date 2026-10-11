@@ -25,6 +25,7 @@ import { EscalatorSystem } from '../world/escalators.ts';
 import { ElevatorSystem } from '../world/elevator.ts';
 import { InteractionSystem } from '../systems/Interaction.ts';
 import { ElevatorPanel } from '../ui/ElevatorPanel.ts';
+import { SeatSystem, type Seat } from '../systems/Seats.ts';
 
 const FIXED_DT = 1 / 60;
 const MAX_STEPS = 5;
@@ -63,6 +64,8 @@ export class Game {
   private elevators: ElevatorSystem[] = [];
   private readonly interaction = new InteractionSystem();
   private readonly elevatorPanel = new ElevatorPanel();
+  private readonly seats = new SeatSystem();
+  private seated: Seat | null = null;
 
   constructor(container: HTMLElement) {
     this.renderer = new Renderer(container, { postFx: !devFlags.nofx });
@@ -75,9 +78,17 @@ export class Game {
 
     if (this.layout && import.meta.env.DEV) this.reportLayoutProblems(this.layout);
 
-    const world = this.layout ? buildMall(this.layout, this.physics).root : buildTestbed(this.physics);
+    let world: THREE.Group;
+    if (this.layout) {
+      const built = buildMall(this.layout, this.physics);
+      world = built.root;
+      this.seats.addAll(built.seats);
+    } else {
+      world = buildTestbed(this.physics);
+    }
     this.renderer.scene.add(world);
     if (this.layout) this.setupCirculation(this.layout);
+    this.setupSeating();
 
     this.player = new PlayerController(this.physics);
     const spawn = this.spawnPoint();
@@ -233,7 +244,7 @@ export class Game {
     const feet = this.player.feetPosition(alpha, this.tmp);
     this.updateDynamicWorld(dt, feet);
     this.updateAvatar(dt, feet);
-    const camDist = this.cameraRig.update(dt, this.player, alpha);
+    const camDist = this.cameraRig.update(dt, this.player, alpha, this.seatedView());
     this.avatar.setVisible(this.cameraRig.mode === 'first' || camDist > CAMERA.hideAvatarBelow);
     let floor = 0;
     if (this.zones && this.hud) {
@@ -270,6 +281,15 @@ export class Game {
 
   /** 一个固定物理步：电梯 → 扶梯输送 → 角色 → 物理世界。 */
   private fixedStep(move: MoveIntent, jump: boolean) {
+    // 坐着：一走动或起跳就站起来，否则角色不动
+    if (this.seated) {
+      if (move.forward !== 0 || move.right !== 0 || jump) this.standUp();
+      else {
+        for (const el of this.elevators) el.fixedUpdate(FIXED_DT, this.player.curr);
+        this.physics.step(FIXED_DT);
+        return;
+      }
+    }
     let ride = null;
     for (const el of this.elevators) ride = el.fixedUpdate(FIXED_DT, this.player.curr) ?? ride;
     const esc = !ride && !jump ? (this.escalators?.locate(this.player.curr) ?? null) : null;
@@ -288,6 +308,60 @@ export class Game {
     this.interaction.update(feet);
     const cur = this.interaction.current;
     this.hud?.setPrompt(cur && !this.elevatorPanel.isOpen && !this.musicPanel.isOpen ? cur.prompt() : null);
+  }
+
+  private sitDown(seat: Seat) {
+    this.seated = seat;
+    this.player.vel.set(0, 0, 0);
+    this.player.moveVel.set(0, 0, 0);
+    // 视线转向座位朝向（玩家 yaw 与角色朝向相差 π）
+    this.player.yaw = seat.yaw + Math.PI;
+    this.player.pitch = this.cameraRig.mode === 'third' ? -0.12 : 0;
+  }
+
+  /** 站起来：落在座位正前方，镜头保持现在的角度 */
+  private standUp() {
+    const s = this.seated;
+    if (!s) return;
+    this.seated = null;
+    const pos = new THREE.Vector3(s.x + Math.sin(s.yaw) * 0.62, s.y - 0.46 + 0.05, s.z + Math.cos(s.yaw) * 0.62);
+    this.player.teleport(pos, this.player.yaw, this.player.pitch);
+    this.avatar.setFacing(s.yaw);
+  }
+
+  /** 坐着时的镜头注视点和第一人称眼睛位置 */
+  private seatedView(): { pivot: THREE.Vector3; eye: THREE.Vector3 } | null {
+    const s = this.seated;
+    if (!s) return null;
+    const lift = this.avatar.height * 0.86 - this.avatar.hipsHeight;
+    const eyeLift = this.avatar.eyeHeight - this.avatar.hipsHeight;
+    return { pivot: new THREE.Vector3(s.x, s.y + lift, s.z), eye: new THREE.Vector3(s.x, s.y + eyeLift, s.z) };
+  }
+
+  private setupSeating() {
+    const far = new THREE.Vector3(1e6, 0, 1e6);
+    this.interaction.add({
+      id: 'seat',
+      prompt: () => i18n.t('seat.sit'),
+      position: () => {
+        const s = this.seats.nearest(this.player.curr);
+        return s ? new THREE.Vector3(s.x, s.y - 0.46, s.z) : far;
+      },
+      radius: 1.4,
+      isAvailable: () => !this.seated && this.seats.lastNearest !== null,
+      interact: () => {
+        const s = this.seats.lastNearest;
+        if (s) this.sitDown(s);
+      },
+    });
+    this.interaction.add({
+      id: 'stand',
+      prompt: () => i18n.t('seat.stand'),
+      position: () => this.player.curr.clone(),
+      radius: 5,
+      isAvailable: () => this.seated !== null,
+      interact: () => this.standUp(),
+    });
   }
 
   private setupCirculation(layout: MallLayout) {
@@ -342,7 +416,14 @@ export class Game {
     // 第一人称时身体朝向跟着视线，第三人称时朝移动方向
     if (this.cameraRig.mode === 'first') this.avatar.setFacing(p.yaw + Math.PI);
     const groundY = this.physics.groundBelow(feet.x, feet.y + 0.4, feet.z, 12);
-    this.avatar.update(dt, feet, this.cameraRig.mode === 'first' ? p.moveVel.clone().multiplyScalar(0) : p.moveVel, { speed: p.horizontalSpeed, grounded: p.grounded, vy: p.vy }, groundY);
+    this.avatar.update(
+      dt,
+      feet,
+      this.cameraRig.mode === 'first' ? p.moveVel.clone().multiplyScalar(0) : p.moveVel,
+      { speed: p.horizontalSpeed, grounded: p.grounded, vy: p.vy },
+      groundY,
+      this.seated,
+    );
   }
 
   private toggleView() {
@@ -460,12 +541,18 @@ export class Game {
       setYaw(deg: number) {
         game.player.yaw = (deg * Math.PI) / 180;
       },
+      get seats() {
+        return game.seats.seats;
+      },
+      get seated() {
+        return game.seated;
+      },
       /** 立即按当前状态渲染一帧（浏览器面板隐藏、渲染循环暂停时截图用） */
       renderOnce(dt = 1 / 60) {
         const feet = game.player.feetPosition(1, new THREE.Vector3());
         game.updateDynamicWorld(dt, feet);
         game.updateAvatar(dt, feet);
-        const d = game.cameraRig.update(dt, game.player, 1);
+        const d = game.cameraRig.update(dt, game.player, 1, game.seatedView());
         game.avatar.setVisible(game.cameraRig.mode === 'first' || d > CAMERA.hideAvatarBelow);
         game.renderer.render(dt);
       },
