@@ -71,6 +71,8 @@ export class Game {
   private readonly voice = new VoicePlayer(this.audio);
   private readonly dialogue = new DialogueBox();
   private npcs: NpcSystem | null = null;
+  private npcSpots = new Map<string, { x: number; z: number; yaw: number }>();
+  private products: THREE.Group | null = null;
   private seated: Seat | null = null;
 
   constructor(container: HTMLElement) {
@@ -89,6 +91,8 @@ export class Game {
       const built = buildMall(this.layout, this.physics);
       world = built.root;
       this.seats.addAll(built.seats);
+      this.npcSpots = built.npcSpots;
+      this.products = built.products;
     } else {
       world = buildTestbed(this.physics);
     }
@@ -96,7 +100,7 @@ export class Game {
     if (this.layout) this.setupCirculation(this.layout);
     this.setupSeating();
     if (this.layout) {
-      this.npcs = new NpcSystem(this.layout, this.renderer.scene, this.physics, this.interaction, this.voice, this.dialogue);
+      this.npcs = new NpcSystem(this.layout, this.renderer.scene, this.physics, this.interaction, this.voice, this.dialogue, this.npcSpots);
       void this.voice.loadManifest();
     }
 
@@ -262,6 +266,8 @@ export class Game {
       floor = zone.floor;
       this.hud.setZone(zone);
     }
+    // 商品只画玩家所在楼层和上下相邻层（隔得更远的被楼板挡住）
+    if (this.products) for (const m of this.products.children) m.visible = Math.abs((m.userData.floor as number) - floor) <= 1;
 
     if (this.debugLines) {
       const { vertices, colors } = this.physics.world.debugRender();
@@ -591,6 +597,33 @@ export class Game {
         c.height = Math.round((src.height / src.width) * width);
         c.getContext('2d')!.drawImage(src, 0, 0, c.width, c.height);
         const res = await fetch(`/__shot?name=${encodeURIComponent(name)}`, { method: 'POST', body: c.toDataURL('image/jpeg', 0.85) });
+        return res.text();
+      },
+      /** 店内总览图：依次走进每家店门内一点、拍一张，拼成 3 列的图存到 tools/.shots/<name>.jpg */
+      async sheet(ids: string[], name: string) {
+        const cw = 440;
+        const ch = 262;
+        const cols = 3;
+        const out = document.createElement('canvas');
+        out.width = cols * cw;
+        out.height = Math.ceil(ids.length / cols) * (ch + 22);
+        const x = out.getContext('2d')!;
+        x.fillStyle = '#222';
+        x.fillRect(0, 0, out.width, out.height);
+        hooks.setView('first');
+        ids.forEach((id, i) => {
+          hooks.teleportShop(id);
+          hooks.simulate(1, 0, 0.55);
+          game.player.pitch = -0.22;
+          for (let k = 0; k < 3; k++) hooks.renderOnce();
+          const px = (i % cols) * cw;
+          const py = Math.floor(i / cols) * (ch + 22);
+          x.drawImage(game.renderer.canvas, px, py + 22, cw, ch);
+          x.fillStyle = '#fff';
+          x.font = '15px sans-serif';
+          x.fillText(id, px + 6, py + 16);
+        });
+        const res = await fetch(`/__shot?name=${encodeURIComponent(name)}`, { method: 'POST', body: out.toDataURL('image/jpeg', 0.85) });
         return res.text();
       },
       /** 同步模拟若干秒的物理步（不依赖渲染循环，页面在后台也能测）。返回脚底位置。 */

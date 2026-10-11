@@ -54,6 +54,7 @@ export class NpcSystem {
     interaction: InteractionSystem,
     private readonly voice: VoicePlayer,
     private readonly box: DialogueBox,
+    spots: Map<string, { x: number; z: number; yaw: number }> = new Map(),
   ) {
     const H = layout.building.floorHeight;
     for (const def of npcs) {
@@ -62,7 +63,7 @@ export class NpcSystem {
         console.warn('[npc] 找不到店铺或店门', def.shopId);
         continue;
       }
-      const spot = npcSpot(shop);
+      const spot = spots.get(shop.id) ?? npcSpot(shop);
       const home = new THREE.Vector3(spot.x, shop.floor * H, spot.z);
       const n: Npc = { def, shop, home, homeYaw: spot.yaw, avatar: null, loading: false, facing: spot.yaw, lineIndex: 0, talkUntil: 0 };
       this.list.push(n);
