@@ -1,0 +1,16 @@
+node_modules/
+dist/
+.DS_Store
+._*
+*.log
+
+# 工具中间产物
+tools/*/work/
+
+# 本机专用 BGM（商业曲目，不进仓库）
+public/audio/bgm/local/
+public/audio/bgm/playlist.local.json
+
+# Python 缓存
+__pycache__/
+*.pyc
