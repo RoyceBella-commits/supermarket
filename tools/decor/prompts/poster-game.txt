@@ -1,0 +1,11 @@
+Use case: stylized-concept
+Asset type: text-free key-art poster for a fictional video game, displayed in a game shop in a cartoon shopping-mall game
+Primary request: key art for a fictional fantasy adventure video game: hero with sword, floating islands
+Scene/backdrop: a sky full of floating grassy islands with small waterfalls spilling off their edges, soft clouds, distant islands fading into haze.
+Subject: one original young adventurer hero standing on a cliff edge in the foreground, holding a sword raised confidently, with a flowing cape and light armour; an original design that does not resemble any existing video game character.
+Style/medium: flat cel-shaded cartoon illustration; bright, soft, pastel-leaning colours; clean simple shapes; soft two-tone shading; thin warm outlines; friendly, cozy mood matching a "bright & soft" toon 3D game with Animal-Crossing-like brightness (brightness reference only; no characters, assets or designs from any existing game).
+Composition/framing: vertical portrait poster; hero in the lower-middle foreground seen from a slightly low angle; floating islands rising behind and above; calm empty sky space near the top.
+Lighting/mood: warm sunset light, adventurous and hopeful.
+Color palette: warm sunset orange, sky blue, soft purple and pastel clouds.
+Constraints: no text, letters, numbers, logos or watermarks anywhere in the image (including signs, screens, packaging, labels and clothing); the game overlays its own text. Original characters and designs only; no real brands, no famous or copyrighted characters, no real people or celebrity likenesses.
+Avoid: any text or lettering, numbers, logos, brand marks, watermarks, signatures, photorealism, harsh contrast, dark or gritty mood.

@@ -1,0 +1,407 @@
+{
+  "poster-menswear": {
+    "prompt": "Use case: ads-marketing\nAsset type: text-free in-store fashion poster for a menswear shop in a cartoon shopping-mall game\nPrimary request: a stylish young man in a casual autumn outfit (jacket, knit, chinos), simple background\nScene/backdrop: simple plain warm-cream background with a few soft falling autumn leaves; no other environment.\nSubject: one original friendly young adult man with cartoon proportions, relaxed confident standing pose, wearing a light casual jacket over a cozy knit sweater, chinos and simple sneakers; plain fabrics with no prints, logos or lettering.\nStyle/medium: flat cel-shaded cartoon illustration; bright, soft, pastel-leaning colours; clean simple shapes; soft two-tone shading; thin warm outlines; friendly, cozy mood matching a \"bright & soft\" toon 3D game with Animal-Crossing-like brightness (brightness reference only; no characters, assets or designs from any existing game).\nComposition/framing: vertical portrait poster; knee-up or full-body figure centred; comfortable margins around the figure; calm empty space near the top.\nLighting/mood: soft even daylight, gentle warm autumn feeling.\nColor palette: soft deep teal and mustard accents on warm cream, muted pastel autumn tones.\nConstraints: no text, letters, numbers, logos or watermarks anywhere in the image (including signs, screens, packaging, labels and clothing); the game overlays its own text. Original characters and designs only; no real brands, no famous or copyrighted characters, no real people or celebrity likenesses.\nAvoid: any text or lettering, numbers, logos, brand marks, watermarks, signatures, photorealism, harsh contrast, dark or gritty mood.",
+    "model": "gpt-6.1-sol",
+    "effort": "low",
+    "backend": "Codex CLI (codex exec) built-in image_gen",
+    "date": "2026-10-11T10:32:43Z",
+    "aspect": "2:3",
+    "sizeRequested": "1024x1536",
+    "rawSize": [
+      1024,
+      1536
+    ],
+    "crop": null,
+    "taskDir": "assets-src/decor/tasks/poster-menswear/low-20261011-183141",
+    "attempts": [
+      {
+        "effort": "low",
+        "ok": true,
+        "seconds": 62,
+        "dir": "assets-src/decor/tasks/poster-menswear/low-20261011-183141",
+        "error": null
+      }
+    ]
+  },
+  "poster-womenswear": {
+    "prompt": "Use case: ads-marketing\nAsset type: text-free in-store fashion poster for a womenswear shop in a cartoon shopping-mall game\nPrimary request: a young woman in a pastel spring dress and cardigan\nScene/backdrop: simple soft pastel background with a few drifting spring blossom petals; no other environment.\nSubject: one original friendly young adult woman with cartoon proportions, natural relaxed standing pose and gentle smile, wearing a pastel spring dress with a light cardigan and simple flats; plain fabrics with no logos or lettering.\nStyle/medium: flat cel-shaded cartoon illustration; bright, soft, pastel-leaning colours; clean simple shapes; soft two-tone shading; thin warm outlines; friendly, cozy mood matching a \"bright & soft\" toon 3D game with Animal-Crossing-like brightness (brightness reference only; no characters, assets or designs from any existing game).\nComposition/framing: vertical portrait poster; knee-up or full-body figure centred; comfortable margins around the figure; calm empty space near the top.\nLighting/mood: soft airy spring daylight, fresh and gentle.\nColor palette: blush pink, peach cream and soft mint accents.\nConstraints: no text, letters, numbers, logos or watermarks anywhere in the image (including signs, screens, packaging, labels and clothing); the game overlays its own text. Original characters and designs only; no real brands, no famous or copyrighted characters, no real people or celebrity likenesses.\nAvoid: any text or lettering, numbers, logos, brand marks, watermarks, signatures, photorealism, harsh contrast, dark or gritty mood.",
+    "model": "gpt-6.1-sol",
+    "effort": "low",
+    "backend": "Codex CLI (codex exec) built-in image_gen",
+    "date": "2026-10-11T10:34:08Z",
+    "aspect": "2:3",
+    "sizeRequested": "1024x1536",
+    "rawSize": [
+      1024,
+      1536
+    ],
+    "crop": null,
+    "taskDir": "assets-src/decor/tasks/poster-womenswear/low-20261011-183304",
+    "attempts": [
+      {
+        "effort": "low",
+        "ok": true,
+        "seconds": 63,
+        "dir": "assets-src/decor/tasks/poster-womenswear/low-20261011-183304",
+        "error": null
+      }
+    ]
+  },
+  "poster-kidswear": {
+    "prompt": "Use case: ads-marketing\nAsset type: text-free in-store poster for a kidswear shop in a cartoon shopping-mall game\nPrimary request: two happy kids in colourful playful outfits\nScene/backdrop: simple bright pastel background with a few playful confetti dots and soft cloud shapes; no other environment.\nSubject: two original cheerful young children (around 6 to 8 years old) side by side, mid-hop or waving happily, wearing colourful playful, age-appropriate outfits such as striped tee with overalls and a bright jacket with leggings and sneakers; plain fabrics with no logos or lettering.\nStyle/medium: flat cel-shaded cartoon illustration; bright, soft, pastel-leaning colours; clean simple shapes; soft two-tone shading; thin warm outlines; friendly, cozy mood matching a \"bright & soft\" toon 3D game with Animal-Crossing-like brightness (brightness reference only; no characters, assets or designs from any existing game).\nComposition/framing: vertical portrait poster; both kids full-body and centred; comfortable margins; calm empty space near the top.\nLighting/mood: soft sunny daylight, joyful and playful.\nColor palette: fresh mint green, sunny yellow, sky blue and soft coral on cream.\nConstraints: no text, letters, numbers, logos or watermarks anywhere in the image (including signs, screens, packaging, labels and clothing); the game overlays its own text. Original characters and designs only; no real brands, no famous or copyrighted characters, no real people or celebrity likenesses.\nAvoid: any text or lettering, numbers, logos, brand marks, watermarks, signatures, photorealism, harsh contrast, dark or gritty mood.",
+    "model": "gpt-6.1-sol",
+    "effort": "low",
+    "backend": "Codex CLI (codex exec) built-in image_gen",
+    "date": "2026-10-11T10:35:18Z",
+    "aspect": "2:3",
+    "sizeRequested": "1024x1536",
+    "rawSize": [
+      1024,
+      1536
+    ],
+    "crop": null,
+    "taskDir": "assets-src/decor/tasks/poster-kidswear/low-20261011-183408",
+    "attempts": [
+      {
+        "effort": "low",
+        "ok": true,
+        "seconds": 70,
+        "dir": "assets-src/decor/tasks/poster-kidswear/low-20261011-183408",
+        "error": null
+      }
+    ]
+  },
+  "poster-running": {
+    "prompt": "Use case: ads-marketing\nAsset type: text-free in-store poster for a running and sports shop in a cartoon shopping-mall game\nPrimary request: a runner mid-stride on a sunny track\nScene/backdrop: a sunny outdoor running track with soft-coloured lanes (no lane numbers or markings with digits), rounded green trees and a clear blue sky with soft clouds.\nSubject: one original athletic young adult runner shown mid-stride in a dynamic three-quarter side view, sporty tank top, running shorts and plain solid-colour running shoes with no side stripes, swooshes, checks or any brand-like marks.\nStyle/medium: flat cel-shaded cartoon illustration; bright, soft, pastel-leaning colours; clean simple shapes; soft two-tone shading; thin warm outlines; friendly, cozy mood matching a \"bright & soft\" toon 3D game with Animal-Crossing-like brightness (brightness reference only; no characters, assets or designs from any existing game).\nComposition/framing: vertical portrait poster; runner large in frame, slightly below centre, track leading into the distance; a few soft motion lines; calm sky space near the top.\nLighting/mood: bright warm sunshine, energetic yet soft.\nColor palette: fresh lime green, sky blue, warm orange and cream.\nConstraints: no text, letters, numbers, logos or watermarks anywhere in the image (including signs, screens, packaging, labels and clothing); the game overlays its own text. Original characters and designs only; no real brands, no famous or copyrighted characters, no real people or celebrity likenesses.\nAvoid: any text or lettering, numbers, logos, brand marks, swoosh or stripe logos on shoes, watermarks, signatures, photorealism, harsh contrast, dark or gritty mood.",
+    "model": "gpt-6.1-sol",
+    "effort": "high",
+    "backend": "Codex CLI (codex exec) built-in image_gen",
+    "date": "2026-10-11T10:51:23Z",
+    "aspect": "2:3",
+    "sizeRequested": "1024x1536",
+    "rawSize": [
+      1024,
+      1536
+    ],
+    "crop": null,
+    "taskDir": "assets-src/decor/tasks/poster-running/high-20261011-185013",
+    "attempts": [
+      {
+        "effort": "low",
+        "ok": true,
+        "seconds": 63,
+        "dir": "assets-src/decor/tasks/poster-running/low-20261011-183518",
+        "error": null
+      },
+      {
+        "effort": "high",
+        "ok": true,
+        "seconds": 70,
+        "dir": "assets-src/decor/tasks/poster-running/high-20261011-185013",
+        "error": null
+      }
+    ]
+  },
+  "poster-badminton": {
+    "prompt": "Use case: ads-marketing\nAsset type: text-free in-store poster for a badminton shop in a cartoon shopping-mall game\nPrimary request: a badminton player jumping for a smash, shuttlecock in the air\nScene/backdrop: a bright, airy indoor badminton court with a net and soft-coloured floor; simple background with no banners or scoreboards.\nSubject: one original adult badminton player in mid-air jumping smash pose, racket raised overhead, one white shuttlecock clearly visible in the air just above the racket; sporty shirt, shorts and court shoes with no logos; plausible anatomy and racket grip.\nStyle/medium: flat cel-shaded cartoon illustration; bright, soft, pastel-leaning colours; clean simple shapes; soft two-tone shading; thin warm outlines; friendly, cozy mood matching a \"bright & soft\" toon 3D game with Animal-Crossing-like brightness (brightness reference only; no characters, assets or designs from any existing game).\nComposition/framing: vertical portrait poster; player large and centred, dynamic diagonal pose; shuttlecock in the upper area; calm space near the top.\nLighting/mood: soft bright indoor light, energetic and cheerful.\nColor palette: periwinkle and cobalt blue, sunny yellow and white.\nConstraints: no text, letters, numbers, logos or watermarks anywhere in the image (including signs, screens, packaging, labels and clothing); the game overlays its own text. Original characters and designs only; no real brands, no famous or copyrighted characters, no real people or celebrity likenesses.\nAvoid: any text or lettering, numbers, logos, brand marks, watermarks, signatures, photorealism, harsh contrast, dark or gritty mood.",
+    "model": "gpt-6.1-sol",
+    "effort": "low",
+    "backend": "Codex CLI (codex exec) built-in image_gen",
+    "date": "2026-10-11T10:37:16Z",
+    "aspect": "2:3",
+    "sizeRequested": "1024x1536",
+    "rawSize": [
+      1024,
+      1536
+    ],
+    "crop": null,
+    "taskDir": "assets-src/decor/tasks/poster-badminton/low-20261011-183621",
+    "attempts": [
+      {
+        "effort": "low",
+        "ok": true,
+        "seconds": 55,
+        "dir": "assets-src/decor/tasks/poster-badminton/low-20261011-183621",
+        "error": null
+      }
+    ]
+  },
+  "poster-outdoor": {
+    "prompt": "Use case: ads-marketing\nAsset type: text-free in-store landscape poster for an outdoor and camping shop in a cartoon shopping-mall game\nPrimary request: tent and campfire by a lake with mountains\nScene/backdrop: a calm lakeside in a pine forest with gentle mountains behind, their soft reflections in the still lake water, a pastel sky.\nSubject: one small dome tent and a cozy crackling campfire with a few logs on the grassy lakeshore; no people.\nStyle/medium: flat cel-shaded cartoon illustration; bright, soft, pastel-leaning colours; clean simple shapes; soft two-tone shading; thin warm outlines; friendly, cozy mood matching a \"bright & soft\" toon 3D game with Animal-Crossing-like brightness (brightness reference only; no characters, assets or designs from any existing game).\nComposition/framing: wide horizontal landscape; tent and campfire in the lower foreground third, lake in the middle, mountains and sky in the upper half.\nLighting/mood: warm golden late-afternoon light with a soft glow from the campfire, peaceful and cozy.\nColor palette: sage and leaf green, soft lake blue, peach sky and warm campfire orange.\nConstraints: no text, letters, numbers, logos or watermarks anywhere in the image (including signs, screens, packaging, labels and clothing); the game overlays its own text. Original characters and designs only; no real brands, no famous or copyrighted characters, no real people or celebrity likenesses.\nAvoid: any text or lettering, numbers, logos, brand marks, watermarks, signatures, photorealism, harsh contrast, dark or gritty mood.",
+    "model": "gpt-6.1-sol",
+    "effort": "low",
+    "backend": "Codex CLI (codex exec) built-in image_gen",
+    "date": "2026-10-11T10:38:13Z",
+    "aspect": "3:2",
+    "sizeRequested": "1536x1024",
+    "rawSize": [
+      1672,
+      941
+    ],
+    "crop": "1672x941 -> 1412x941 (centre)",
+    "taskDir": "assets-src/decor/tasks/poster-outdoor/low-20261011-183716",
+    "attempts": [
+      {
+        "effort": "low",
+        "ok": true,
+        "seconds": 57,
+        "dir": "assets-src/decor/tasks/poster-outdoor/low-20261011-183716",
+        "error": null
+      }
+    ]
+  },
+  "menu-coffee": {
+    "prompt": "Use case: product-mockup\nAsset type: text-free menu board illustration for a cozy café in a cartoon shopping-mall game\nPrimary request: top-down cozy café spread: latte with latte art, croissant, cake slice, cookie\nScene/backdrop: a light warm-wood or cream tabletop seen from directly above.\nSubject: a latte in a ceramic cup and saucer with heart or leaf latte art, a golden flaky croissant on a small plate, a slice of strawberry layer cake on a small plate, and a round chocolate-chip cookie; a few scattered coffee beans.\nStyle/medium: flat cel-shaded cartoon illustration; bright, soft, pastel-leaning colours; clean simple shapes; soft two-tone shading; thin warm outlines; friendly, cozy mood matching a \"bright & soft\" toon 3D game with Animal-Crossing-like brightness (brightness reference only; no characters, assets or designs from any existing game).\nComposition/framing: wide horizontal, strict top-down flat lay; the four items evenly arranged with breathing room between them; nothing cut off at the edges.\nLighting/mood: soft morning light, warm and cozy.\nColor palette: sage green and cream with caramel brown and strawberry pink accents.\nMaterials/textures: glossy ceramic, flaky pastry, soft sponge cake, simplified into clean cartoon shapes.\nConstraints: no text, letters, numbers, logos or watermarks anywhere in the image (including signs, screens, packaging, labels and clothing); the game overlays its own text. Original characters and designs only; no real brands, no famous or copyrighted characters, no real people or celebrity likenesses.\nAvoid: any text or lettering, numbers, logos, brand marks, watermarks, signatures, photorealism, harsh contrast, dark or gritty mood.",
+    "model": "gpt-6.1-sol",
+    "effort": "low",
+    "backend": "Codex CLI (codex exec) built-in image_gen",
+    "date": "2026-10-11T10:39:07Z",
+    "aspect": "3:2",
+    "sizeRequested": "1536x1024",
+    "rawSize": [
+      1536,
+      1024
+    ],
+    "crop": null,
+    "taskDir": "assets-src/decor/tasks/menu-coffee/low-20261011-183813",
+    "attempts": [
+      {
+        "effort": "low",
+        "ok": true,
+        "seconds": 54,
+        "dir": "assets-src/decor/tasks/menu-coffee/low-20261011-183813",
+        "error": null
+      }
+    ]
+  },
+  "atlas-books": {
+    "prompt": "Use case: product-mockup\nAsset type: texture atlas of book covers for bookstore shelves and tables in a cartoon shopping-mall game\nPrimary request: a neat 4×4 grid of 16 different fictional book covers (front covers only, flat, each cell a distinct illustrated cover, NO title text)\nScene/backdrop: a plain light cream sheet behind the grid, visible only as thin gutters between the covers.\nSubject: 16 different flat front book covers, one per cell, each with its own background colour and one simple central illustration: a whale under stars, a mountain at sunrise, a steaming teacup, a rocket among planets, botanical leaves, a sleeping cat, a lighthouse on waves, a pine forest, a hot-air balloon, a geometric pattern, a fox in snow, a sailboat, a castle on a hill, a cluster of mushrooms, a city skyline at dusk, a little bird on a branch. Covers may have simple decorative borders or blank colour bands, but no writing.\nStyle/medium: flat cel-shaded cartoon illustration; bright, soft, pastel-leaning colours; clean simple shapes; soft two-tone shading; thin warm outlines; friendly, cozy mood matching a \"bright & soft\" toon 3D game with Animal-Crossing-like brightness (brightness reference only; no characters, assets or designs from any existing game).\nComposition/framing: exactly 4 columns and 4 rows of equal-sized cells on a regular grid with thin uniform cream gutters; each cover seen perfectly straight-on and flat, filling its cell edge to edge; no perspective, no 3D book thickness, no drop shadows; nothing crosses from one cell into another.\nColor palette: varied muted pastel cover colours such as teal, coral, mustard, lavender, sage, navy, rose and sky blue.\nConstraints: no text, letters, numbers, logos or watermarks anywhere in the image (including signs, screens, packaging, labels and clothing); the game overlays its own text. Original characters and designs only; no real brands, no famous or copyrighted characters, no real people or celebrity likenesses. No titles, author names, publisher marks, barcodes or any writing on any cover.\nAvoid: any text or lettering, numbers, logos, brand marks, watermarks, signatures, photorealism, harsh contrast, dark or gritty mood.",
+    "model": "gpt-6.1-sol",
+    "effort": "low",
+    "backend": "Codex CLI (codex exec) built-in image_gen",
+    "date": "2026-10-11T10:40:50Z",
+    "aspect": "1:1",
+    "sizeRequested": "1024x1024",
+    "rawSize": [
+      1246,
+      1263
+    ],
+    "crop": "1246x1263 -> 1246x1246 (centre)",
+    "taskDir": "assets-src/decor/tasks/atlas-books/low-20261011-183907",
+    "attempts": [
+      {
+        "effort": "low",
+        "ok": true,
+        "seconds": 103,
+        "dir": "assets-src/decor/tasks/atlas-books/low-20261011-183907",
+        "error": null
+      }
+    ]
+  },
+  "atlas-blindbox": {
+    "prompt": "Use case: product-mockup\nAsset type: texture atlas of collectible toy figures for a blind-box shop in a cartoon shopping-mall game\nPrimary request: 3×3 grid of 9 cute original vinyl collectible figures (chibi animals/creatures), each on its own plain pastel cell\nSubject: 9 different cute chibi vinyl figures with big heads and small bodies, standing and facing forward, one per cell: a bunny in a cloud hoodie, a frog holding a leaf umbrella, a cat in a little space suit, a sleepy bear hugging a pillow, a tiny round dragon, a penguin with a knitted scarf, a mushroom sprite, a fox in a strawberry costume, a small ghost holding a star. All are original designs that do not resemble any existing toy line or mascot.\nScene/backdrop: each cell has its own plain flat pastel background colour (pink, mint, lavender, peach, sky blue, butter yellow, lilac, seafoam, apricot).\nStyle/medium: flat cel-shaded cartoon illustration; bright, soft, pastel-leaning colours; clean simple shapes; soft two-tone shading; thin warm outlines; friendly, cozy mood matching a \"bright & soft\" toon 3D game with Animal-Crossing-like brightness (brightness reference only; no characters, assets or designs from any existing game).\nComposition/framing: exactly 3 columns and 3 rows of equal square cells on a regular grid; each figure centred and fully inside its cell with a little margin and a soft contact shadow; nothing crosses from one cell into another.\nMaterials/textures: drawn as flat 2D cel-shaded illustrations of vinyl toys, not a 3D render: smooth vinyl suggested only with simple two-tone shading, one small highlight and thin warm outlines.\nConstraints: no text, letters, numbers, logos or watermarks anywhere in the image (including signs, screens, packaging, labels and clothing); the game overlays its own text. Original characters and designs only; no real brands, no famous or copyrighted characters, no real people or celebrity likenesses.\nAvoid: 3D render look, CGI, any text or lettering, numbers, logos, brand marks, watermarks, signatures, photorealism, harsh contrast, dark or gritty mood.",
+    "model": "gpt-6.1-sol",
+    "effort": "high",
+    "backend": "Codex CLI (codex exec) built-in image_gen",
+    "date": "2026-10-11T10:52:46Z",
+    "aspect": "1:1",
+    "sizeRequested": "1024x1024",
+    "rawSize": [
+      1254,
+      1254
+    ],
+    "crop": null,
+    "taskDir": "assets-src/decor/tasks/atlas-blindbox/high-20261011-185123",
+    "attempts": [
+      {
+        "effort": "low",
+        "ok": true,
+        "seconds": 67,
+        "dir": "assets-src/decor/tasks/atlas-blindbox/low-20261011-184050",
+        "error": null
+      },
+      {
+        "effort": "high",
+        "ok": true,
+        "seconds": 83,
+        "dir": "assets-src/decor/tasks/atlas-blindbox/high-20261011-185123",
+        "error": null
+      }
+    ]
+  },
+  "atlas-brickboxes": {
+    "prompt": "Use case: product-mockup\nAsset type: texture atlas of toy box art for a building-brick toy shop in a cartoon shopping-mall game\nPrimary request: 2×2 grid of building-brick set box art: castle, rocket, city street, dragon (bricks are generic, no studs logo, no brand)\nSubject: four flat toy-box front faces, one per cell. Top-left: a brick-built castle with towers and plain flags. Top-right: a brick-built rocket lifting off among stars. Bottom-left: a brick-built city street corner with small shops with blank signs and a little car. Bottom-right: a brick-built dragon. Each model is clearly built from generic interlocking toy bricks with plain smooth round studs (nothing printed on the studs), shown on a colourful illustrated background inside a simple coloured border band, with a blank label area.\nStyle/medium: flat cel-shaded cartoon illustration; bright, soft, pastel-leaning colours; clean simple shapes; soft two-tone shading; thin warm outlines; friendly, cozy mood matching a \"bright & soft\" toon 3D game with Animal-Crossing-like brightness (brightness reference only; no characters, assets or designs from any existing game).\nComposition/framing: exactly 2 columns and 2 rows of equal square cells on a regular grid with thin uniform light gutters; each box front seen perfectly straight-on and flat, filling its cell; no box perspective or side faces; nothing crosses from one cell into another.\nColor palette: cheerful brick red, sunny yellow, sky blue and leaf green, kept soft and bright.\nConstraints: no text, letters, numbers, logos or watermarks anywhere in the image (including signs, screens, packaging, labels and clothing); the game overlays its own text. Original characters and designs only; no real brands, no famous or copyrighted characters, no real people or celebrity likenesses. No brand names or logos, no age or piece-count numbers, no minifigure characters.\nAvoid: any text or lettering, numbers, logos, brand marks, watermarks, signatures, photorealism, harsh contrast, dark or gritty mood.",
+    "model": "gpt-6.1-sol",
+    "effort": "low",
+    "backend": "Codex CLI (codex exec) built-in image_gen",
+    "date": "2026-10-11T10:43:39Z",
+    "aspect": "1:1",
+    "sizeRequested": "1024x1024",
+    "rawSize": [
+      1254,
+      1254
+    ],
+    "crop": null,
+    "taskDir": "assets-src/decor/tasks/atlas-brickboxes/low-20261011-184157",
+    "attempts": [
+      {
+        "effort": "low",
+        "ok": true,
+        "seconds": 102,
+        "dir": "assets-src/decor/tasks/atlas-brickboxes/low-20261011-184157",
+        "error": null
+      }
+    ]
+  },
+  "poster-game": {
+    "prompt": "Use case: stylized-concept\nAsset type: text-free key-art poster for a fictional video game, displayed in a game shop in a cartoon shopping-mall game\nPrimary request: key art for a fictional fantasy adventure video game: hero with sword, floating islands\nScene/backdrop: a sky full of floating grassy islands with small waterfalls spilling off their edges, soft clouds, distant islands fading into haze.\nSubject: one original young adventurer hero standing on a cliff edge in the foreground, holding a sword raised confidently, with a flowing cape and light armour; an original design that does not resemble any existing video game character.\nStyle/medium: flat cel-shaded cartoon illustration; bright, soft, pastel-leaning colours; clean simple shapes; soft two-tone shading; thin warm outlines; friendly, cozy mood matching a \"bright & soft\" toon 3D game with Animal-Crossing-like brightness (brightness reference only; no characters, assets or designs from any existing game).\nComposition/framing: vertical portrait poster; hero in the lower-middle foreground seen from a slightly low angle; floating islands rising behind and above; calm empty sky space near the top.\nLighting/mood: warm sunset light, adventurous and hopeful.\nColor palette: warm sunset orange, sky blue, soft purple and pastel clouds.\nConstraints: no text, letters, numbers, logos or watermarks anywhere in the image (including signs, screens, packaging, labels and clothing); the game overlays its own text. Original characters and designs only; no real brands, no famous or copyrighted characters, no real people or celebrity likenesses.\nAvoid: any text or lettering, numbers, logos, brand marks, watermarks, signatures, photorealism, harsh contrast, dark or gritty mood.",
+    "model": "gpt-6.1-sol",
+    "effort": "low",
+    "backend": "Codex CLI (codex exec) built-in image_gen",
+    "date": "2026-10-11T10:44:49Z",
+    "aspect": "2:3",
+    "sizeRequested": "1024x1536",
+    "rawSize": [
+      1024,
+      1536
+    ],
+    "crop": null,
+    "taskDir": "assets-src/decor/tasks/poster-game/low-20261011-184339",
+    "attempts": [
+      {
+        "effort": "low",
+        "ok": true,
+        "seconds": 69,
+        "dir": "assets-src/decor/tasks/poster-game/low-20261011-184339",
+        "error": null
+      }
+    ]
+  },
+  "atlas-food": {
+    "prompt": "Use case: product-mockup\nAsset type: texture atlas of dish illustrations for food-court stalls and restaurants in a cartoon shopping-mall game\nPrimary request: 3×2 grid of dishes, one per cell: ramen bowl, sushi platter, curry rice, burger with fries, pasta, dumplings\nSubject: six dishes, one per cell. Top row from left to right: a ramen bowl with sliced pork, a soft-boiled egg, nori and scallions; a sushi platter on a wooden board with nigiri and maki rolls; Japanese curry rice on a plate. Bottom row from left to right: a burger with fries; a plate of spaghetti with tomato sauce and basil; steamed dumplings in a bamboo steamer.\nScene/backdrop: each cell has its own plain flat soft pastel background colour.\nStyle/medium: flat cel-shaded cartoon illustration; bright, soft, pastel-leaning colours; clean simple shapes; soft two-tone shading; thin warm outlines; friendly, cozy mood matching a \"bright & soft\" toon 3D game with Animal-Crossing-like brightness (brightness reference only; no characters, assets or designs from any existing game).\nComposition/framing: exactly 3 columns and 2 rows of equal square cells on a regular grid with thin uniform light gutters; each dish centred and fully inside its cell in a three-quarter top-down view; nothing crosses from one cell into another.\nLighting/mood: soft appetising light, warm and inviting.\nConstraints: no text, letters, numbers, logos or watermarks anywhere in the image (including signs, screens, packaging, labels and clothing); the game overlays its own text. Original characters and designs only; no real brands, no famous or copyrighted characters, no real people or celebrity likenesses.\nAvoid: any text or lettering, numbers, logos, brand marks, watermarks, signatures, photorealism, harsh contrast, dark or gritty mood.",
+    "model": "gpt-6.1-sol",
+    "effort": "low",
+    "backend": "Codex CLI (codex exec) built-in image_gen",
+    "date": "2026-10-11T10:45:53Z",
+    "aspect": "3:2",
+    "sizeRequested": "1536x1024",
+    "rawSize": [
+      1536,
+      1024
+    ],
+    "crop": null,
+    "taskDir": "assets-src/decor/tasks/atlas-food/low-20261011-184449",
+    "attempts": [
+      {
+        "effort": "low",
+        "ok": true,
+        "seconds": 64,
+        "dir": "assets-src/decor/tasks/atlas-food/low-20261011-184449",
+        "error": null
+      }
+    ]
+  },
+  "banner-produce": {
+    "prompt": "Use case: ads-marketing\nAsset type: text-free produce-section wall graphic for a supermarket in a cartoon shopping-mall game\nPrimary request: fresh fruit and vegetables arranged in crates, market style\nScene/backdrop: a simple warm cream background behind a market stand.\nSubject: wooden crates neatly filled with fresh produce, such as red apples, oranges, bananas, grapes, strawberries, lemons, tomatoes, carrots, broccoli, lettuce, eggplants and bell peppers; abundant and tidy; no price cards or labels.\nStyle/medium: flat cel-shaded cartoon illustration; bright, soft, pastel-leaning colours; clean simple shapes; soft two-tone shading; thin warm outlines; friendly, cozy mood matching a \"bright & soft\" toon 3D game with Animal-Crossing-like brightness (brightness reference only; no characters, assets or designs from any existing game).\nComposition/framing: horizontal landscape frame (not an ultra-wide strip); front view of about six crates in two tiers of three, filling most of the frame; cheerful abundance.\nLighting/mood: soft bright morning light, fresh and wholesome.\nColor palette: fresh greens, warm reds, sunny yellow and orange on cream.\nConstraints: no text, letters, numbers, logos or watermarks anywhere in the image (including signs, screens, packaging, labels and clothing); the game overlays its own text. Original characters and designs only; no real brands, no famous or copyrighted characters, no real people or celebrity likenesses.\nAvoid: any text or lettering, numbers, logos, brand marks, watermarks, signatures, photorealism, harsh contrast, dark or gritty mood.",
+    "model": "gpt-6.1-sol",
+    "effort": "high",
+    "backend": "Codex CLI (codex exec) built-in image_gen",
+    "date": "2026-10-11T10:53:49Z",
+    "aspect": "3:2",
+    "sizeRequested": "1536x1024",
+    "rawSize": [
+      1536,
+      1024
+    ],
+    "crop": null,
+    "taskDir": "assets-src/decor/tasks/banner-produce/high-20261011-185246",
+    "attempts": [
+      {
+        "effort": "low",
+        "ok": true,
+        "seconds": 53,
+        "dir": "assets-src/decor/tasks/banner-produce/low-20261011-184553",
+        "error": null
+      },
+      {
+        "effort": "high",
+        "ok": true,
+        "seconds": 63,
+        "dir": "assets-src/decor/tasks/banner-produce/high-20261011-185246",
+        "error": null
+      }
+    ]
+  },
+  "poster-cosmetics": {
+    "prompt": "Use case: ads-marketing\nAsset type: text-free in-store poster for a cosmetics and skincare shop in a cartoon shopping-mall game\nPrimary request: skincare bottles and flowers still life, soft pink\nScene/backdrop: a soft pink backdrop with a smooth round pedestal and a few water droplets and gentle bubbles.\nSubject: a group of original unbranded skincare containers (a dropper serum bottle, a pump bottle, a cream jar and a tube) with blank labels, arranged with fresh soft-pink flowers such as peonies and roses.\nStyle/medium: flat cel-shaded cartoon illustration; bright, soft, pastel-leaning colours; clean simple shapes; soft two-tone shading; thin warm outlines; friendly, cozy mood matching a \"bright & soft\" toon 3D game with Animal-Crossing-like brightness (brightness reference only; no characters, assets or designs from any existing game).\nComposition/framing: vertical portrait poster; still life arranged in the lower two-thirds; calm empty pink space near the top.\nLighting/mood: soft glowing light, fresh and gentle.\nColor palette: soft pink, blush, pearl white and a touch of butter yellow.\nMaterials/textures: glossy glass and frosted plastic simplified into clean cel-shaded shapes.\nConstraints: no text, letters, numbers, logos or watermarks anywhere in the image (including signs, screens, packaging, labels and clothing); the game overlays its own text. Original characters and designs only; no real brands, no famous or copyrighted characters, no real people or celebrity likenesses.\nAvoid: any text or lettering, numbers, logos, brand marks, watermarks, signatures, photorealism, harsh contrast, dark or gritty mood.",
+    "model": "gpt-6.1-sol",
+    "effort": "low",
+    "backend": "Codex CLI (codex exec) built-in image_gen",
+    "date": "2026-10-11T10:47:42Z",
+    "aspect": "2:3",
+    "sizeRequested": "1024x1536",
+    "rawSize": [
+      1024,
+      1536
+    ],
+    "crop": null,
+    "taskDir": "assets-src/decor/tasks/poster-cosmetics/low-20261011-184646",
+    "attempts": [
+      {
+        "effort": "low",
+        "ok": true,
+        "seconds": 56,
+        "dir": "assets-src/decor/tasks/poster-cosmetics/low-20261011-184646",
+        "error": null
+      }
+    ]
+  },
+  "poster-arcade": {
+    "prompt": "Use case: ads-marketing\nAsset type: text-free landscape poster for a game arcade in a cartoon shopping-mall game\nPrimary request: neon arcade machines and claw machine with plush prizes, playful\nScene/backdrop: a cozy arcade interior with glowing neon tube lights shaped like stars, planets and waves (no neon words), and a row of upright arcade cabinets with colourful abstract game screens (no text or score digits).\nSubject: a claw machine in the foreground filled with cute original plush toys (round animals and creatures), its claw hovering above the prizes.\nStyle/medium: flat cel-shaded cartoon illustration; bright, soft, pastel-leaning colours; clean simple shapes; soft two-tone shading; thin warm outlines; friendly, cozy mood matching a \"bright & soft\" toon 3D game with Animal-Crossing-like brightness (brightness reference only; no characters, assets or designs from any existing game).\nComposition/framing: wide horizontal landscape; claw machine slightly right of centre in the foreground; arcade cabinets receding to the left.\nLighting/mood: playful soft neon glow, but overall bright, soft and friendly rather than dark.\nColor palette: violet, cyan, bubblegum pink and sunny yellow.\nConstraints: no text, letters, numbers, logos or watermarks anywhere in the image (including signs, screens, packaging, labels and clothing); the game overlays its own text. Original characters and designs only; no real brands, no famous or copyrighted characters, no real people or celebrity likenesses.\nAvoid: any text or lettering, numbers, logos, brand marks, watermarks, signatures, photorealism, harsh contrast, dark or gritty mood.",
+    "model": "gpt-6.1-sol",
+    "effort": "low",
+    "backend": "Codex CLI (codex exec) built-in image_gen",
+    "date": "2026-10-11T10:48:54Z",
+    "aspect": "3:2",
+    "sizeRequested": "1536x1024",
+    "rawSize": [
+      1672,
+      941
+    ],
+    "crop": "1672x941 -> 1412x941 (centre)",
+    "taskDir": "assets-src/decor/tasks/poster-arcade/low-20261011-184742",
+    "attempts": [
+      {
+        "effort": "low",
+        "ok": true,
+        "seconds": 72,
+        "dir": "assets-src/decor/tasks/poster-arcade/low-20261011-184742",
+        "error": null
+      }
+    ]
+  },
+  "poster-vr": {
+    "prompt": "Use case: stylized-concept\nAsset type: text-free in-store poster for a VR experience shop in a cartoon shopping-mall game\nPrimary request: a person wearing a VR headset surrounded by a dreamy fantasy world\nScene/backdrop: a dreamy fantasy world swirling around the person: floating islands, pastel clouds, glowing butterflies, small planets, crystals and soft sparkling stars, dissolving into soft light particles near the person.\nSubject: one original young adult wearing a sleek generic VR headset with no logos, standing and reaching one hand out in wonder.\nStyle/medium: flat cel-shaded cartoon illustration; bright, soft, pastel-leaning colours; clean simple shapes; soft two-tone shading; thin warm outlines; friendly, cozy mood matching a \"bright & soft\" toon 3D game with Animal-Crossing-like brightness (brightness reference only; no characters, assets or designs from any existing game).\nComposition/framing: vertical portrait poster; person centred in the lower half; fantasy world surrounding them and rising above; calm space near the top.\nLighting/mood: magical soft glow, dreamy and wondrous yet bright.\nColor palette: aqua cyan, soft blue, lavender and pink.\nConstraints: no text, letters, numbers, logos or watermarks anywhere in the image (including signs, screens, packaging, labels and clothing); the game overlays its own text. Original characters and designs only; no real brands, no famous or copyrighted characters, no real people or celebrity likenesses.\nAvoid: any text or lettering, numbers, logos, brand marks, watermarks, signatures, photorealism, harsh contrast, dark or gritty mood.",
+    "model": "gpt-6.1-sol",
+    "effort": "low",
+    "backend": "Codex CLI (codex exec) built-in image_gen",
+    "date": "2026-10-11T10:50:02Z",
+    "aspect": "2:3",
+    "sizeRequested": "1024x1536",
+    "rawSize": [
+      1024,
+      1536
+    ],
+    "crop": null,
+    "taskDir": "assets-src/decor/tasks/poster-vr/low-20261011-184854",
+    "attempts": [
+      {
+        "effort": "low",
+        "ok": true,
+        "seconds": 68,
+        "dir": "assets-src/decor/tasks/poster-vr/low-20261011-184854",
+        "error": null
+      }
+    ]
+  }
+}

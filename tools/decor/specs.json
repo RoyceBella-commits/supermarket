@@ -1,0 +1,30 @@
+{
+  "version": 1,
+  "note": "装饰插图规格：比例、请求尺寸、manifest 字段。提示词原文在 prompts/<id>.txt。",
+  "images": [
+    { "id": "poster-menswear",   "aspect": "2:3", "kind": "poster", "usage": ["threadco"] },
+    { "id": "poster-womenswear", "aspect": "2:3", "kind": "poster", "usage": ["lumi"] },
+    { "id": "poster-kidswear",   "aspect": "2:3", "kind": "poster", "usage": ["littlesprout"] },
+    { "id": "poster-running",    "aspect": "2:3", "kind": "poster", "usage": ["stride", "arc"] },
+    { "id": "poster-badminton",  "aspect": "2:3", "kind": "poster", "usage": ["shuttle"] },
+    { "id": "poster-outdoor",    "aspect": "3:2", "kind": "poster", "usage": ["summit"] },
+    { "id": "menu-coffee",       "aspect": "3:2", "kind": "banner", "usage": ["kumo"] },
+    { "id": "atlas-books",       "aspect": "1:1", "kind": "atlas",  "grid": [4, 4], "usage": ["marginbooks"] },
+    { "id": "atlas-blindbox",    "aspect": "1:1", "kind": "atlas",  "grid": [3, 3], "usage": ["blindstar", "gachagalaxy"] },
+    { "id": "atlas-brickboxes",  "aspect": "1:1", "kind": "atlas",  "grid": [2, 2], "usage": ["bricknest"],
+      "cells": ["castle", "rocket", "city-street", "dragon"] },
+    { "id": "poster-game",       "aspect": "2:3", "kind": "poster", "usage": ["pixelfox"] },
+    { "id": "atlas-food",        "aspect": "3:2", "kind": "atlas",  "grid": [3, 2],
+      "usage": ["foodalley", "noodlelane", "tidesushi", "spiceroute", "embergrill", "bistroolive"],
+      "cells": ["ramen", "sushi", "curry-rice", "burger-fries", "pasta", "dumplings"] },
+    { "id": "banner-produce",    "aspect": "3:2", "kind": "banner", "usage": ["dailyharvest"] },
+    { "id": "poster-cosmetics",  "aspect": "2:3", "kind": "poster", "usage": ["dewdrop"] },
+    { "id": "poster-arcade",     "aspect": "3:2", "kind": "poster", "usage": ["coinplanet"] },
+    { "id": "poster-vr",         "aspect": "2:3", "kind": "poster", "usage": ["blinkvr"] }
+  ],
+  "sizeRequest": {
+    "2:3": { "label": "竖版 2:3", "size": "1024x1536" },
+    "3:2": { "label": "横版 3:2", "size": "1536x1024" },
+    "1:1": { "label": "正方形 1:1", "size": "1024x1024" }
+  }
+}

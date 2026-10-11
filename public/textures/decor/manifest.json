@@ -1,0 +1,202 @@
+{
+  "version": 1,
+  "images": [
+    {
+      "id": "poster-menswear",
+      "file": "poster-menswear.jpg",
+      "width": 683,
+      "height": 1024,
+      "kind": "poster",
+      "usage": [
+        "threadco"
+      ]
+    },
+    {
+      "id": "poster-womenswear",
+      "file": "poster-womenswear.jpg",
+      "width": 683,
+      "height": 1024,
+      "kind": "poster",
+      "usage": [
+        "lumi"
+      ]
+    },
+    {
+      "id": "poster-kidswear",
+      "file": "poster-kidswear.jpg",
+      "width": 683,
+      "height": 1024,
+      "kind": "poster",
+      "usage": [
+        "littlesprout"
+      ]
+    },
+    {
+      "id": "poster-running",
+      "file": "poster-running.jpg",
+      "width": 683,
+      "height": 1024,
+      "kind": "poster",
+      "usage": [
+        "stride",
+        "arc"
+      ]
+    },
+    {
+      "id": "poster-badminton",
+      "file": "poster-badminton.jpg",
+      "width": 683,
+      "height": 1024,
+      "kind": "poster",
+      "usage": [
+        "shuttle"
+      ]
+    },
+    {
+      "id": "poster-outdoor",
+      "file": "poster-outdoor.jpg",
+      "width": 1024,
+      "height": 683,
+      "kind": "poster",
+      "usage": [
+        "summit"
+      ]
+    },
+    {
+      "id": "menu-coffee",
+      "file": "menu-coffee.jpg",
+      "width": 1024,
+      "height": 683,
+      "kind": "banner",
+      "usage": [
+        "kumo"
+      ]
+    },
+    {
+      "id": "atlas-books",
+      "file": "atlas-books.jpg",
+      "width": 1024,
+      "height": 1024,
+      "kind": "atlas",
+      "grid": [
+        4,
+        4
+      ],
+      "usage": [
+        "marginbooks"
+      ]
+    },
+    {
+      "id": "atlas-blindbox",
+      "file": "atlas-blindbox.jpg",
+      "width": 1024,
+      "height": 1024,
+      "kind": "atlas",
+      "grid": [
+        3,
+        3
+      ],
+      "usage": [
+        "blindstar",
+        "gachagalaxy"
+      ]
+    },
+    {
+      "id": "atlas-brickboxes",
+      "file": "atlas-brickboxes.jpg",
+      "width": 1024,
+      "height": 1024,
+      "kind": "atlas",
+      "grid": [
+        2,
+        2
+      ],
+      "usage": [
+        "bricknest"
+      ],
+      "cells": [
+        "castle",
+        "rocket",
+        "city-street",
+        "dragon"
+      ]
+    },
+    {
+      "id": "poster-game",
+      "file": "poster-game.jpg",
+      "width": 683,
+      "height": 1024,
+      "kind": "poster",
+      "usage": [
+        "pixelfox"
+      ]
+    },
+    {
+      "id": "atlas-food",
+      "file": "atlas-food.jpg",
+      "width": 1024,
+      "height": 683,
+      "kind": "atlas",
+      "grid": [
+        3,
+        2
+      ],
+      "usage": [
+        "foodalley",
+        "noodlelane",
+        "tidesushi",
+        "spiceroute",
+        "embergrill",
+        "bistroolive"
+      ],
+      "cells": [
+        "ramen",
+        "sushi",
+        "curry-rice",
+        "burger-fries",
+        "pasta",
+        "dumplings"
+      ]
+    },
+    {
+      "id": "banner-produce",
+      "file": "banner-produce.jpg",
+      "width": 1024,
+      "height": 683,
+      "kind": "banner",
+      "usage": [
+        "dailyharvest"
+      ]
+    },
+    {
+      "id": "poster-cosmetics",
+      "file": "poster-cosmetics.jpg",
+      "width": 683,
+      "height": 1024,
+      "kind": "poster",
+      "usage": [
+        "dewdrop"
+      ]
+    },
+    {
+      "id": "poster-arcade",
+      "file": "poster-arcade.jpg",
+      "width": 1024,
+      "height": 683,
+      "kind": "poster",
+      "usage": [
+        "coinplanet"
+      ]
+    },
+    {
+      "id": "poster-vr",
+      "file": "poster-vr.jpg",
+      "width": 683,
+      "height": 1024,
+      "kind": "poster",
+      "usage": [
+        "blinkvr"
+      ]
+    }
+  ]
+}

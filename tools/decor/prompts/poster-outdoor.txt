@@ -1,0 +1,11 @@
+Use case: ads-marketing
+Asset type: text-free in-store landscape poster for an outdoor and camping shop in a cartoon shopping-mall game
+Primary request: tent and campfire by a lake with mountains
+Scene/backdrop: a calm lakeside in a pine forest with gentle mountains behind, their soft reflections in the still lake water, a pastel sky.
+Subject: one small dome tent and a cozy crackling campfire with a few logs on the grassy lakeshore; no people.
+Style/medium: flat cel-shaded cartoon illustration; bright, soft, pastel-leaning colours; clean simple shapes; soft two-tone shading; thin warm outlines; friendly, cozy mood matching a "bright & soft" toon 3D game with Animal-Crossing-like brightness (brightness reference only; no characters, assets or designs from any existing game).
+Composition/framing: wide horizontal landscape; tent and campfire in the lower foreground third, lake in the middle, mountains and sky in the upper half.
+Lighting/mood: warm golden late-afternoon light with a soft glow from the campfire, peaceful and cozy.
+Color palette: sage and leaf green, soft lake blue, peach sky and warm campfire orange.
+Constraints: no text, letters, numbers, logos or watermarks anywhere in the image (including signs, screens, packaging, labels and clothing); the game overlays its own text. Original characters and designs only; no real brands, no famous or copyrighted characters, no real people or celebrity likenesses.
+Avoid: any text or lettering, numbers, logos, brand marks, watermarks, signatures, photorealism, harsh contrast, dark or gritty mood.

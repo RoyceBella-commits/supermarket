@@ -1,0 +1,10 @@
+Use case: product-mockup
+Asset type: texture atlas of collectible toy figures for a blind-box shop in a cartoon shopping-mall game
+Primary request: 3×3 grid of 9 cute original vinyl collectible figures (chibi animals/creatures), each on its own plain pastel cell
+Subject: 9 different cute chibi vinyl figures with big heads and small bodies, standing and facing forward, one per cell: a bunny in a cloud hoodie, a frog holding a leaf umbrella, a cat in a little space suit, a sleepy bear hugging a pillow, a tiny round dragon, a penguin with a knitted scarf, a mushroom sprite, a fox in a strawberry costume, a small ghost holding a star. All are original designs that do not resemble any existing toy line or mascot.
+Scene/backdrop: each cell has its own plain flat pastel background colour (pink, mint, lavender, peach, sky blue, butter yellow, lilac, seafoam, apricot).
+Style/medium: flat cel-shaded cartoon illustration; bright, soft, pastel-leaning colours; clean simple shapes; soft two-tone shading; thin warm outlines; friendly, cozy mood matching a "bright & soft" toon 3D game with Animal-Crossing-like brightness (brightness reference only; no characters, assets or designs from any existing game).
+Composition/framing: exactly 3 columns and 3 rows of equal square cells on a regular grid; each figure centred and fully inside its cell with a little margin and a soft contact shadow; nothing crosses from one cell into another.
+Materials/textures: drawn as flat 2D cel-shaded illustrations of vinyl toys, not a 3D render: smooth vinyl suggested only with simple two-tone shading, one small highlight and thin warm outlines.
+Constraints: no text, letters, numbers, logos or watermarks anywhere in the image (including signs, screens, packaging, labels and clothing); the game overlays its own text. Original characters and designs only; no real brands, no famous or copyrighted characters, no real people or celebrity likenesses.
+Avoid: 3D render look, CGI, any text or lettering, numbers, logos, brand marks, watermarks, signatures, photorealism, harsh contrast, dark or gritty mood.

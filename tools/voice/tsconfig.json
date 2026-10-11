@@ -1,0 +1,10 @@
+{
+  // 只用于类型检查 tools/voice：node node_modules/typescript/bin/tsc -p tools/voice
+  "extends": "../../tsconfig.json",
+  "compilerOptions": {
+    "types": [],
+    "erasableSyntaxOnly": true,
+    "noEmit": true
+  },
+  "include": ["./*.ts", "./types/*.d.ts", "../../src/data/npcDialogue.ts", "../../src/data/mallLayout.ts"]
+}

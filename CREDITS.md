@@ -18,3 +18,15 @@
 ## 店铺与品牌
 
 所有店铺名和招牌都是原创虚构，不对应任何真实品牌。
+
+## 角色模型
+
+玩家和 21 位店员的 VRM 模型由 `tools/vrm/` 里的脚本用代码生成（几何体 + MToon 材质），原创形象。
+
+## 装饰插图
+
+`public/textures/decor/` 里的 16 张海报、菜单板和图集（书封、盲盒、积木盒、美食）由 Codex CLI 内置 image_gen（模型 gpt-6.1-sol）为本项目生成，提示词和生成记录见 `tools/decor/prompts/`、`tools/decor/prompts.json`。画面中没有文字、商标或真实品牌，店名等文字由游戏代码叠加。
+
+## 店员配音
+
+店员语音由本机 Qwen3-TTS（Qwen3-TTS-12Hz-1.7B-VoiceDesign）根据文字描述设计音色离线生成，不模仿任何真人声音。生成脚本见 `tools/voice/`。

@@ -73,7 +73,7 @@ export const npcs: NpcDef[] = [
       { zh: '你好，欢迎来到Orbit。今天，想重新定义生活的哪一部分？', en: 'Hello, and welcome to Orbit. Which part of your life shall we redefine today?' },
       { zh: '这款耳机降噪特别强，戴上它，连闹钟都听不见。所以，别戴着睡觉。', en: "These headphones cancel noise so well you won't even hear your alarm. So, don't sleep in them." },
       { zh: '我每天给手机更新三次系统。可惜，我本人还没有升级。', en: "I update my phone three times a day. Sadly, I myself haven't been upgraded yet." },
-      { zh: '扶梯在东西两个中庭，南边上行，北边下行，别走反了哦。', en: "The escalators are in the east and west courts—up on the south side, down on the north. Don't mix them up!" },
+      { zh: '扶梯在东西两个中庭，北边上行，南边下行，别走反了哦。', en: "The escalators are in the east and west courts—up on the north side, down on the south. Don't mix them up!" },
     ],
   ),
   npc(
