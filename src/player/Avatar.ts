@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
-import { VRMLoaderPlugin, VRMUtils, type VRM } from '@pixiv/three-vrm';
+import { VRMLoaderPlugin, VRMUtils, type VRM, type MToonMaterial } from '@pixiv/three-vrm';
+import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
 import { ProceduralAnimator, type AnimInput } from './ProceduralAnimator.ts';
 import type { Seat } from '../systems/Seats.ts';
 
@@ -44,8 +45,9 @@ export class Avatar {
   /**
    * 加载 VRM；失败时返回胶囊占位并在 error 里给出原因。
    * firstPerson：玩家自己的模型才需要（第一人称时隐藏头部）；NPC 传 false，否则第一人称下会看不到 NPC 的头。
+   * merge：合并身体网格（默认非第一人称时合并）。
    */
-  static async load(url = DEFAULT_AVATAR_URL, opts: { firstPerson?: boolean; quiet?: boolean } = {}): Promise<{ avatar: Avatar; error?: unknown }> {
+  static async load(url = DEFAULT_AVATAR_URL, opts: { firstPerson?: boolean; quiet?: boolean; merge?: boolean } = {}): Promise<{ avatar: Avatar; error?: unknown }> {
     try {
       const loader = new GLTFLoader();
       loader.register((parser) => new VRMLoaderPlugin(parser));
@@ -64,6 +66,8 @@ export class Avatar {
         for (const m of mats) if ((m as { isOutline?: boolean }).isOutline) m.visible = false;
       });
       if (opts.firstPerson !== false) vrm.firstPerson?.setup();
+      // 店员（非第一人称）：身体各色网格合并成一个，省 draw call
+      if (opts.merge ?? opts.firstPerson === false) mergeBodyMeshes(vrm.scene);
       return { avatar: new Avatar(vrm, vrm.scene) };
     } catch (error) {
       if (!opts.quiet) console.warn('[avatar] VRM 加载失败，改用占位模型', error);
@@ -140,6 +144,79 @@ export class Avatar {
   setVisible(v: boolean) {
     this.root.visible = v;
     if (!v) this.shadow.visible = false;
+  }
+}
+
+/**
+ * 把同一骨架下、没有表情变形的不透明 MToon 网格合并成一个蒙皮网格：
+ * 每个原材质的亮部色 / 暗部色写进两张 N×1 的调色板贴图（线性、浮点、最近邻），
+ * 顶点 UV 指向自己那一格；其余 MToon 参数各材质本来就相同（生成器统一设置），所以外观不变。
+ * 生成的角色一般从约 20 个网格降到约 8 个（脸部带表情的网格保持独立）。
+ */
+function mergeBodyMeshes(scene: THREE.Object3D) {
+  const cands: THREE.SkinnedMesh[] = [];
+  scene.traverse((o) => {
+    const m = o as THREE.SkinnedMesh;
+    if (!m.isSkinnedMesh || Object.keys(m.geometry.morphAttributes).length > 0) return;
+    const mat = (Array.isArray(m.material) ? m.material[0] : m.material) as MToonMaterial;
+    if (!mat.isMToonMaterial || mat.transparent || mat.map || mat.shadeMultiplyTexture) return;
+    cands.push(m);
+  });
+  const base = cands[0];
+  if (!base) return;
+  const group = cands.filter((m) => m.skeleton === base.skeleton && m.parent === base.parent && m.bindMatrix.equals(base.bindMatrix) && m.matrix.equals(base.matrix));
+  if (group.length < 2) return;
+  const n = group.length;
+  const lit = new Float32Array(n * 4);
+  const shade = new Float32Array(n * 4);
+  const keep = ['position', 'normal', 'uv', 'skinIndex', 'skinWeight'];
+  const geos = group.map((m, i) => {
+    const mat = (Array.isArray(m.material) ? m.material[0] : m.material) as MToonMaterial;
+    lit.set([mat.color.r, mat.color.g, mat.color.b, 1], i * 4);
+    shade.set([mat.shadeColorFactor.r, mat.shadeColorFactor.g, mat.shadeColorFactor.b, 1], i * 4);
+    const g = m.geometry.clone();
+    g.clearGroups();
+    const count = g.attributes.position.count;
+    const uv = new Float32Array(count * 2);
+    for (let k = 0; k < count; k++) {
+      uv[k * 2] = (i + 0.5) / n;
+      uv[k * 2 + 1] = 0.5;
+    }
+    g.setAttribute('uv', new THREE.BufferAttribute(uv, 2));
+    for (const name of Object.keys(g.attributes)) if (!keep.includes(name)) g.deleteAttribute(name);
+    return g;
+  });
+  const merged = mergeGeometries(geos);
+  for (const g of geos) g.dispose();
+  if (!merged) return;
+  const palette = (data: Float32Array) => {
+    const t = new THREE.DataTexture(data, n, 1, THREE.RGBAFormat, THREE.FloatType);
+    t.magFilter = THREE.NearestFilter;
+    t.minFilter = THREE.NearestFilter;
+    t.generateMipmaps = false;
+    t.colorSpace = THREE.LinearSRGBColorSpace;
+    t.needsUpdate = true;
+    return t;
+  };
+  const baseMat = (Array.isArray(base.material) ? base.material[0] : base.material) as MToonMaterial;
+  const mat = baseMat.clone() as MToonMaterial;
+  mat.map = palette(lit);
+  mat.color.setRGB(1, 1, 1);
+  mat.shadeMultiplyTexture = palette(shade);
+  mat.shadeColorFactor.setRGB(1, 1, 1);
+  mat.needsUpdate = true;
+  const mesh = new THREE.SkinnedMesh(merged, mat);
+  mesh.name = 'Body_merged';
+  mesh.frustumCulled = false;
+  mesh.position.copy(base.position);
+  mesh.quaternion.copy(base.quaternion);
+  mesh.scale.copy(base.scale);
+  mesh.layers.mask = base.layers.mask;
+  base.parent!.add(mesh);
+  mesh.bind(base.skeleton, base.bindMatrix);
+  for (const m of group) {
+    m.removeFromParent();
+    m.geometry.dispose();
   }
 }
 

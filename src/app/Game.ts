@@ -65,6 +65,8 @@ export class Game {
   private acc = 0;
   private last = performance.now();
   private readonly tmp = new THREE.Vector3();
+  private readonly frustum = new THREE.Frustum();
+  private readonly frustumMat = new THREE.Matrix4();
   /** 有面板打开时，失去指针锁定不显示暂停界面 */
   private panelOpen = false;
   private started = false;
@@ -408,7 +410,10 @@ export class Game {
   private updateDynamicWorld(dt: number, feet: THREE.Vector3) {
     this.escalators?.update(dt);
     for (const el of this.elevators) el.update();
-    this.npcs?.update(dt, feet);
+    const cam = this.renderer.camera;
+    cam.updateMatrixWorld();
+    this.frustum.setFromProjectionMatrix(this.frustumMat.multiplyMatrices(cam.projectionMatrix, cam.matrixWorldInverse));
+    this.npcs?.update(dt, feet, this.frustum);
     this.interaction.update(feet);
     const cur = this.interaction.current;
     this.cinema?.update(this.renderer.camera, feet);
@@ -786,6 +791,15 @@ export class Game {
       },
       get announcer() {
         return game.announcer;
+      },
+      /** 渲染一帧，返回 draw call、三角形数和 CPU 用时（毫秒，取 n 次平均） */
+      stats(n = 10) {
+        hooks.renderOnce();
+        const t0 = performance.now();
+        for (let i = 0; i < n; i++) game.renderer.render(1 / 60);
+        const ms = (performance.now() - t0) / n;
+        const info = game.renderer.renderer.info;
+        return { calls: info.render.calls, triangles: info.render.triangles, ms: +ms.toFixed(2), geometries: info.memory.geometries, textures: info.memory.textures };
       },
       enterKart() {
         game.enterKart();

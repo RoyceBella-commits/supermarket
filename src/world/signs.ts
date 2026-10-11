@@ -9,6 +9,7 @@ import type { BackLogo } from './interiors/index.ts';
 
 // 招牌：Canvas 画贴图贴到平面上。店铺招牌是原创 logo（品类图标徽章 + 英文字标，见 logos.ts）；
 // 设施和楼梯的牌子中英双语，不随界面语言变化。
+// 一百多块招牌按楼层打包进图集，每层合并成一个 Mesh（原来每块一个 draw call，描边法线还要再画一遍）。
 
 const FONT = '"Avenir Next", "PingFang SC", "Helvetica Neue", Arial, sans-serif';
 // 每米多少像素：招牌有六十多块，太高会占很多显存
@@ -23,21 +24,31 @@ interface SignStyle {
   sub?: string; // 第二行小字
 }
 
+interface SignEntry {
+  canvas: HTMLCanvasElement;
+  w: number;
+  h: number;
+  x: number;
+  y: number;
+  z: number;
+  rotY: number;
+  floor: number;
+}
+
 export function buildSigns(layout: MallLayout, backLogos: BackLogo[] = []): THREE.Group {
-  const group = new THREE.Group();
-  group.name = 'signs';
+  const group: SignEntry[] = [];
   const b = layout.building;
   const H = b.floorHeight;
   const offset = 0.03;
 
-  const logoTextures = new Map<string, THREE.CanvasTexture>();
+  const logoTextures = new Map<string, HTMLCanvasElement>();
   for (const s of layout.shops) {
     const entry = s.entrances[0];
     if (!entry) continue;
     const c = openingCenter(s.rect, entry);
     const y = s.floor * H;
     const openH = entry.height ?? (entry.kind === 'storefront' ? b.storefrontHeight : b.doorHeight);
-    const texture = canvasTexture(drawLogoSign(s, Math.round(0.95 * PX_PER_M)));
+    const texture = drawLogoSign(s, Math.round(0.95 * PX_PER_M));
     logoTextures.set(s.id, texture);
     // 门外上方的大招牌
     addTextureSign(group, `sign:${s.id}`, texture, 0.95, Math.max(4, Math.min(entry.width + 2, 12)), c.x + c.outX * offset, y + openH + 0.75, c.z + c.outZ * offset, c.outX, c.outZ, s.floor);
@@ -108,12 +119,11 @@ export function buildSigns(layout: MallLayout, backLogos: BackLogo[] = []): THRE
     addSign(group, layout.name.en, { bg: '#ff8c42', fg: '#ffffff', accent: '#ffd166', height: 1.6, sub: layout.name.zh, maxWidth: 14 }, c.x + c.outX * out, (m.height ?? 4) + 1.4, c.z + c.outZ * out, c.outX, c.outZ, OUTSIDE_FLOOR);
   }
 
-  return group;
+  return buildAtlasMeshes(group);
 }
 
-function addSign(group: THREE.Group, text: string, style: SignStyle, x: number, y: number, z: number, outX: number, outZ: number, floor: number) {
-  const { texture } = signTexture(text, style);
-  addTextureSign(group, `sign:${text}`, texture, style.height, style.maxWidth, x, y, z, outX, outZ, floor);
+function addSign(group: SignEntry[], text: string, style: SignStyle, x: number, y: number, z: number, outX: number, outZ: number, floor: number) {
+  addTextureSign(group, `sign:${text}`, signTexture(text, style), style.height, style.maxWidth, x, y, z, outX, outZ, floor);
 }
 
 function canvasTexture(c: HTMLCanvasElement): THREE.CanvasTexture {
@@ -124,24 +134,121 @@ function canvasTexture(c: HTMLCanvasElement): THREE.CanvasTexture {
 }
 
 /** 按贴图宽高比放一块招牌；超过 maxWidth 时等比缩小 */
-function addTextureSign(group: THREE.Group, name: string, texture: THREE.CanvasTexture, height: number, maxWidth: number | undefined, x: number, y: number, z: number, outX: number, outZ: number, floor: number) {
-  const img = texture.image as HTMLCanvasElement;
-  let w = height * (img.width / img.height);
+function addTextureSign(group: SignEntry[], _name: string, canvas: HTMLCanvasElement, height: number, maxWidth: number | undefined, x: number, y: number, z: number, outX: number, outZ: number, floor: number) {
+  let w = height * (canvas.width / canvas.height);
   let h = height;
   if (maxWidth && w > maxWidth) {
     h *= maxWidth / w;
     w = maxWidth;
   }
-  const mat = new THREE.MeshBasicMaterial({ map: texture, transparent: true, toneMapped: false });
-  const mesh = new THREE.Mesh(new THREE.PlaneGeometry(w, h), mat);
-  mesh.position.set(x, y, z);
-  mesh.rotation.y = Math.atan2(outX, outZ);
-  mesh.userData.floor = floor;
-  mesh.name = name;
-  group.add(mesh);
+  group.push({ canvas, w, h, x, y, z, rotY: Math.atan2(outX, outZ), floor });
 }
 
-function signTexture(text: string, style: SignStyle): { texture: THREE.CanvasTexture; aspect: number } {
+const ATLAS_W = 2048;
+const ATLAS_MAX_H = 4096;
+const PAD = 6;
+
+/**
+ * 按楼层把招牌贴图装进图集（同一张贴图只放一次），每页图集一个 Mesh。
+ * 架子式装箱：按高度从高到低排，一行放满换行；超过最大高度就开新的一页。
+ */
+function buildAtlasMeshes(entries: SignEntry[]): THREE.Group {
+  const root = new THREE.Group();
+  root.name = 'signs';
+  const floors = new Map<number, SignEntry[]>();
+  for (const e of entries) {
+    let list = floors.get(e.floor);
+    if (!list) floors.set(e.floor, (list = []));
+    list.push(e);
+  }
+  for (const [floor, list] of floors) {
+    const canvases = [...new Set(list.map((e) => e.canvas))].sort((a, b) => b.height - a.height);
+    // 装箱：每张贴图 → (页, x, y)
+    const pages: { h: number; items: { c: HTMLCanvasElement; x: number; y: number }[] }[] = [];
+    const where = new Map<HTMLCanvasElement, { page: number; x: number; y: number; w: number; h: number }>();
+    let page = { h: 0, items: [] as { c: HTMLCanvasElement; x: number; y: number }[] };
+    let x = PAD;
+    let y = PAD;
+    let rowH = 0;
+    for (const c of canvases) {
+      const cw = Math.min(c.width, ATLAS_W - PAD * 2);
+      if (x + cw + PAD > ATLAS_W) {
+        x = PAD;
+        y += rowH + PAD;
+        rowH = 0;
+      }
+      if (y + c.height + PAD > ATLAS_MAX_H) {
+        pages.push(page);
+        page = { h: 0, items: [] };
+        x = PAD;
+        y = PAD;
+        rowH = 0;
+      }
+      page.items.push({ c, x, y });
+      where.set(c, { page: pages.length, x, y, w: cw, h: c.height });
+      page.h = Math.max(page.h, y + c.height + PAD);
+      x += cw + PAD;
+      rowH = Math.max(rowH, c.height);
+    }
+    pages.push(page);
+
+    pages.forEach((pg, pi) => {
+      const atlas = document.createElement('canvas');
+      atlas.width = ATLAS_W;
+      atlas.height = Math.ceil(pg.h / 4) * 4;
+      const g = atlas.getContext('2d')!;
+      for (const it of pg.items) g.drawImage(it.c, it.x, it.y, Math.min(it.c.width, ATLAS_W - PAD * 2), it.c.height);
+      const tex = canvasTexture(atlas);
+      const mine = list.filter((e) => where.get(e.canvas)!.page === pi);
+      const pos = new Float32Array(mine.length * 12);
+      const nor = new Float32Array(mine.length * 12);
+      const uv = new Float32Array(mine.length * 8);
+      const idx = new Uint32Array(mine.length * 6);
+      mine.forEach((e, i) => {
+        const r = where.get(e.canvas)!;
+        const cos = Math.cos(e.rotY);
+        const sin = Math.sin(e.rotY);
+        const corners: [number, number][] = [
+          [-e.w / 2, -e.h / 2],
+          [e.w / 2, -e.h / 2],
+          [e.w / 2, e.h / 2],
+          [-e.w / 2, e.h / 2],
+        ];
+        // 贴图边缘内缩半个像素，避免采到隔壁
+        const u0 = (r.x + 0.5) / atlas.width;
+        const u1 = (r.x + r.w - 0.5) / atlas.width;
+        const vTop = 1 - (r.y + 0.5) / atlas.height;
+        const vBot = 1 - (r.y + r.h - 0.5) / atlas.height;
+        const uvs = [u0, vBot, u1, vBot, u1, vTop, u0, vTop];
+        corners.forEach(([lx, ly], k) => {
+          const o = i * 12 + k * 3;
+          pos[o] = e.x + lx * cos;
+          pos[o + 1] = e.y + ly;
+          pos[o + 2] = e.z - lx * sin;
+          nor[o] = sin;
+          nor[o + 1] = 0;
+          nor[o + 2] = cos;
+          uv[i * 8 + k * 2] = uvs[k * 2];
+          uv[i * 8 + k * 2 + 1] = uvs[k * 2 + 1];
+        });
+        idx.set([i * 4, i * 4 + 1, i * 4 + 2, i * 4, i * 4 + 2, i * 4 + 3], i * 6);
+      });
+      const geo = new THREE.BufferGeometry();
+      geo.setAttribute('position', new THREE.BufferAttribute(pos, 3));
+      geo.setAttribute('normal', new THREE.BufferAttribute(nor, 3));
+      geo.setAttribute('uv', new THREE.BufferAttribute(uv, 2));
+      geo.setIndex(new THREE.BufferAttribute(idx, 1));
+      geo.computeBoundingSphere();
+      const mesh = new THREE.Mesh(geo, new THREE.MeshBasicMaterial({ map: tex, transparent: true, toneMapped: false }));
+      mesh.name = `signs:${floor}:${pi}`;
+      mesh.userData.floor = floor;
+      root.add(mesh);
+    });
+  }
+  return root;
+}
+
+function signTexture(text: string, style: SignStyle): HTMLCanvasElement {
   const h = Math.round(style.height * PX_PER_M);
   const mainSize = Math.round(h * (style.sub ? 0.46 : 0.56));
   const subSize = Math.round(h * 0.24);
@@ -179,7 +286,7 @@ function signTexture(text: string, style: SignStyle): { texture: THREE.CanvasTex
     g.globalAlpha = 1;
   }
 
-  return { texture: canvasTexture(c), aspect: w / h };
+  return c;
 }
 
 function roundRect(g: CanvasRenderingContext2D, x: number, y: number, w: number, h: number, r: number) {

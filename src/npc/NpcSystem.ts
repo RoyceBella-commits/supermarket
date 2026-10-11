@@ -15,12 +15,15 @@ const staffUrl = (shopId: string) => `${BASE}models/staff/${shopId}.vrm`;
 /** 玩家进入这个距离（米，含高差）才加载店员模型 */
 const LOAD_DIST = 45;
 /** 超过这个水平距离或隔了一层以上就不画 */
-const SHOW_DIST = 70;
+const SHOW_DIST = 40;
+/** 别的楼层（隔着中庭）的店员只在这么近时才画 */
+const SHOW_DIST_OTHER_FLOOR = 22;
 const TALK_RADIUS = 2.2;
 /** 对话中走开这么远就自动结束 */
 const CLOSE_DIST = 4;
 const LOOK_DIST = 6;
 const ZERO = new THREE.Vector3();
+const cullSphere = new THREE.Sphere(new THREE.Vector3(), 1.6);
 
 export interface Npc {
   def: NpcDef;
@@ -121,7 +124,11 @@ export class NpcSystem {
     this.voice.preload(lines[(n.lineIndex + 1) % lines.length].id);
   }
 
-  update(dt: number, feet: THREE.Vector3) {
+  /**
+   * frustum：上一帧相机的视锥。VRM 的网格关掉了自动视锥剔除（蒙皮包围盒不可靠），
+   * 所以这里自己用一个包住整个人的球判断，不在画面里的店员不画、也不更新动画。
+   */
+  update(dt: number, feet: THREE.Vector3, frustum: THREE.Frustum | null = null) {
     this.clock += dt;
     for (const n of this.list) {
       const dx = feet.x - n.home.x;
@@ -132,7 +139,9 @@ export class NpcSystem {
         if (!n.loading && Math.hypot(dist, dy) < LOAD_DIST) this.enqueue(n);
         continue;
       }
-      const visible = Math.abs(dy) < 7 && dist < SHOW_DIST;
+      cullSphere.center.set(n.home.x, n.home.y + 0.9, n.home.z);
+      const near = Math.abs(dy) < 3 ? dist < SHOW_DIST : Math.abs(dy) < 7 && dist < SHOW_DIST_OTHER_FLOOR;
+      const visible = near && (this.active === n || !frustum || frustum.intersectsSphere(cullSphere));
       n.avatar.setVisible(visible);
       if (!visible) continue;
 
