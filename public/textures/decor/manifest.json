@@ -197,6 +197,109 @@
       "usage": [
         "blinkvr"
       ]
+    },
+    {
+      "id": "movie-space",
+      "file": "movie-space.jpg",
+      "width": 683,
+      "height": 1024,
+      "kind": "poster",
+      "usage": [
+        "cinema"
+      ]
+    },
+    {
+      "id": "movie-detective",
+      "file": "movie-detective.jpg",
+      "width": 683,
+      "height": 1024,
+      "kind": "poster",
+      "usage": [
+        "cinema"
+      ]
+    },
+    {
+      "id": "movie-dragon",
+      "file": "movie-dragon.jpg",
+      "width": 683,
+      "height": 1024,
+      "kind": "poster",
+      "usage": [
+        "cinema"
+      ]
+    },
+    {
+      "id": "movie-ocean",
+      "file": "movie-ocean.jpg",
+      "width": 683,
+      "height": 1024,
+      "kind": "poster",
+      "usage": [
+        "cinema"
+      ]
+    },
+    {
+      "id": "movie-racing",
+      "file": "movie-racing.jpg",
+      "width": 683,
+      "height": 1024,
+      "kind": "poster",
+      "usage": [
+        "cinema",
+        "turbokart"
+      ]
+    },
+    {
+      "id": "movie-romance",
+      "file": "movie-romance.jpg",
+      "width": 683,
+      "height": 1024,
+      "kind": "poster",
+      "usage": [
+        "cinema"
+      ]
+    },
+    {
+      "id": "cinema-keyvisual",
+      "file": "cinema-keyvisual.jpg",
+      "width": 1024,
+      "height": 576,
+      "kind": "banner",
+      "usage": [
+        "cinema"
+      ]
+    },
+    {
+      "id": "atlas-concession",
+      "file": "atlas-concession.jpg",
+      "width": 1024,
+      "height": 683,
+      "kind": "atlas",
+      "grid": [
+        3,
+        2
+      ],
+      "usage": [
+        "cinema"
+      ],
+      "cells": [
+        "popcorn",
+        "soda",
+        "hotdog",
+        "nachos",
+        "pretzel",
+        "icecream"
+      ]
+    },
+    {
+      "id": "kart-banner",
+      "file": "kart-banner.jpg",
+      "width": 1024,
+      "height": 683,
+      "kind": "banner",
+      "usage": [
+        "turbokart"
+      ]
     }
   ]
 }

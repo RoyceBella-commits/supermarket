@@ -1,0 +1,11 @@
+Use case: ads-marketing
+Asset type: text-free wall banner for an indoor go-kart track in a cartoon shopping-mall game
+Primary request: an indoor go-kart track scene: colourful karts racing through a hairpin with red-white kerbs, stacked tyre barriers, checkered flag bunting
+Scene/backdrop: a bright, roomy indoor karting hall with a smooth grey track, red-and-white striped kerbs, walls of neatly stacked tyre barriers, strings of small black-and-white checkered flag bunting hanging overhead, and soft white ceiling lights.
+Subject: four small colourful go-karts (cherry red, sunny yellow, sky blue and mint green) racing through a tight hairpin bend, drivers in rounded helmets with blank plain visors and simple suits; karts, helmets and suits are plain solid colours with no numbers, sponsor patches, logos or lettering.
+Style/medium: flat cel-shaded cartoon illustration; bright, soft, pastel-leaning colours; clean simple shapes; soft two-tone shading; thin warm outlines; friendly, cozy mood matching a "bright & soft" toon 3D game with Animal-Crossing-like brightness (brightness reference only; no characters, assets or designs from any existing game).
+Composition/framing: horizontal 3:2 landscape frame (not an ultra-wide strip); slightly elevated three-quarter view of the hairpin filling most of the frame, karts curving through the middle of the bend; tyre barriers framing the corner; bunting along the top.
+Lighting/mood: bright even indoor lighting, energetic and fun.
+Color palette: cherry red, sunny yellow, sky blue and mint on soft grey, with crisp black-and-white checker accents.
+Constraints: no text, letters, numbers, logos or watermarks anywhere in the image (including signs, screens, packaging, labels and clothing); the game overlays its own text. Original characters and designs only; no real brands, no famous or copyrighted characters, no real people or celebrity likenesses. No race numbers, no banners, billboards or signs with writing.
+Avoid: any text or lettering, numbers, logos, brand marks, watermarks, signatures, photorealism, harsh contrast, dark or gritty mood.

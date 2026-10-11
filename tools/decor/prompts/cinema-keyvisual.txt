@@ -1,0 +1,11 @@
+Use case: ads-marketing
+Asset type: text-free wide key-visual wall graphic for a cinema lobby in a cartoon shopping-mall game, also shown on the movie screen between films
+Primary request: a starry night sky with a crescent moon, a film-reel-shaped constellation and shooting stars over a cozy cartoon city skyline
+Scene/backdrop: a soft night sky that fades from deep periwinkle at the top to lavender and a faint peach glow just above the horizon, sprinkled with twinkling stars; along the bottom edge a low cozy cartoon city skyline of rounded rooftops, little towers and warmly lit windows.
+Subject: in the centre of the sky, one large clear constellation shaped like a classic round film reel, made of glowing star dots joined by thin soft lines (an outer circle with several round holes around a hub); a big friendly crescent moon in the upper right; two or three gentle shooting stars with soft trails sweeping across the sky.
+Style/medium: flat cel-shaded cartoon illustration; bright, soft, pastel-leaning colours; clean simple shapes; soft two-tone shading; thin warm outlines; friendly, cozy mood matching a "bright & soft" toon 3D game with Animal-Crossing-like brightness (brightness reference only; no characters, assets or designs from any existing game).
+Composition/framing: wide 16:9 cinematic landscape frame; the city skyline kept low along the bottom; the centre calm, uncluttered and readable from far away, with the film-reel constellation as the single clear focal point; keep important elements away from the very edges; simple bold shapes.
+Lighting/mood: magical, calm and inviting, like the moment before a film starts; soft glowing stars rather than a dark sky.
+Color palette: periwinkle, indigo-violet and lavender with warm gold stars and moon and peach window lights.
+Constraints: no text, letters, numbers, logos or watermarks anywhere in the image (including signs, screens, packaging, labels and clothing); the game overlays its own text. Original characters and designs only; no real brands, no famous or copyrighted characters, no real people or celebrity likenesses. The film-reel constellation has no sprocket numbers or frame markings.
+Avoid: any text or lettering, numbers, logos, brand marks, watermarks, signatures, photorealism, harsh contrast, dark or gritty mood.

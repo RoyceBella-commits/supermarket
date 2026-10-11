@@ -1,0 +1,11 @@
+Use case: stylized-concept
+Asset type: text-free key-art poster for a fictional sports drama film, displayed in a cinema and a go-kart track in a cartoon shopping-mall game
+Primary request: key art for a fictional go-kart racing sports drama: two go-kart racers neck and neck on a track with motion lines, cheering crowd blur
+Scene/backdrop: a go-kart race track with red-and-white kerbs, a softly blurred cheering crowd in the stands behind waving plain coloured flags, bright sky.
+Subject: two original young go-kart racers in rounded helmets with plain visors and simple racing suits, driving two small open go-karts side by side, neck and neck, leaning forward with determination; one kart sunny yellow, the other sky blue; the karts, suits and helmets are plain solid colours with no numbers, sponsor patches, logos or lettering.
+Style/medium: flat cel-shaded cartoon illustration; bright, soft, pastel-leaning colours; clean simple shapes; soft two-tone shading; thin warm outlines; friendly, cozy mood matching a "bright & soft" toon 3D game with Animal-Crossing-like brightness (brightness reference only; no characters, assets or designs from any existing game).
+Composition/framing: vertical portrait movie poster; the two karts charging toward the viewer at a slight diagonal in the lower half, with speed and motion lines streaking behind them; blurred crowd in the middle distance; calm open sky space near the top.
+Lighting/mood: bright sunny daylight, energetic, competitive but friendly.
+Color palette: sunny yellow, sky blue, cherry red and white with soft green accents.
+Constraints: no text, letters, numbers, logos or watermarks anywhere in the image (including signs, screens, packaging, labels and clothing); the game overlays its own text. Original characters and designs only; no real brands, no famous or copyrighted characters, no real people or celebrity likenesses. No race numbers on karts or racers, no banners or billboards with writing.
+Avoid: any text or lettering, numbers, logos, brand marks, watermarks, signatures, photorealism, harsh contrast, dark or gritty mood.

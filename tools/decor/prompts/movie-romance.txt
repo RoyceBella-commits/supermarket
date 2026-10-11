@@ -1,0 +1,11 @@
+Use case: stylized-concept
+Asset type: text-free key-art poster for a fictional animated romantic comedy film, displayed in a cinema in a cartoon shopping-mall game
+Primary request: key art for a fictional gentle romantic comedy: two young adults sharing an umbrella on a city bridge at dusk with lanterns
+Scene/backdrop: a small arched stone footbridge over a calm city river at dusk, a row of warm glowing paper lanterns strung along the railing, light drizzle, soft city buildings with lit windows in the distance reflected in the water.
+Subject: two original young adults, a young woman and a young man in simple casual coats, standing close together under one shared umbrella on the bridge, smiling shyly at each other; wholesome, simple and sweet; original designs that do not resemble any existing film or cartoon characters.
+Style/medium: flat cel-shaded cartoon illustration; bright, soft, pastel-leaning colours; clean simple shapes; soft two-tone shading; thin warm outlines; friendly, cozy mood matching a "bright & soft" toon 3D game with Animal-Crossing-like brightness (brightness reference only; no characters, assets or designs from any existing game).
+Composition/framing: vertical portrait movie poster; the couple centred in the lower-middle part, seen at full or knee-up length; lantern-lit bridge leading into the background; calm open dusk sky space near the top.
+Lighting/mood: warm lantern glow against a soft dusk sky, tender, gentle and heartwarming.
+Color palette: dusky rose, lavender and soft peach with warm lantern amber.
+Constraints: no text, letters, numbers, logos or watermarks anywhere in the image (including signs, screens, packaging, labels and clothing); the game overlays its own text. Original characters and designs only; no real brands, no famous or copyrighted characters, no real people or celebrity likenesses.
+Avoid: any text or lettering, numbers, logos, brand marks, watermarks, signatures, photorealism, harsh contrast, dark or gritty mood.

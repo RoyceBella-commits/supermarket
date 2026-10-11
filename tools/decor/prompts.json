@@ -403,5 +403,221 @@
         "error": null
       }
     ]
+  },
+  "movie-space": {
+    "prompt": "Use case: stylized-concept\nAsset type: text-free key-art poster for a fictional animated family film, displayed in a cinema in a cartoon shopping-mall game\nPrimary request: key art for a fictional family sci-fi adventure film: a small round friendly robot and a kid astronaut on a pastel planet, rings and stars behind\nScene/backdrop: the gentle rolling surface of a small pastel alien planet with soft craters and a few rounded crystal plants; behind it a huge ringed planet and a sky full of twinkling stars and soft nebula clouds.\nSubject: one original kid astronaut in a simple rounded white-and-coral spacesuit with the helmet visor raised to show a curious smiling face, standing next to one original small round friendly robot companion with a spherical body, two big glowing eyes and short stubby arms, the two looking up at the sky together; original designs that do not resemble any existing film, game or toy robot or character; plain suit with no patches, flags or lettering.\nStyle/medium: flat cel-shaded cartoon illustration; bright, soft, pastel-leaning colours; clean simple shapes; soft two-tone shading; thin warm outlines; friendly, cozy mood matching a \"bright & soft\" toon 3D game with Animal-Crossing-like brightness (brightness reference only; no characters, assets or designs from any existing game).\nComposition/framing: vertical portrait movie poster; the two characters in the lower-middle foreground; the ringed planet and stars rising behind and above; calm open starry sky space near the top.\nLighting/mood: soft glowing starlight and rim light, wonder-filled and hopeful.\nColor palette: lavender, periwinkle blue, mint and peach with soft coral accents.\nConstraints: no text, letters, numbers, logos or watermarks anywhere in the image (including signs, screens, packaging, labels and clothing); the game overlays its own text. Original characters and designs only; no real brands, no famous or copyrighted characters, no real people or celebrity likenesses.\nAvoid: any text or lettering, numbers, logos, brand marks, watermarks, signatures, photorealism, harsh contrast, dark or gritty mood.",
+    "model": "gpt-6.1-sol",
+    "effort": "low",
+    "backend": "Codex CLI (codex exec) built-in image_gen",
+    "date": "2026-10-11T12:36:25Z",
+    "aspect": "2:3",
+    "sizeRequested": "1024x1536",
+    "rawSize": [
+      1024,
+      1536
+    ],
+    "crop": null,
+    "taskDir": "assets-src/decor/tasks/movie-space/low-20261011-203520",
+    "attempts": [
+      {
+        "effort": "low",
+        "ok": true,
+        "seconds": 65,
+        "dir": "assets-src/decor/tasks/movie-space/low-20261011-203520",
+        "error": null
+      }
+    ]
+  },
+  "movie-detective": {
+    "prompt": "Use case: stylized-concept\nAsset type: text-free key-art poster for a fictional animated comedy film, displayed in a cinema in a cartoon shopping-mall game\nPrimary request: key art for a fictional animal detective comedy: a fox detective with a magnifying glass and a nervous hamster sidekick in a rainy cartoon city at night with warm window lights\nScene/backdrop: a cosy cartoon city street at night in gentle rain, small rounded buildings with many warm glowing windows, a street lamp, shiny wet cobblestones with soft reflections; shopfronts and signs are plain and blank.\nSubject: one original anthropomorphic fox detective in a trench coat and a small brimmed hat, leaning forward and peering through a big magnifying glass with a confident sly smile; beside him one original small nervous hamster sidekick in a tiny raincoat clutching a little umbrella and peeking out anxiously; original designs that do not resemble any existing film or cartoon characters.\nStyle/medium: flat cel-shaded cartoon illustration; bright, soft, pastel-leaning colours; clean simple shapes; soft two-tone shading; thin warm outlines; friendly, cozy mood matching a \"bright & soft\" toon 3D game with Animal-Crossing-like brightness (brightness reference only; no characters, assets or designs from any existing game).\nComposition/framing: vertical portrait movie poster; the fox and the hamster in the lower-middle foreground, full body; the street and buildings receding behind them; calm open rainy sky space near the top.\nLighting/mood: playful mystery, warm amber window light against soft night blues; overall soft and friendly rather than dark.\nColor palette: soft navy and periwinkle night tones with warm amber, orange fox fur and cream accents.\nConstraints: no text, letters, numbers, logos or watermarks anywhere in the image (including signs, screens, packaging, labels and clothing); the game overlays its own text. Original characters and designs only; no real brands, no famous or copyrighted characters, no real people or celebrity likenesses.\nAvoid: any text or lettering, numbers, logos, brand marks, watermarks, signatures, photorealism, harsh contrast, dark or gritty mood.",
+    "model": "gpt-6.1-sol",
+    "effort": "low",
+    "backend": "Codex CLI (codex exec) built-in image_gen",
+    "date": "2026-10-11T12:37:36Z",
+    "aspect": "2:3",
+    "sizeRequested": "1024x1536",
+    "rawSize": [
+      1024,
+      1536
+    ],
+    "crop": null,
+    "taskDir": "assets-src/decor/tasks/movie-detective/low-20261011-203632",
+    "attempts": [
+      {
+        "effort": "low",
+        "ok": true,
+        "seconds": 64,
+        "dir": "assets-src/decor/tasks/movie-detective/low-20261011-203632",
+        "error": null
+      }
+    ]
+  },
+  "movie-dragon": {
+    "prompt": "Use case: stylized-concept\nAsset type: text-free key-art poster for a fictional animated fantasy film, displayed in a cinema in a cartoon shopping-mall game\nPrimary request: key art for a fictional fantasy film: a girl riding a gentle teal dragon over cloud mountains at sunrise\nScene/backdrop: soft rounded mountain peaks rising out of a sea of fluffy clouds, a big warm sunrise glowing on the horizon, a few distant birds.\nSubject: one original gentle teal dragon with a friendly face, soft rounded horns, cream belly scales and wide feathery wings, gliding through the air; one original young girl riding on its back, holding on happily with her hair and scarf flowing in the wind; original designs that do not resemble any existing film, game or book dragon or character.\nStyle/medium: flat cel-shaded cartoon illustration; bright, soft, pastel-leaning colours; clean simple shapes; soft two-tone shading; thin warm outlines; friendly, cozy mood matching a \"bright & soft\" toon 3D game with Animal-Crossing-like brightness (brightness reference only; no characters, assets or designs from any existing game).\nComposition/framing: vertical portrait movie poster; the dragon and rider in the middle, flying diagonally upward from lower left; cloud mountains in the lower part; calm open sunrise sky space near the top.\nLighting/mood: warm golden sunrise light, adventurous, free and hopeful.\nColor palette: teal and mint with peach, apricot and soft pink sunrise tones.\nConstraints: no text, letters, numbers, logos or watermarks anywhere in the image (including signs, screens, packaging, labels and clothing); the game overlays its own text. Original characters and designs only; no real brands, no famous or copyrighted characters, no real people or celebrity likenesses.\nAvoid: any text or lettering, numbers, logos, brand marks, watermarks, signatures, photorealism, harsh contrast, dark or gritty mood.",
+    "model": "gpt-6.1-sol",
+    "effort": "low",
+    "backend": "Codex CLI (codex exec) built-in image_gen",
+    "date": "2026-10-11T12:38:58Z",
+    "aspect": "2:3",
+    "sizeRequested": "1024x1536",
+    "rawSize": [
+      1024,
+      1536
+    ],
+    "crop": null,
+    "taskDir": "assets-src/decor/tasks/movie-dragon/low-20261011-203751",
+    "attempts": [
+      {
+        "effort": "low",
+        "ok": true,
+        "seconds": 66,
+        "dir": "assets-src/decor/tasks/movie-dragon/low-20261011-203751",
+        "error": null
+      }
+    ]
+  },
+  "movie-ocean": {
+    "prompt": "Use case: stylized-concept\nAsset type: text-free key-art poster for a fictional animated family film, displayed in a cinema in a cartoon shopping-mall game\nPrimary request: key art for a fictional underwater animated family film: a sea turtle, colourful fish and a coral castle, light rays from above\nScene/backdrop: a clear bright underwater world with a whimsical castle built from pastel coral, shells and sea sponges on the sandy sea floor, swaying seaweed, rising bubbles and soft light rays shining down from the water surface above.\nSubject: one original friendly sea turtle with a kind smile swimming in the foreground, surrounded by a cheerful school of small colourful fish; original designs that do not resemble any existing film or cartoon characters.\nStyle/medium: flat cel-shaded cartoon illustration; bright, soft, pastel-leaning colours; clean simple shapes; soft two-tone shading; thin warm outlines; friendly, cozy mood matching a \"bright & soft\" toon 3D game with Animal-Crossing-like brightness (brightness reference only; no characters, assets or designs from any existing game).\nComposition/framing: vertical portrait movie poster; the turtle in the middle foreground swimming toward the viewer at a slight angle; the coral castle below and behind; light rays and calm open water near the top.\nLighting/mood: luminous, gentle and joyful, sparkling sunlight under the sea.\nColor palette: aqua, turquoise and soft sea blue with coral pink, sunny yellow and lilac accents.\nConstraints: no text, letters, numbers, logos or watermarks anywhere in the image (including signs, screens, packaging, labels and clothing); the game overlays its own text. Original characters and designs only; no real brands, no famous or copyrighted characters, no real people or celebrity likenesses.\nAvoid: any text or lettering, numbers, logos, brand marks, watermarks, signatures, photorealism, harsh contrast, dark or gritty mood.",
+    "model": "gpt-6.1-sol",
+    "effort": "low",
+    "backend": "Codex CLI (codex exec) built-in image_gen",
+    "date": "2026-10-11T12:40:11Z",
+    "aspect": "2:3",
+    "sizeRequested": "1024x1536",
+    "rawSize": [
+      1024,
+      1536
+    ],
+    "crop": null,
+    "taskDir": "assets-src/decor/tasks/movie-ocean/low-20261011-203903",
+    "attempts": [
+      {
+        "effort": "low",
+        "ok": true,
+        "seconds": 68,
+        "dir": "assets-src/decor/tasks/movie-ocean/low-20261011-203903",
+        "error": null
+      }
+    ]
+  },
+  "movie-racing": {
+    "prompt": "Use case: stylized-concept\nAsset type: text-free key-art poster for a fictional sports drama film, displayed in a cinema and a go-kart track in a cartoon shopping-mall game\nPrimary request: key art for a fictional go-kart racing sports drama: two go-kart racers neck and neck on a track with motion lines, cheering crowd blur\nScene/backdrop: a go-kart race track with red-and-white kerbs, a softly blurred cheering crowd in the stands behind waving plain coloured flags, bright sky.\nSubject: two original young go-kart racers in rounded helmets with plain visors and simple racing suits, driving two small open go-karts side by side, neck and neck, leaning forward with determination; one kart sunny yellow, the other sky blue; the karts, suits and helmets are plain solid colours with no numbers, sponsor patches, logos or lettering.\nStyle/medium: flat cel-shaded cartoon illustration; bright, soft, pastel-leaning colours; clean simple shapes; soft two-tone shading; thin warm outlines; friendly, cozy mood matching a \"bright & soft\" toon 3D game with Animal-Crossing-like brightness (brightness reference only; no characters, assets or designs from any existing game).\nComposition/framing: vertical portrait movie poster; the two karts charging toward the viewer at a slight diagonal in the lower half, with speed and motion lines streaking behind them; blurred crowd in the middle distance; calm open sky space near the top.\nLighting/mood: bright sunny daylight, energetic, competitive but friendly.\nColor palette: sunny yellow, sky blue, cherry red and white with soft green accents.\nConstraints: no text, letters, numbers, logos or watermarks anywhere in the image (including signs, screens, packaging, labels and clothing); the game overlays its own text. Original characters and designs only; no real brands, no famous or copyrighted characters, no real people or celebrity likenesses. No race numbers on karts or racers, no banners or billboards with writing.\nAvoid: any text or lettering, numbers, logos, brand marks, watermarks, signatures, photorealism, harsh contrast, dark or gritty mood.",
+    "model": "gpt-6.1-sol",
+    "effort": "low",
+    "backend": "Codex CLI (codex exec) built-in image_gen",
+    "date": "2026-10-11T12:41:35Z",
+    "aspect": "2:3",
+    "sizeRequested": "1024x1536",
+    "rawSize": [
+      1024,
+      1536
+    ],
+    "crop": null,
+    "taskDir": "assets-src/decor/tasks/movie-racing/low-20261011-204020",
+    "attempts": [
+      {
+        "effort": "low",
+        "ok": true,
+        "seconds": 75,
+        "dir": "assets-src/decor/tasks/movie-racing/low-20261011-204020",
+        "error": null
+      }
+    ]
+  },
+  "movie-romance": {
+    "prompt": "Use case: stylized-concept\nAsset type: text-free key-art poster for a fictional animated romantic comedy film, displayed in a cinema in a cartoon shopping-mall game\nPrimary request: key art for a fictional gentle romantic comedy: two young adults sharing an umbrella on a city bridge at dusk with lanterns\nScene/backdrop: a small arched stone footbridge over a calm city river at dusk, a row of warm glowing paper lanterns strung along the railing, light drizzle, soft city buildings with lit windows in the distance reflected in the water.\nSubject: two original young adults, a young woman and a young man in simple casual coats, standing close together under one shared umbrella on the bridge, smiling shyly at each other; wholesome, simple and sweet; original designs that do not resemble any existing film or cartoon characters.\nStyle/medium: flat cel-shaded cartoon illustration; bright, soft, pastel-leaning colours; clean simple shapes; soft two-tone shading; thin warm outlines; friendly, cozy mood matching a \"bright & soft\" toon 3D game with Animal-Crossing-like brightness (brightness reference only; no characters, assets or designs from any existing game).\nComposition/framing: vertical portrait movie poster; the couple centred in the lower-middle part, seen at full or knee-up length; lantern-lit bridge leading into the background; calm open dusk sky space near the top.\nLighting/mood: warm lantern glow against a soft dusk sky, tender, gentle and heartwarming.\nColor palette: dusky rose, lavender and soft peach with warm lantern amber.\nConstraints: no text, letters, numbers, logos or watermarks anywhere in the image (including signs, screens, packaging, labels and clothing); the game overlays its own text. Original characters and designs only; no real brands, no famous or copyrighted characters, no real people or celebrity likenesses.\nAvoid: any text or lettering, numbers, logos, brand marks, watermarks, signatures, photorealism, harsh contrast, dark or gritty mood.",
+    "model": "gpt-6.1-sol",
+    "effort": "low",
+    "backend": "Codex CLI (codex exec) built-in image_gen",
+    "date": "2026-10-11T12:42:50Z",
+    "aspect": "2:3",
+    "sizeRequested": "1024x1536",
+    "rawSize": [
+      1024,
+      1536
+    ],
+    "crop": null,
+    "taskDir": "assets-src/decor/tasks/movie-romance/low-20261011-204141",
+    "attempts": [
+      {
+        "effort": "low",
+        "ok": true,
+        "seconds": 69,
+        "dir": "assets-src/decor/tasks/movie-romance/low-20261011-204141",
+        "error": null
+      }
+    ]
+  },
+  "cinema-keyvisual": {
+    "prompt": "Use case: ads-marketing\nAsset type: text-free wide key-visual wall graphic for a cinema lobby in a cartoon shopping-mall game, also shown on the movie screen between films\nPrimary request: a starry night sky with a crescent moon, a film-reel-shaped constellation and shooting stars over a cozy cartoon city skyline\nScene/backdrop: a soft night sky that fades from deep periwinkle at the top to lavender and a faint peach glow just above the horizon, sprinkled with twinkling stars; along the bottom edge a low cozy cartoon city skyline of rounded rooftops, little towers and warmly lit windows.\nSubject: in the centre of the sky, one large clear constellation shaped like a classic round film reel, made of glowing star dots joined by thin soft lines (an outer circle with several round holes around a hub); a big friendly crescent moon in the upper right; two or three gentle shooting stars with soft trails sweeping across the sky.\nStyle/medium: flat cel-shaded cartoon illustration; bright, soft, pastel-leaning colours; clean simple shapes; soft two-tone shading; thin warm outlines; friendly, cozy mood matching a \"bright & soft\" toon 3D game with Animal-Crossing-like brightness (brightness reference only; no characters, assets or designs from any existing game).\nComposition/framing: wide 16:9 cinematic landscape frame; the city skyline kept low along the bottom; the centre calm, uncluttered and readable from far away, with the film-reel constellation as the single clear focal point; keep important elements away from the very edges; simple bold shapes.\nLighting/mood: magical, calm and inviting, like the moment before a film starts; soft glowing stars rather than a dark sky.\nColor palette: periwinkle, indigo-violet and lavender with warm gold stars and moon and peach window lights.\nConstraints: no text, letters, numbers, logos or watermarks anywhere in the image (including signs, screens, packaging, labels and clothing); the game overlays its own text. Original characters and designs only; no real brands, no famous or copyrighted characters, no real people or celebrity likenesses. The film-reel constellation has no sprocket numbers or frame markings.\nAvoid: any text or lettering, numbers, logos, brand marks, watermarks, signatures, photorealism, harsh contrast, dark or gritty mood.",
+    "model": "gpt-6.1-sol",
+    "effort": "low",
+    "backend": "Codex CLI (codex exec) built-in image_gen",
+    "date": "2026-10-11T12:44:06Z",
+    "aspect": "16:9",
+    "sizeRequested": "1536x864",
+    "rawSize": [
+      1672,
+      941
+    ],
+    "crop": null,
+    "taskDir": "assets-src/decor/tasks/cinema-keyvisual/low-20261011-204303",
+    "attempts": [
+      {
+        "effort": "low",
+        "ok": true,
+        "seconds": 63,
+        "dir": "assets-src/decor/tasks/cinema-keyvisual/low-20261011-204303",
+        "error": null
+      }
+    ]
+  },
+  "atlas-concession": {
+    "prompt": "Use case: product-mockup\nAsset type: texture atlas of snack illustrations for a cinema concession-stand menu board in a cartoon shopping-mall game\nPrimary request: 3×2 grid of cinema snacks, one per cell: popcorn bucket, fizzy soda cup, hot dog, nachos with cheese, soft pretzel, ice-cream cone\nSubject: six snack items, one per cell. Top row from left to right: an overflowing popcorn bucket with plain red-and-white vertical stripes; a fizzy soda in a plain paper cup with a lid and a bendy straw, with a few bubbles; a hot dog in a soft bun with a wavy line of mustard. Bottom row from left to right: a small tray of nachos topped with melted cheese; a golden soft pretzel with coarse salt; a swirl ice-cream cone in a waffle cone.\nScene/backdrop: each cell has its own plain flat soft pastel background colour.\nStyle/medium: flat cel-shaded cartoon illustration; bright, soft, pastel-leaning colours; clean simple shapes; soft two-tone shading; thin warm outlines; friendly, cozy mood matching a \"bright & soft\" toon 3D game with Animal-Crossing-like brightness (brightness reference only; no characters, assets or designs from any existing game).\nComposition/framing: exactly 3 columns and 2 rows of equal square cells on a regular grid with thin uniform light gutters; each item centred and fully inside its cell in a three-quarter view; nothing crosses from one cell into another.\nLighting/mood: soft appetising light, fun and inviting.\nConstraints: no text, letters, numbers, logos or watermarks anywhere in the image (including signs, screens, packaging, labels and clothing); the game overlays its own text. Original characters and designs only; no real brands, no famous or copyrighted characters, no real people or celebrity likenesses. Plain cups, buckets and wrappers with no printing.\nAvoid: any text or lettering, numbers, logos, brand marks, watermarks, signatures, photorealism, harsh contrast, dark or gritty mood.",
+    "model": "gpt-6.1-sol",
+    "effort": "low",
+    "backend": "Codex CLI (codex exec) built-in image_gen",
+    "date": "2026-10-11T12:45:46Z",
+    "aspect": "3:2",
+    "sizeRequested": "1536x1024",
+    "rawSize": [
+      1536,
+      1024
+    ],
+    "crop": null,
+    "taskDir": "assets-src/decor/tasks/atlas-concession/low-20261011-204414",
+    "attempts": [
+      {
+        "effort": "low",
+        "ok": true,
+        "seconds": 92,
+        "dir": "assets-src/decor/tasks/atlas-concession/low-20261011-204414",
+        "error": null
+      }
+    ]
+  },
+  "kart-banner": {
+    "prompt": "Use case: ads-marketing\nAsset type: text-free wall banner for an indoor go-kart track in a cartoon shopping-mall game\nPrimary request: an indoor go-kart track scene: colourful karts racing through a hairpin with red-white kerbs, stacked tyre barriers, checkered flag bunting\nScene/backdrop: a bright, roomy indoor karting hall with a smooth grey track, red-and-white striped kerbs, walls of neatly stacked tyre barriers, strings of small black-and-white checkered flag bunting hanging overhead, and soft white ceiling lights.\nSubject: four small colourful go-karts (cherry red, sunny yellow, sky blue and mint green) racing through a tight hairpin bend, drivers in rounded helmets with blank plain visors and simple suits; karts, helmets and suits are plain solid colours with no numbers, sponsor patches, logos or lettering.\nStyle/medium: flat cel-shaded cartoon illustration; bright, soft, pastel-leaning colours; clean simple shapes; soft two-tone shading; thin warm outlines; friendly, cozy mood matching a \"bright & soft\" toon 3D game with Animal-Crossing-like brightness (brightness reference only; no characters, assets or designs from any existing game).\nComposition/framing: horizontal 3:2 landscape frame (not an ultra-wide strip); slightly elevated three-quarter view of the hairpin filling most of the frame, karts curving through the middle of the bend; tyre barriers framing the corner; bunting along the top.\nLighting/mood: bright even indoor lighting, energetic and fun.\nColor palette: cherry red, sunny yellow, sky blue and mint on soft grey, with crisp black-and-white checker accents.\nConstraints: no text, letters, numbers, logos or watermarks anywhere in the image (including signs, screens, packaging, labels and clothing); the game overlays its own text. Original characters and designs only; no real brands, no famous or copyrighted characters, no real people or celebrity likenesses. No race numbers, no banners, billboards or signs with writing.\nAvoid: any text or lettering, numbers, logos, brand marks, watermarks, signatures, photorealism, harsh contrast, dark or gritty mood.",
+    "model": "gpt-6.1-sol",
+    "effort": "low",
+    "backend": "Codex CLI (codex exec) built-in image_gen",
+    "date": "2026-10-11T12:46:59Z",
+    "aspect": "3:2",
+    "sizeRequested": "1536x1024",
+    "rawSize": [
+      1536,
+      1024
+    ],
+    "crop": null,
+    "taskDir": "assets-src/decor/tasks/kart-banner/low-20261011-204553",
+    "attempts": [
+      {
+        "effort": "low",
+        "ok": true,
+        "seconds": 66,
+        "dir": "assets-src/decor/tasks/kart-banner/low-20261011-204553",
+        "error": null
+      }
+    ]
   }
 }

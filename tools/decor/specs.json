@@ -20,11 +20,22 @@
     { "id": "banner-produce",    "aspect": "3:2", "kind": "banner", "usage": ["dailyharvest"] },
     { "id": "poster-cosmetics",  "aspect": "2:3", "kind": "poster", "usage": ["dewdrop"] },
     { "id": "poster-arcade",     "aspect": "3:2", "kind": "poster", "usage": ["coinplanet"] },
-    { "id": "poster-vr",         "aspect": "2:3", "kind": "poster", "usage": ["blinkvr"] }
+    { "id": "poster-vr",         "aspect": "2:3", "kind": "poster", "usage": ["blinkvr"] },
+    { "id": "movie-space",       "aspect": "2:3", "kind": "poster", "usage": ["cinema"] },
+    { "id": "movie-detective",   "aspect": "2:3", "kind": "poster", "usage": ["cinema"] },
+    { "id": "movie-dragon",      "aspect": "2:3", "kind": "poster", "usage": ["cinema"] },
+    { "id": "movie-ocean",       "aspect": "2:3", "kind": "poster", "usage": ["cinema"] },
+    { "id": "movie-racing",      "aspect": "2:3", "kind": "poster", "usage": ["cinema", "turbokart"] },
+    { "id": "movie-romance",     "aspect": "2:3", "kind": "poster", "usage": ["cinema"] },
+    { "id": "cinema-keyvisual",  "aspect": "16:9", "kind": "banner", "usage": ["cinema"] },
+    { "id": "atlas-concession",  "aspect": "3:2", "kind": "atlas",  "grid": [3, 2], "usage": ["cinema"],
+      "cells": ["popcorn", "soda", "hotdog", "nachos", "pretzel", "icecream"] },
+    { "id": "kart-banner",       "aspect": "3:2", "kind": "banner", "usage": ["turbokart"] }
   ],
   "sizeRequest": {
     "2:3": { "label": "竖版 2:3", "size": "1024x1536" },
     "3:2": { "label": "横版 3:2", "size": "1536x1024" },
-    "1:1": { "label": "正方形 1:1", "size": "1024x1024" }
+    "1:1": { "label": "正方形 1:1", "size": "1024x1024" },
+    "16:9": { "label": "宽屏横版 16:9", "size": "1536x864" }
   }
 }

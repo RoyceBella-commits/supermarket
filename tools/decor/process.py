@@ -4,7 +4,7 @@
 用法（在项目根目录）：python3 tools/decor/process.py
 只用标准库 + macOS 自带 sips + ffmpeg：
   1. 比例与 specs.json 不符时居中裁切到目标比例；
-  2. 长边缩放到 1024（2:3 → 683×1024，3:2 → 1024×683，1:1 → 1024×1024）；
+  2. 长边缩放到 1024（2:3 → 683×1024，3:2 → 1024×683，1:1 → 1024×1024，16:9 → 1024×576）；
   3. 转 sRGB（sips），ffmpeg 编码 JPEG（-q:v 2，按 PSNR 与 sips 质量 85 相当，体积小约 30%）→ public/textures/decor/<id>.jpg；
   4. 写 public/textures/decor/manifest.json、tools/decor/prompts.json；
   5. 用 ffmpeg 拼 assets-src/decor/contact-sheet.jpg。
@@ -24,8 +24,8 @@ RAW = SRC / "raw"
 WORK = SRC / "work"
 OUT = ROOT / "public" / "textures" / "decor"
 SRGB = "/System/Library/ColorSync/Profiles/sRGB Profile.icc"
-TARGET = {"2:3": (683, 1024), "3:2": (1024, 683), "1:1": (1024, 1024)}
-FFMPEG_JPEG_QV = 2  # 实测与 sips formatOptions 85 的 PSNR 相当（atlas-books 32.68 vs 32.65 dB），16 张合计约 2.7 MB
+TARGET = {"2:3": (683, 1024), "3:2": (1024, 683), "1:1": (1024, 1024), "16:9": (1024, 576)}
+FFMPEG_JPEG_QV = 2  # 实测与 sips formatOptions 85 的 PSNR 相当（atlas-books 32.68 vs 32.65 dB），25 张合计约 4.0 MB
 
 
 def run(cmd):

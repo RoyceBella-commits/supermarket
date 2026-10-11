@@ -1,0 +1,11 @@
+Use case: stylized-concept
+Asset type: text-free key-art poster for a fictional animated family film, displayed in a cinema in a cartoon shopping-mall game
+Primary request: key art for a fictional underwater animated family film: a sea turtle, colourful fish and a coral castle, light rays from above
+Scene/backdrop: a clear bright underwater world with a whimsical castle built from pastel coral, shells and sea sponges on the sandy sea floor, swaying seaweed, rising bubbles and soft light rays shining down from the water surface above.
+Subject: one original friendly sea turtle with a kind smile swimming in the foreground, surrounded by a cheerful school of small colourful fish; original designs that do not resemble any existing film or cartoon characters.
+Style/medium: flat cel-shaded cartoon illustration; bright, soft, pastel-leaning colours; clean simple shapes; soft two-tone shading; thin warm outlines; friendly, cozy mood matching a "bright & soft" toon 3D game with Animal-Crossing-like brightness (brightness reference only; no characters, assets or designs from any existing game).
+Composition/framing: vertical portrait movie poster; the turtle in the middle foreground swimming toward the viewer at a slight angle; the coral castle below and behind; light rays and calm open water near the top.
+Lighting/mood: luminous, gentle and joyful, sparkling sunlight under the sea.
+Color palette: aqua, turquoise and soft sea blue with coral pink, sunny yellow and lilac accents.
+Constraints: no text, letters, numbers, logos or watermarks anywhere in the image (including signs, screens, packaging, labels and clothing); the game overlays its own text. Original characters and designs only; no real brands, no famous or copyrighted characters, no real people or celebrity likenesses.
+Avoid: any text or lettering, numbers, logos, brand marks, watermarks, signatures, photorealism, harsh contrast, dark or gritty mood.

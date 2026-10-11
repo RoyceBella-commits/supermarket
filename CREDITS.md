@@ -25,7 +25,7 @@
 
 ## 装饰插图
 
-`public/textures/decor/` 里的 16 张海报、菜单板和图集（书封、盲盒、积木盒、美食）由 Codex CLI 内置 image_gen（模型 gpt-6.1-sol）为本项目生成，提示词和生成记录见 `tools/decor/prompts/`、`tools/decor/prompts.json`。画面中没有文字、商标或真实品牌，店名等文字由游戏代码叠加。
+`public/textures/decor/` 里的 25 张海报、菜单板和图集（书封、盲盒、积木盒、美食、虚构电影海报、影院主视觉和小卖部图集、卡丁车主视觉）由 Codex CLI 内置 image_gen（模型 gpt-6.1-sol）为本项目生成，提示词和生成记录见 `tools/decor/prompts/`、`tools/decor/prompts.json`。画面中没有文字、商标或真实品牌，店名等文字由游戏代码叠加。
 
 ## 店员配音
 
