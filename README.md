@@ -8,6 +8,8 @@
 
 ## 在线游玩与发布
 
+[点击这里直接游玩商场漫游](https://roycebella-commits.github.io/supermarket/)
+
 项目通过 GitHub Pages 提供浏览器直接游玩的版本。推送到 `main` 后，GitHub Actions 会自动安装依赖、检查类型、构建并更新网页。
 
 首次发布需在仓库 `Settings → Pages → Source` 中选择 `GitHub Actions`。工作流自动读取网页的子目录路径，角色、贴图、配音和音乐都能从正确位置加载。
