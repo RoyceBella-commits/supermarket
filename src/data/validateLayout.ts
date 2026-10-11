@@ -1,7 +1,7 @@
 import type { MallLayout, Opening, Rect } from './layoutTypes.ts';
 import { containsPoint, containsRect, edgeOf, openingCenter, overlaps } from '../world/rectOps.ts';
 
-export const EXPECTED_SHOP_COUNT = 19;
+export const EXPECTED_SHOP_COUNT = 20;
 
 interface Placed {
   id: string;
@@ -65,7 +65,8 @@ export function validateLayout(layout: MallLayout): string[] {
     const items = byFloor(floor.level);
     for (let i = 0; i < items.length; i++) {
       const a = items[i];
-      if (!a.outdoor && overlaps(a.rect, layout.atrium.rect)) problems.push(`${a.id}：和中庭重叠（${floor.label}）`);
+      // 中庭从 1F 往上贯通，地下层不受限
+      if (floor.level >= 0 && !a.outdoor && overlaps(a.rect, layout.atrium.rect)) problems.push(`${a.id}：和中庭重叠（${floor.label}）`);
       for (let j = i + 1; j < items.length; j++) {
         const b = items[j];
         if (a.id === b.id) continue;
@@ -93,6 +94,26 @@ export function validateLayout(layout: MallLayout): string[] {
       if (blocked) problems.push(`${p.id}：门外是 ${blocked.id}，不是走廊`);
       if (floor && !containsPoint(floor.indoor, px, pz)) problems.push(`${p.id}：门开到了楼外`);
       if (p.floor > 0 && containsPoint(layout.atrium.rect, px, pz)) problems.push(`${p.id}：门开向中庭的空洞`);
+    }
+  }
+
+  // 设施：在室内范围里，不压到店铺、房间、楼梯间，也不挡住门口
+  for (const a of layout.amenities) {
+    checkId(a.id);
+    const floor = layout.floors.find((f) => f.level === a.floor);
+    if (!floor) {
+      problems.push(`${a.id}：楼层 ${a.floor} 不存在`);
+      continue;
+    }
+    if (!containsRect(floor.indoor, a.rect)) problems.push(`${a.id}：超出了 ${floor.label} 的室内范围`);
+    for (const p of byFloor(a.floor)) {
+      if (overlaps(a.rect, p.rect)) problems.push(`${a.id} 和 ${p.id} 重叠（${floor.label}）`);
+      for (const o of p.entrances) {
+        const c = openingCenter(p.rect, o);
+        const door: Rect = { x: c.x - o.width / 2 - 0.5, z: c.z - o.width / 2 - 0.5, w: o.width + 1, d: o.width + 1 };
+        const front: Rect = { x: c.x + c.outX * 1 - 1, z: c.z + c.outZ * 1 - 1, w: 2, d: 2 };
+        if (overlaps(a.rect, front) && overlaps(a.rect, door)) problems.push(`${a.id} 挡住了 ${p.id} 的门口`);
+      }
     }
   }
 

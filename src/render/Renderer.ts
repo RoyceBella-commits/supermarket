@@ -20,7 +20,8 @@ export class Renderer {
     this.scene.background = new THREE.Color('#bfe4ff');
     this.scene.fog = new THREE.Fog('#d6ecff', 90, 260);
 
-    const hemi = new THREE.HemisphereLight('#ffffff', '#b9b3a8', 1.7);
+    // 地面方向的补光调亮一些，朝下的天花板才不会发灰
+    const hemi = new THREE.HemisphereLight('#ffffff', '#e6e1d8', 1.7);
     const sun = new THREE.DirectionalLight('#fff1dc', 1.5);
     sun.position.set(40, 80, 30);
     const ambient = new THREE.AmbientLight('#ffffff', 0.35);

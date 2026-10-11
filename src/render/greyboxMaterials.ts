@@ -7,6 +7,7 @@ export function createGreyboxMaterials(): Record<MatKey, THREE.Material> {
   const fineGrid = gridTexture('#ffffff', 'rgba(60,60,70,0.09)');
   const paving = gridTexture('#ffffff', 'rgba(90,80,70,0.22)');
   const stripes = stripeTexture();
+  const lockerDoors = lockerTexture();
 
   const lambert = (color: string, map?: THREE.Texture) =>
     new THREE.MeshLambertMaterial({ color, map: map ?? null, vertexColors: true });
@@ -22,6 +23,9 @@ export function createGreyboxMaterials(): Record<MatKey, THREE.Material> {
   return {
     floor: lambert('#ecebe6', grid),
     floorShop: lambert('#ffffff', fineGrid),
+    // 天花板整层统一一个颜色、不带贴图（远处不会出现摩尔纹）
+    ceiling: lambert('#fbfaf6'),
+    slabEdge: lambert('#d9d5cd'),
     ground: lambert('#9cc58a'),
     plaza: lambert('#ddd6ca', paving),
     wall: lambert('#f4f1ea'),
@@ -33,6 +37,8 @@ export function createGreyboxMaterials(): Record<MatKey, THREE.Material> {
     core: lambert('#e3ded4'),
     roof: lambert('#b9b3a8'),
     hoarding: lambert('#ffffff', stripes),
+    locker: lambert('#ffffff', lockerDoors),
+    prop: lambert('#ffffff'),
   };
 }
 
@@ -72,6 +78,29 @@ function stripeTexture(): THREE.CanvasTexture {
     g.lineTo(i + 256, 256);
     g.closePath();
     g.fill();
+  }
+  return finishTexture(c);
+}
+
+/** 寄存柜门：256 px = 2 m，4 × 4 个 0.5 m 见方的柜门，带把手和号码牌。 */
+function lockerTexture(): THREE.CanvasTexture {
+  const c = document.createElement('canvas');
+  c.width = c.height = 256;
+  const g = c.getContext('2d')!;
+  g.fillStyle = '#ffffff';
+  g.fillRect(0, 0, 256, 256);
+  for (let i = 0; i < 4; i++) {
+    for (let j = 0; j < 4; j++) {
+      const x = i * 64;
+      const y = j * 64;
+      g.fillStyle = 'rgba(0,0,0,0.28)';
+      g.fillRect(x, y, 64, 3);
+      g.fillRect(x, y, 3, 64);
+      g.fillStyle = 'rgba(255,255,255,0.35)';
+      g.fillRect(x + 8, y + 8, 18, 9);
+      g.fillStyle = 'rgba(0,0,0,0.35)';
+      g.fillRect(x + 48, y + 26, 5, 14);
+    }
   }
   return finishTexture(c);
 }

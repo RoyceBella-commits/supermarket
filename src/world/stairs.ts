@@ -1,5 +1,5 @@
 import type { Rect, StairDef } from '../data/layoutTypes.ts';
-import type { StaticBatch } from './StaticBatch.ts';
+import type { BoxSpec, StaticBatch } from './StaticBatch.ts';
 
 // 封闭双跑楼梯间。局部坐标：lx 为横向（两条梯道并排），lz 为进深（从门往里），原点在室内左前角。
 // 室内 3.2 × 8.6 m，四周墙厚 0.2 m（整体 3.6 × 9.0 m）。
@@ -59,10 +59,21 @@ function localRect(map: ReturnType<typeof stairMapper>, lx0: number, lz0: number
 
 export function buildStairCore(batch: StaticBatch, st: StairDef, floorHeight: number, slab: number, needsRoof: boolean, doorHeight: number) {
   const map = stairMapper(st);
-  const lbox = (lx0: number, y0: number, lz0: number, lx1: number, y1: number, lz1: number, mat: 'core' | 'stair' | 'wall' | 'roof', floor: number, collide: 'solid' | 'none' = 'solid') => {
+  const lbox = (
+    lx0: number,
+    y0: number,
+    lz0: number,
+    lx1: number,
+    y1: number,
+    lz1: number,
+    mat: 'core' | 'stair' | 'wall' | 'roof',
+    floor: number,
+    collide: 'solid' | 'none' = 'solid',
+    faces?: BoxSpec['faces'],
+  ) => {
     const a = map(lx0, lz0);
     const b = map(lx1, lz1);
-    batch.box(a.x, y0, a.z, b.x, y1, b.z, mat, floor, collide);
+    batch.box(a.x, y0, a.z, b.x, y1, b.z, mat, floor, collide, undefined, faces);
   };
   const hull = (pts: [number, number, number][], floor: number) => {
     const out: number[] = [];
@@ -95,7 +106,7 @@ export function buildStairCore(batch: StaticBatch, st: StairDef, floorHeight: nu
     if (top) {
       // 顶层：第二跑上来的 lane B 是洞，用隔墙把它和 lane A 的平台隔开
       lbox(STAIR.divider[0], y0, STAIR.landing, STAIR.divider[1], wallTop, D, 'core', L);
-      if (needsRoof) lbox(-t, wallTop, -t, W + t, wallTop + slab, D + t, 'roof', L);
+      if (needsRoof) lbox(-t, wallTop, -t, W + t, wallTop + slab, D + t, 'roof', L, 'solid', { bottom: 'ceiling' });
       continue;
     }
 

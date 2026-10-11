@@ -1,4 +1,4 @@
-import type { I18nText, MallLayout, ShopCategory } from '../data/layoutTypes.ts';
+import { levelRange, type I18nText, type MallLayout, type ShopCategory } from '../data/layoutTypes.ts';
 import { containsPoint } from './rectOps.ts';
 
 export interface ZoneInfo {
@@ -19,9 +19,9 @@ export class ZoneIndex {
   constructor(private readonly layout: MallLayout) {}
 
   floorAt(yFeet: number): number {
-    const n = this.layout.floors.length;
+    const { min, max } = levelRange(this.layout);
     const f = Math.floor((yFeet + 0.25) / this.layout.building.floorHeight);
-    return Math.max(0, Math.min(n - 1, f));
+    return Math.max(min, Math.min(max, f));
   }
 
   locate(x: number, yFeet: number, z: number): ZoneInfo {

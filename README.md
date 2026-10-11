@@ -1,6 +1,6 @@
 # 商场漫游 · Mall Wander
 
-在浏览器里自由逛的五层卡通商场（Vite + TypeScript + Three.js + Rapier）。规划见 `PLAN.md`（不在仓库里），目前完成**阶段 1：骨架、五层灰盒、第一人称、音乐系统**。
+在浏览器里自由逛的卡通商场：地上五层 + B1 超市层（Vite + TypeScript + Three.js + Rapier）。规划见 `PLAN.md`（不在仓库里），目前完成**阶段 1：骨架、五层灰盒、第一人称、音乐系统**。
 
 ## 运行
 
@@ -37,7 +37,7 @@ npm run dev
 |---|---|
 | `?debug` | 碰撞线框、FPS、draw call 数、坐标 |
 | `?map` | 当前楼层的平面图和玩家位置 |
-| `?floor=3` | 直接传送到 3F 南侧回廊 |
+| `?floor=3` | 直接传送到 3F 南侧回廊；`?floor=B1` 到地下超市前厅 |
 | `?shop=kumo` | 传送到某家店门口（id 见 `src/data/mallLayout.ts`） |
 | `?testbed` | 只加载调手感用的测试场（台阶、坡道、楼梯、矮墙） |
 | `?bgmSeek=-5` | 内置 BGM 从循环接缝前 5 秒开始，用来听接缝；正数表示从第几秒开始 |

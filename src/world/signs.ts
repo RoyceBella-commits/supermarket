@@ -1,6 +1,8 @@
 import * as THREE from 'three';
-import type { MallLayout } from '../data/layoutTypes.ts';
+import { floorByLevel, type MallLayout } from '../data/layoutTypes.ts';
 import { edgeOf, openingCenter } from './rectOps.ts';
+import { OUTSIDE_FLOOR } from './StaticBatch.ts';
+import { LOCKER_HEIGHT, SERVICE_PANEL_HEIGHT, amenityFrame, facingVector } from './amenities.ts';
 import { stairDoor } from './stairs.ts';
 
 // 招牌：Canvas 画文字贴到平面上。店名一律英文；设施和楼梯的牌子中英双语，不随界面语言变化。
@@ -49,13 +51,17 @@ export function buildSigns(layout: MallLayout): THREE.Group {
 
   for (const f of layout.facilities) {
     const y = f.floor * H;
-    if (f.kind === 'vacant') {
-      // 围挡中间挂“敬请期待”
+    if (f.entrances.length === 0) {
+      // 没有门的房间（空铺位围挡、员工区）：在朝走廊一侧的墙中间挂牌
       const side = f.rect.z < 0 ? 'S' : 'N';
       const e = edgeOf(f.rect, side);
-      const x = e.x + e.ax * e.length / 2 + e.outX * offset;
-      const z = e.z + e.az * e.length / 2 + e.outZ * offset;
-      addSign(group, f.label.en, { bg: '#5b4b8a', fg: '#ffffff', height: 1.1, sub: f.label.zh, maxWidth: 8 }, x, y + 2.4, z, e.outX, e.outZ, f.floor);
+      const x = e.x + (e.ax * e.length) / 2 + e.outX * offset;
+      const z = e.z + (e.az * e.length) / 2 + e.outZ * offset;
+      const style: SignStyle =
+        f.kind === 'vacant'
+          ? { bg: '#5b4b8a', fg: '#ffffff', height: 1.1, sub: f.label.zh, maxWidth: 8 }
+          : { bg: '#495057', fg: '#ffffff', height: 0.7, sub: f.label.zh, maxWidth: 4 };
+      addSign(group, f.label.en, style, x, y + (f.kind === 'vacant' ? 2.4 : 2.2), z, e.outX, e.outZ, f.floor);
       continue;
     }
     const entry = f.entrances[0];
@@ -67,8 +73,24 @@ export function buildSigns(layout: MallLayout): THREE.Group {
   for (const st of layout.circulation.stairs) {
     const d = stairDoor(st);
     for (let L = st.floors[0]; L <= st.floors[1]; L++) {
-      const label = layout.floors[L].label;
+      const label = floorByLevel(layout, L).label;
       addSign(group, `${label}  Stairs 楼梯`, { bg: '#2f3e46', fg: '#ffffff', accent: '#84a98c', height: 0.5, maxWidth: 4 }, d.x + d.outX * offset, L * H + b.doorHeight + 0.45, d.z + d.outZ * offset, d.outX, d.outZ, L);
+    }
+  }
+
+  // 设施的牌子：寄存柜挂在柜顶上方，服务台挂在背景板上
+  for (const a of layout.amenities) {
+    if (!a.label) continue;
+    const { map, width, depth } = amenityFrame(a);
+    const out = facingVector(a.facing);
+    const y = a.floor * H;
+    const text = `${a.label.en}  ${a.label.zh}`;
+    if (a.kind === 'lockers') {
+      const p = map(width / 2, 0);
+      addSign(group, text, { bg: '#3d5a80', fg: '#ffffff', height: 0.42, maxWidth: Math.min(width, 4) }, p.x + out.x * offset, y + LOCKER_HEIGHT + 0.42, p.z + out.z * offset, out.x, out.z, a.floor);
+    } else if (a.kind === 'serviceDesk') {
+      const p = map(width / 2, depth - 0.2);
+      addSign(group, text, { bg: '#ffd166', fg: '#1f2430', height: 0.6, maxWidth: width - 1 }, p.x + out.x * offset, y + SERVICE_PANEL_HEIGHT - 0.7, p.z + out.z * offset, out.x, out.z, a.floor);
     }
   }
 
@@ -78,7 +100,7 @@ export function buildSigns(layout: MallLayout): THREE.Group {
     const m = layout.mainEntrance;
     const c = openingCenter(o, m);
     const out = layout.building.extWall + offset;
-    addSign(group, layout.name.en, { bg: '#ff8c42', fg: '#ffffff', accent: '#ffd166', height: 1.6, sub: layout.name.zh, maxWidth: 14 }, c.x + c.outX * out, (m.height ?? 4) + 1.4, c.z + c.outZ * out, c.outX, c.outZ, -1);
+    addSign(group, layout.name.en, { bg: '#ff8c42', fg: '#ffffff', accent: '#ffd166', height: 1.6, sub: layout.name.zh, maxWidth: 14 }, c.x + c.outX * out, (m.height ?? 4) + 1.4, c.z + c.outZ * out, c.outX, c.outZ, OUTSIDE_FLOOR);
   }
 
   return group;

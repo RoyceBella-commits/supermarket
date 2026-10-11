@@ -1,10 +1,10 @@
-import type { MallLayout, Rect } from '../data/layoutTypes.ts';
+import { floorByLevel, type MallLayout, type Rect } from '../data/layoutTypes.ts';
 
 /** ?debug 的性能读数 和 ?map 的当前楼层平面图。 */
 export class DebugOverlay {
   private stats?: HTMLDivElement;
   private map?: HTMLDivElement;
-  private mapFloor = -1;
+  private mapFloor = Number.NaN;
   private playerDot?: SVGCircleElement;
   private playerDir?: SVGLineElement;
   private frames = 0;
@@ -37,7 +37,7 @@ export class DebugOverlay {
         `FPS ${this.fps.toFixed(0)}  draw calls ${info.calls}  tris ${(info.triangles / 1000).toFixed(1)}k\n` +
         `colliders ${info.colliders}\n` +
         `pos ${info.x.toFixed(2)}, ${info.y.toFixed(2)}, ${info.z.toFixed(2)}  yaw ${((info.yaw * 180) / Math.PI).toFixed(0)}°\n` +
-        `floor ${info.floor + 1}F  ${info.grounded ? 'grounded' : 'airborne'}  ${info.speed.toFixed(1)} m/s`;
+        `floor ${info.floor >= 0 ? `${info.floor + 1}F` : `B${-info.floor}`}  ${info.grounded ? 'grounded' : 'airborne'}  ${info.speed.toFixed(1)} m/s`;
     }
     if (this.map && this.layout) {
       if (info.floor !== this.mapFloor) this.drawMap(info.floor);
@@ -60,12 +60,12 @@ export class DebugOverlay {
       `<rect x="${r.x}" y="${r.z}" width="${r.w}" height="${r.d}" fill="${fill}" stroke="${stroke}" stroke-width="0.15" ${extra}/>`;
     const label = (r: Rect, text: string) =>
       `<text x="${r.x + r.w / 2}" y="${r.z + r.d / 2}" font-size="1.6" text-anchor="middle" dominant-baseline="middle" fill="#222">${text}</text>`;
-    const f = L.floors[floor];
+    const f = floorByLevel(L, floor);
     let s = rect(o, '#f5f3ee', '#333');
     s += rect(f.indoor, '#ffffff', '#333');
     for (const out of f.outdoor ?? []) s += rect(out, '#d8f3dc');
     if (floor > 0) s += rect(L.atrium.rect, '#cfe8ff', '#4a90d9', 'stroke-dasharray="0.6 0.4"');
-    else s += rect(L.atrium.rect, '#f3e3c3');
+    else if (floor === 0) s += rect(L.atrium.rect, "#f3e3c3");
     for (const shop of L.shops.filter((x) => x.floor === floor)) {
       s += rect(shop.rect, shop.theme.primary + '55');
       s += label(shop.rect, shop.name);
@@ -74,7 +74,8 @@ export class DebugOverlay {
       s += rect(fac.rect, '#e4e7eb');
       s += label(fac.rect, fac.label.en);
     }
-    for (const st of L.circulation.stairs) {
+    for (const a of L.amenities.filter((x) => x.floor === floor)) s += rect(a.rect, '#ffd166', '#aa8800');
+    for (const st of L.circulation.stairs.filter((x) => floor >= x.floors[0] && floor <= x.floors[1])) {
       s += rect(st.rect, '#adb5bd');
       s += label(st.rect, 'Stairs');
     }

@@ -1,8 +1,10 @@
-import type { FacilityDef, MallLayout, Opening, Rect, ShopCategory, ShopDef, Side } from './layoutTypes.ts';
+import type { AmenityDef, FacilityDef, MallLayout, Opening, Rect, ShopCategory, ShopDef, Side } from './layoutTypes.ts';
 
-// 商场整体：64 × 44 m，层高 6 m，五层。
-// 南北两条店铺带（进深 12 m）夹着中间带：中庭 24 × 10 m 居中，四周回廊宽 5 m，
-// 中间带东西两端各有一个封闭楼梯间。5F 西侧是室外的 Skyline Garden。
+// 商场整体：64 × 44 m，层高 6 m，地上五层 + 地下一层（B1）。
+// 地上：南北两条店铺带（进深 12 m）夹着中间带：中庭 24 × 10 m 居中，四周回廊宽 5 m，
+// 中间带东西两端各有一个封闭楼梯间（B1 到 5F）。5F 西侧是室外的 Skyline Garden。
+// B1：Daily Harvest 超市占中部和北侧（40 × 32 m）；南侧 12 m 宽的超市前厅放寄存柜、购物车、服务台；
+// 东西两翼连着楼梯间，西翼是洗手间和休息区，东翼是员工区和第二组寄存柜。
 // 改布局只改这个文件；开发模式下 validateLayout() 会检查重叠和门洞。
 
 const X0 = -32;
@@ -10,6 +12,7 @@ const X1 = 32;
 const Z0 = -22;
 const Z1 = 22;
 const BAND = 12; // 店铺带进深
+const ABOVE_GROUND = [0, 1, 2, 3, 4];
 
 /** 北侧店铺带上 [x0, x1] 的一段 */
 const north = (x0: number, x1: number): Rect => ({ x: x0, z: Z0, w: x1 - x0, d: BAND });
@@ -63,6 +66,11 @@ function vacant(id: string, floor: number, rect: Rect): FacilityDef {
 }
 
 const shops: ShopDef[] = [
+  // B1 超市
+  shop('dailyharvest', 'Daily Harvest', 'supermarket', -1, { x: -20, z: Z0, w: 40, d: 32 }, '#2d6a4f', '#ffd166', {
+    entrances: [{ side: 'S', offset: 13, width: 14, height: 4, kind: 'storefront' }],
+  }),
+
   // 1F 潮玩与数码
   shop('bricknest', 'BrickNest', 'bricks', 0, north(-32, -10.5), '#e94f37', '#f6c445'),
   shop('blindstar', 'BlindStar', 'blindbox', 0, north(-10.5, 10.5), '#8e6cef', '#ffc6e0'),
@@ -105,12 +113,35 @@ const shops: ShopDef[] = [
 ];
 
 const facilities: FacilityDef[] = [
+  {
+    id: 'wc-b1',
+    kind: 'restroom',
+    label: { zh: '洗手间', en: 'Restrooms' },
+    floor: -1,
+    rect: { x: X0, z: Z0, w: 12, d: 9 },
+    entrances: [{ side: 'S', offset: 4.8, width: 2.4, kind: 'door' }],
+  },
+  { id: 'staff-b1', kind: 'service', label: { zh: '员工专用', en: 'Staff Only' }, floor: -1, rect: { x: 20, z: Z0, w: 12, d: 12 }, entrances: [] },
   restroom(0),
   restroom(1),
   restroom(2),
   restroom(3),
   restroom(4),
   vacant('vacant-2f', 1, south(12, 24)),
+];
+
+// B1 超市外侧的设施
+const amenities: AmenityDef[] = [
+  { id: 'lockers-hall', kind: 'lockers', floor: -1, rect: { x: -30, z: Z1 - 0.6, w: 12, d: 0.6 }, facing: 'N', label: { zh: '寄存柜', en: 'Lockers' } },
+  { id: 'lockers-east', kind: 'lockers', floor: -1, rect: { x: X1 - 0.6, z: -9, w: 0.6, d: 6 }, facing: 'W', label: { zh: '寄存柜', en: 'Lockers' } },
+  { id: 'carts', kind: 'carts', floor: -1, rect: { x: -16, z: 11.5, w: 6, d: 4 }, facing: 'N', label: { zh: '购物车', en: 'Carts' } },
+  { id: 'baskets', kind: 'baskets', floor: -1, rect: { x: -9.2, z: 11, w: 1.4, d: 0.8 }, facing: 'N' },
+  { id: 'service-desk', kind: 'serviceDesk', floor: -1, rect: { x: 12, z: Z1 - 3, w: 8, d: 3 }, facing: 'N', label: { zh: '服务台', en: 'Service Desk' } },
+  { id: 'bench-hall-w', kind: 'bench', floor: -1, rect: { x: -4.5, z: 17.5, w: 2, d: 0.55 }, facing: 'N' },
+  { id: 'bench-hall-e', kind: 'bench', floor: -1, rect: { x: 2.5, z: 17.5, w: 2, d: 0.55 }, facing: 'N' },
+  { id: 'bench-lounge-1', kind: 'bench', floor: -1, rect: { x: X0, z: -11.5, w: 0.55, d: 2 }, facing: 'E' },
+  { id: 'bench-lounge-2', kind: 'bench', floor: -1, rect: { x: X0, z: -8.5, w: 0.55, d: 2 }, facing: 'E' },
+  { id: 'fountain', kind: 'waterFountain', floor: -1, rect: { x: X0, z: -5.6, w: 0.5, d: 0.6 }, facing: 'E', label: { zh: '饮水机', en: 'Water' } },
 ];
 
 export const mallLayout: MallLayout = {
@@ -130,6 +161,13 @@ export const mallLayout: MallLayout = {
   plaza: { x: X0, z: Z1, w: X1 - X0, d: 16 },
   spawn: { floor: 0, x: 0, z: 33, yaw: 0 },
   floors: [
+    {
+      level: -1,
+      label: 'B1',
+      theme: { zh: '超市与生活', en: 'Market & Services' },
+      indoor: { x: X0, z: Z0, w: 64, d: 44 },
+      devSpawn: { x: 0, z: 16, yaw: 0 },
+    },
     { level: 0, label: '1F', theme: { zh: '潮玩与数码', en: 'Toys & Digital' }, indoor: { x: X0, z: Z0, w: 64, d: 44 } },
     { level: 1, label: '2F', theme: { zh: '服饰与书香', en: 'Fashion & Books' }, indoor: { x: X0, z: Z0, w: 64, d: 44 } },
     { level: 2, label: '3F', theme: { zh: '游乐', en: 'Play' }, indoor: { x: X0, z: Z0, w: 64, d: 44 } },
@@ -150,12 +188,16 @@ export const mallLayout: MallLayout = {
   ],
   shops,
   facilities,
+  amenities,
   publicZones: [
+    { id: 'market-hall', label: { zh: '超市前厅', en: 'Market Hall' }, rect: { x: X0, z: 10, w: 64, d: 12 }, floors: [-1] },
+    { id: 'b1-west', label: { zh: '西侧休息区', en: 'West Lounge' }, rect: { x: X0, z: Z0, w: 12, d: 32 }, floors: [-1] },
+    { id: 'b1-east', label: { zh: '东侧通道', en: 'East Wing' }, rect: { x: 20, z: Z0, w: 12, d: 32 }, floors: [-1] },
     { id: 'plaza', label: { zh: '正门广场', en: 'Entrance Plaza' }, rect: { x: X0, z: Z1, w: 64, d: 16 }, floors: [0] },
     { id: 'lobby', label: { zh: '正门大堂', en: 'Main Lobby' }, rect: { x: -5, z: 10, w: 10, d: 12 }, floors: [0] },
-    { id: 'atrium', label: { zh: '中庭', en: 'Atrium' }, rect: { x: -14, z: -10, w: 28, d: 20 } },
-    { id: 'west', label: { zh: '西侧回廊', en: 'West Concourse' }, rect: { x: X0, z: -10, w: 18, d: 20 } },
-    { id: 'east', label: { zh: '东侧回廊', en: 'East Concourse' }, rect: { x: 14, z: -10, w: 18, d: 20 } },
+    { id: 'atrium', label: { zh: '中庭', en: 'Atrium' }, rect: { x: -14, z: -10, w: 28, d: 20 }, floors: ABOVE_GROUND },
+    { id: 'west', label: { zh: '西侧回廊', en: 'West Concourse' }, rect: { x: X0, z: -10, w: 18, d: 20 }, floors: ABOVE_GROUND },
+    { id: 'east', label: { zh: '东侧回廊', en: 'East Concourse' }, rect: { x: 14, z: -10, w: 18, d: 20 }, floors: ABOVE_GROUND },
   ],
   circulation: {
     stairs: [
@@ -164,14 +206,14 @@ export const mallLayout: MallLayout = {
         label: { zh: '西侧楼梯', en: 'West Stairs' },
         rect: { x: X0, z: -1.8, w: 9, d: 3.6 },
         front: 'E',
-        floors: [0, 4],
+        floors: [-1, 4],
       },
       {
         id: 'stairs-east',
         label: { zh: '东侧楼梯', en: 'East Stairs' },
         rect: { x: X1 - 9, z: -1.8, w: 9, d: 3.6 },
         front: 'W',
-        floors: [0, 4],
+        floors: [-1, 4],
       },
     ],
     // 阶段 3 再加扶梯和观光电梯

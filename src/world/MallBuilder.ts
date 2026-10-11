@@ -1,12 +1,14 @@
 import * as THREE from 'three';
-import type { FloorDef, MallLayout, Opening, Rect, ShopDef, Side } from '../data/layoutTypes.ts';
+import { floorByLevel, levelRange, type FloorDef, type MallLayout, type Opening, type Rect, type ShopDef, type Side } from '../data/layoutTypes.ts';
 import type { PhysicsWorld } from '../systems/physics/PhysicsWorld.ts';
 import { createGreyboxMaterials } from '../render/greyboxMaterials.ts';
-import { StaticBatch } from './StaticBatch.ts';
-import { containsRect, sideOnBoundary, subtractRects } from './rectOps.ts';
+import { OUTSIDE_FLOOR, StaticBatch } from './StaticBatch.ts';
+import { containsRect, sideOnBoundary } from './rectOps.ts';
 import { addWall } from './walls.ts';
 import { buildStairCore, stairHoles } from './stairs.ts';
 import { buildSigns } from './signs.ts';
+import { addSlab, type SurfaceRoom } from './surfaces.ts';
+import { buildAmenities } from './amenities.ts';
 
 const SIDES: Side[] = ['N', 'S', 'E', 'W'];
 
@@ -20,7 +22,7 @@ export function buildMall(layout: MallLayout, physics: PhysicsWorld): BuiltMall 
   const b = layout.building;
   const H = b.floorHeight;
   const batch = new StaticBatch();
-  const top = layout.floors[layout.floors.length - 1];
+  const top = floorByLevel(layout, levelRange(layout).max);
   const roofY = (top.level + 1) * H;
 
   buildGround(layout, batch);
@@ -32,14 +34,15 @@ export function buildMall(layout: MallLayout, physics: PhysicsWorld): BuiltMall 
   }
   for (const shop of layout.shops) buildShopShell(layout, shop, batch);
   for (const f of layout.facilities) {
-    const floor = layout.floors[f.floor];
+    const floor = floorByLevel(layout, f.floor);
     const tint = f.kind === 'vacant' ? '#c9b8e8' : undefined;
     buildRoomWalls(layout, floor, f.rect, f.entrances, 1, f.kind === 'vacant' ? 'hoarding' : 'wall', tint, batch);
   }
   for (const st of layout.circulation.stairs) {
-    const outdoorAtTop = !containsRect(layout.floors[st.floors[1]].indoor, st.rect);
+    const outdoorAtTop = !containsRect(floorByLevel(layout, st.floors[1]).indoor, st.rect);
     buildStairCore(batch, st, H, b.slab, outdoorAtTop, b.doorHeight);
   }
+  buildAmenities(layout, batch);
   buildRoof(layout, top, roofY, batch);
 
   const root = batch.build(createGreyboxMaterials(), physics);
@@ -54,10 +57,17 @@ function buildGround(layout: MallLayout, batch: StaticBatch) {
   const world: Rect = { x: -90, z: -80, w: 180, d: 180 };
   const p = layout.plaza;
   const plaza: Rect = { x: p.x, z: p.z + e, w: p.w, d: p.d - e };
-  for (const r of subtractRects([world], [footprint, plaza])) {
-    batch.box(r.x, -0.5, r.z, r.x + r.w, 0, r.z + r.d, 'ground', -1);
-  }
-  batch.box(plaza.x, -0.5, plaza.z, plaza.x + plaza.w, 0, plaza.z + plaza.d, 'plaza', -1);
+  addSlab(batch, {
+    floor: OUTSIDE_FLOOR,
+    y: 0,
+    thickness: 0.5,
+    regions: [world],
+    holes: [footprint],
+    rooms: [{ rect: plaza, mat: 'plaza' }],
+    topMat: 'ground',
+    bottomMat: null,
+    edgeMat: null,
+  });
 
   // 广场三面：矮花坛（可见）+ 隐形高墙
   const x0 = plaza.x;
@@ -65,46 +75,44 @@ function buildGround(layout: MallLayout, batch: StaticBatch) {
   const z0 = plaza.z;
   const z1 = plaza.z + plaza.d;
   const planter = (ax: number, az: number, bx: number, bz: number) => {
-    batch.box(ax, 0, az, bx, 0.6, bz, 'rail', -1, 'solid', '#7fb069');
-    batch.box(ax, 0.6, az, bx, 4, bz, 'rail', -1, 'invisible');
+    batch.box(ax, 0, az, bx, 0.6, bz, 'rail', OUTSIDE_FLOOR, 'solid', '#7fb069');
+    batch.box(ax, 0.6, az, bx, 4, bz, 'rail', OUTSIDE_FLOOR, 'invisible');
   };
   planter(x0 - 0.6, z0, x0, z1 + 0.6);
   planter(x1, z0, x1 + 0.6, z1 + 0.6);
   planter(x0, z1, x1, z1 + 0.6);
 }
 
-/** 楼板：走廊部分、各店铺地面（浅主题色）、1F 中庭地面分开着色。 */
+/**
+ * 楼板：走廊地面统一一种颜色，店铺地面用各自的浅主题色（边界正好在店门那条线上）；
+ * 底面是下一层的天花板，整层统一用天花板材质，不受本层店铺划分影响。
+ */
 function buildSlab(layout: MallLayout, floor: FloorDef, batch: StaticBatch) {
   const b = layout.building;
-  const y = floor.level * b.floorHeight;
-  const y0 = y - b.slab;
-  const regions = [floor.indoor, ...(floor.outdoor ?? [])];
   const holes: Rect[] = [...(floor.voids ?? [])];
   if (floor.level > 0) holes.push(layout.atrium.rect);
   for (const st of layout.circulation.stairs) holes.push(...stairHoles(st, floor.level));
 
-  const rooms: { rect: Rect; tint: string; mat: 'floorShop' | 'plaza' }[] = [];
+  const rooms: SurfaceRoom[] = [];
   for (const s of layout.shops) {
     if (s.floor !== floor.level) continue;
-    rooms.push({ rect: s.rect, tint: s.kind === 'outdoor' ? '#a8d5a2' : lighten(s.theme.primary, 0.78), mat: s.kind === 'outdoor' ? 'plaza' : 'floorShop' });
+    rooms.push(s.kind === 'outdoor' ? { rect: s.rect, mat: 'plaza', tint: '#a8d5a2' } : { rect: s.rect, mat: 'floorShop', tint: lighten(s.theme.primary, 0.8) });
   }
   for (const f of layout.facilities) {
-    if (f.floor !== floor.level) continue;
-    rooms.push({ rect: f.rect, tint: '#e4e7eb', mat: 'floorShop' });
+    if (f.floor === floor.level) rooms.push({ rect: f.rect, mat: 'floorShop', tint: '#e4e7eb' });
   }
-  const courtHoles = floor.level === 0 ? [layout.atrium.rect] : [];
 
-  for (const r of subtractRects(regions, [...holes, ...rooms.map((m) => m.rect), ...courtHoles])) {
-    batch.box(r.x, y0, r.z, r.x + r.w, y, r.z + r.d, 'floor', floor.level);
-  }
-  for (const room of rooms) {
-    for (const r of subtractRects([room.rect], holes)) {
-      batch.box(r.x, y0, r.z, r.x + r.w, y, r.z + r.d, room.mat, floor.level, 'solid', room.tint);
-    }
-  }
-  for (const r of courtHoles) {
-    batch.box(r.x, y0, r.z, r.x + r.w, y, r.z + r.d, 'floorShop', floor.level, 'solid', '#f3e3c3');
-  }
+  addSlab(batch, {
+    floor: floor.level,
+    y: floor.level * b.floorHeight,
+    thickness: b.slab,
+    regions: [floor.indoor, ...(floor.outdoor ?? [])],
+    holes,
+    rooms,
+    topMat: 'floor',
+    bottomMat: floor.level > levelRange(layout).min ? 'ceiling' : null,
+    edgeMat: 'slabEdge',
+  });
 }
 
 /** 外墙沿室内范围的四边；和室外平台相邻的一边是带门和落地窗的分界墙。 */
@@ -114,6 +122,8 @@ function buildExterior(layout: MallLayout, floor: FloorDef, batch: StaticBatch, 
   const y0 = floor.level * H - b.slab;
   const y1 = isTop ? (floor.level + 1) * H + 0.6 : (floor.level + 1) * H - b.slab;
   const r = floor.indoor;
+  // 地下层的“外墙”从里面看就是普通墙面
+  const mat = floor.level < 0 ? 'wall' : 'exterior';
   for (const side of SIDES) {
     const facingOutdoor = (floor.outdoor ?? []).some((o) => sideOnBoundary(r, side, o));
     const openings: Opening[] = [];
@@ -134,7 +144,7 @@ function buildExterior(layout: MallLayout, floor: FloorDef, batch: StaticBatch, 
       trimEnd: ext,
       openings,
       defaultOpeningHeight: b.doorHeight,
-      mat: 'exterior',
+      mat,
       floor: floor.level,
     });
   }
@@ -189,7 +199,7 @@ function buildAtriumRailing(layout: MallLayout, level: number, batch: StaticBatc
 /** 店铺空壳：沿非外墙的各边做隔墙，入口一侧开门面。影院按挑高层数加高，并单独封顶。 */
 function buildShopShell(layout: MallLayout, shop: ShopDef, batch: StaticBatch) {
   if (shop.kind === 'outdoor') return;
-  const floor = layout.floors[shop.floor];
+  const floor = floorByLevel(layout, shop.floor);
   buildRoomWalls(layout, floor, shop.rect, shop.entrances, shop.spanFloors ?? 1, 'wallShop', lighten(shop.theme.primary, 0.35), batch);
 }
 
@@ -257,7 +267,16 @@ function buildTallRoomTop(layout: MallLayout, floor: FloorDef, rect: Rect, span:
     });
   }
   const e = b.extWall;
-  batch.box(rect.x - e, topY, rect.z - e, rect.x + rect.w + e, topY + b.slab, rect.z + rect.d + e, 'roof', floor.level);
+  addSlab(batch, {
+    floor: floor.level,
+    y: topY + b.slab,
+    thickness: b.slab,
+    regions: [{ x: rect.x - e, z: rect.z - e, w: rect.w + 2 * e, d: rect.d + 2 * e }],
+    holes: [],
+    topMat: 'roof',
+    bottomMat: 'ceiling',
+    edgeMat: 'exterior',
+  });
 }
 
 /** 顶层屋面：扣掉中庭（天窗）和挑高房间。天窗是玻璃加几根梁。 */
@@ -265,9 +284,16 @@ function buildRoof(layout: MallLayout, top: FloorDef, roofY: number, batch: Stat
   const b = layout.building;
   const tall = layout.shops.filter((s) => s.floor === top.level && (s.spanFloors ?? 1) > 1).map((s) => s.rect);
   const a = layout.atrium.rect;
-  for (const r of subtractRects([top.indoor], [a, ...tall])) {
-    batch.box(r.x, roofY - b.slab, r.z, r.x + r.w, roofY, r.z + r.d, 'roof', top.level);
-  }
+  addSlab(batch, {
+    floor: top.level,
+    y: roofY,
+    thickness: b.slab,
+    regions: [top.indoor],
+    holes: [a, ...tall],
+    topMat: 'roof',
+    bottomMat: 'ceiling',
+    edgeMat: 'slabEdge',
+  });
   if (!layout.atrium.skylight) return;
   batch.box(a.x, roofY - 0.12, a.z, a.x + a.w, roofY - 0.08, a.z + a.d, 'glass', top.level, 'none');
   for (let x = a.x; x <= a.x + a.w + 1e-6; x += 4) {

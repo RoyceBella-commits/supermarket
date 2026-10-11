@@ -1,6 +1,6 @@
 // 商场布局数据的类型定义。
-// 坐标约定：单位米；x 向东，z 向南（N 表示 -z 方向）；y 向上。楼层编号从 0 开始（0 = 1F）。
-// 楼层 L 的地面高度 = L × building.floorHeight。
+// 坐标约定：单位米；x 向东，z 向南（N 表示 -z 方向）；y 向上。
+// 楼层编号：0 = 1F，1 = 2F …，-1 = B1。楼层 L 的地面高度 = L × building.floorHeight。
 
 export interface I18nText {
   zh: string;
@@ -49,7 +49,8 @@ export type ShopCategory =
   | 'sports'
   | 'foodcourt'
   | 'cinema'
-  | 'garden';
+  | 'garden'
+  | 'supermarket';
 
 /** shop：普通店铺；foodcourt：开放式美食广场；cinema：影院；outdoor：室外区域（无墙无顶）。 */
 export type ShopKind = 'shop' | 'foodcourt' | 'cinema' | 'outdoor';
@@ -73,7 +74,7 @@ export interface ShopDef {
   npcSpot?: { x: number; z: number };
 }
 
-/** 非店铺的功能房间：洗手间、空置铺位等。 */
+/** 非店铺的功能房间：洗手间、空置铺位、员工区等。没有入口的房间在朝走廊一侧挂牌子。 */
 export interface FacilityDef {
   id: string;
   kind: 'restroom' | 'vacant' | 'service';
@@ -95,6 +96,21 @@ export interface FloorDef {
   facadeOpenings?: Opening[];
   /** 楼板额外挖空的区域 */
   voids?: Rect[];
+  /** ?floor= 传送点，默认 (0, 7.5)，面朝北 */
+  devSpawn?: { x: number; z: number; yaw: number };
+}
+
+/**
+ * 公共区的设施（灰盒阶段只有造型和碰撞，交互在阶段 4）。
+ * rect 是占地范围；facing 是设施正面朝向（使用者站的一侧）。
+ */
+export interface AmenityDef {
+  id: string;
+  kind: 'lockers' | 'carts' | 'baskets' | 'serviceDesk' | 'bench' | 'waterFountain';
+  floor: number;
+  rect: Rect;
+  facing: Side;
+  label?: I18nText;
 }
 
 /**
@@ -158,10 +174,23 @@ export interface MallLayout {
   floors: FloorDef[];
   shops: ShopDef[];
   facilities: FacilityDef[];
+  amenities: AmenityDef[];
   publicZones: PublicZoneDef[];
   circulation: {
     stairs: StairDef[];
     escalators: EscalatorDef[];
     elevators: ElevatorDef[];
   };
+}
+
+/** 按楼层编号取楼层定义（floors 数组不保证下标等于楼层编号）。 */
+export function floorByLevel(layout: MallLayout, level: number): FloorDef {
+  const f = layout.floors.find((x) => x.level === level);
+  if (!f) throw new Error(`楼层 ${level} 不存在`);
+  return f;
+}
+
+export function levelRange(layout: MallLayout): { min: number; max: number } {
+  const levels = layout.floors.map((f) => f.level);
+  return { min: Math.min(...levels), max: Math.max(...levels) };
 }

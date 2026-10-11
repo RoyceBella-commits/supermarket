@@ -118,6 +118,7 @@ const CATEGORY: Record<ShopCategory, I18nText> = {
   foodcourt: { zh: '美食广场', en: 'Food Court' },
   cinema: { zh: '电影院', en: 'Cinema' },
   garden: { zh: '空中花园', en: 'Sky Garden' },
+  supermarket: { zh: '超市', en: 'Supermarket' },
 };
 
 const dicts: Record<Lang, Record<I18nKey, string>> = { zh, en };

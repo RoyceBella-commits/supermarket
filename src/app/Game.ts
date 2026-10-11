@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import { mallLayout } from '../data/mallLayout.ts';
-import type { MallLayout } from '../data/layoutTypes.ts';
+import { floorByLevel, levelRange, type MallLayout } from '../data/layoutTypes.ts';
 import { validateLayout } from '../data/validateLayout.ts';
 import { PhysicsWorld } from '../systems/physics/PhysicsWorld.ts';
 import { Renderer } from '../render/Renderer.ts';
@@ -244,14 +244,16 @@ export class Game {
   /** ?floor=N 传送到第 N 层南侧回廊；?shop=id 传送到店门口，面朝店内。 */
   private devStartPoint(): { pos: THREE.Vector3; yaw: number } | null {
     if (devFlags.shop) return this.shopDoorPoint(devFlags.shop);
-    if (devFlags.floor !== null) return this.floorPoint(devFlags.floor - 1);
+    if (devFlags.floor !== null) return this.floorPoint(devFlags.floor);
     return null;
   }
 
   private floorPoint(level: number): { pos: THREE.Vector3; yaw: number } | null {
     if (!this.layout) return null;
-    const L = Math.max(0, Math.min(this.layout.floors.length - 1, Math.round(level)));
-    return { pos: new THREE.Vector3(0, L * this.layout.building.floorHeight + 0.05, 7.5), yaw: 0 };
+    const { min, max } = levelRange(this.layout);
+    const L = Math.max(min, Math.min(max, Math.round(level)));
+    const sp = floorByLevel(this.layout, L).devSpawn ?? { x: 0, z: 7.5, yaw: 0 };
+    return { pos: new THREE.Vector3(sp.x, L * this.layout.building.floorHeight + 0.05, sp.z), yaw: sp.yaw };
   }
 
   private shopDoorPoint(id: string): { pos: THREE.Vector3; yaw: number } | null {
@@ -294,8 +296,9 @@ export class Game {
         const p = game.player.curr;
         return game.zones?.locate(p.x, p.y, p.z) ?? null;
       },
+      /** n：1–5 = 1F–5F，-1 = B1 */
       teleportFloor(n: number) {
-        const p = game.floorPoint(n - 1);
+        const p = game.floorPoint(n > 0 ? n - 1 : n);
         if (p) game.player.teleport(p.pos, p.yaw);
       },
       teleportShop(id: string) {

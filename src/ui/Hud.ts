@@ -1,4 +1,4 @@
-import type { MallLayout } from '../data/layoutTypes.ts';
+import { floorByLevel, type MallLayout } from '../data/layoutTypes.ts';
 import type { ZoneInfo } from '../world/ZoneIndex.ts';
 import { i18n } from './i18n.ts';
 
@@ -60,7 +60,7 @@ export class Hud {
   private renderZone(animate: boolean) {
     const z = this.zone;
     if (!z) return;
-    const floor = this.layout.floors[z.floor];
+    const floor = floorByLevel(this.layout, z.floor);
     this.floorLabel.textContent = floor.label;
     this.floorTheme.textContent = i18n.pick(floor.theme);
 
