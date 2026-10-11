@@ -11,7 +11,7 @@ import { addSlab, type SurfaceRoom } from './surfaces.ts';
 import { buildAmenities } from './amenities.ts';
 import type { Seat } from '../systems/Seats.ts';
 import { buildInteriors } from './interiors/index.ts';
-import type { NpcSpot } from './interiors/kit.ts';
+import type { DecorSlot, NpcSpot } from './interiors/kit.ts';
 import { buildEscalatorStatics, escalatorFrame } from './escalators.ts';
 import { buildElevatorShaft } from './elevator.ts';
 
@@ -25,6 +25,8 @@ export interface BuiltMall {
   npcSpots: Map<string, NpcSpot>;
   /** 商品 InstancedMesh（每家店一个） */
   products: THREE.Group;
+  /** 装饰图位置，图片由 world/decor.ts 在运行时加载 */
+  decor: DecorSlot[];
 }
 
 /** 根据 mallLayout 生成整座灰盒商场：楼板、外墙、店铺空壳、栏杆、楼梯间、屋顶、广场和招牌。 */
@@ -62,7 +64,7 @@ export function buildMall(layout: MallLayout, physics: PhysicsWorld): BuiltMall 
   const root = batch.build(createWorldMaterials(), physics);
   root.add(buildSigns(layout));
   root.add(interiors.products);
-  return { root, batch, seats, npcSpots: interiors.npcSpots, products: interiors.products };
+  return { root, batch, seats, npcSpots: interiors.npcSpots, products: interiors.products, decor: interiors.decor };
 }
 
 function buildGround(layout: MallLayout, batch: StaticBatch) {

@@ -29,6 +29,7 @@ import { SeatSystem, type Seat } from '../systems/Seats.ts';
 import { VoicePlayer } from '../systems/audio/VoicePlayer.ts';
 import { DialogueBox } from '../ui/DialogueBox.ts';
 import { NpcSystem } from '../npc/NpcSystem.ts';
+import { buildDecor } from '../world/decor.ts';
 
 const FIXED_DT = 1 / 60;
 const MAX_STEPS = 5;
@@ -93,6 +94,11 @@ export class Game {
       this.seats.addAll(built.seats);
       this.npcSpots = built.npcSpots;
       this.products = built.products;
+      // 装饰图异步加载，和商品一样按楼层显示
+      const products = built.products;
+      void buildDecor(built.decor).then((meshes) => {
+        for (const m of meshes) products.add(m);
+      });
     } else {
       world = buildTestbed(this.physics);
     }
@@ -600,7 +606,7 @@ export class Game {
         return res.text();
       },
       /** 店内总览图：依次走进每家店门内一点、拍一张，拼成 3 列的图存到 tools/.shots/<name>.jpg */
-      async sheet(ids: string[], name: string) {
+      async sheet(ids: string[], name: string, pitch = -0.22) {
         const cw = 440;
         const ch = 262;
         const cols = 3;
@@ -614,7 +620,7 @@ export class Game {
         ids.forEach((id, i) => {
           hooks.teleportShop(id);
           hooks.simulate(1, 0, 0.55);
-          game.player.pitch = -0.22;
+          game.player.pitch = pitch;
           for (let k = 0; k < 3; k++) hooks.renderOnce();
           const px = (i % cols) * cw;
           const py = Math.floor(i / cols) * (ch + 22);

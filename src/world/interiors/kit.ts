@@ -27,6 +27,33 @@ export function seededRng(key: string): Rng {
   };
 }
 
+/** 左墙（u=0）、右墙（u=W）、后墙（v=D）的墙面离店铺矩形边的距离 */
+export interface WallFaces {
+  left: number;
+  right: number;
+  back: number;
+}
+
+/** 装饰图的位置（世界坐标）。image 为空时按店铺用途和形状从 manifest 里挑一张海报/横幅。 */
+export interface DecorSlot {
+  shopId: string;
+  floor: number;
+  image?: string;
+  shape?: 'portrait' | 'landscape';
+  /** 图集里的第几格（行优先），整张图用 -1 */
+  cell: number;
+  x: number;
+  y: number;
+  z: number;
+  /** 图朝向（看图的人站在这个方向上） */
+  yaw: number;
+  /** 平放（桌面上的书）还是竖着（墙上、盒子正面） */
+  flat: boolean;
+  /** 最大尺寸；按图片比例缩到框内 */
+  w: number;
+  h: number;
+}
+
 export class ShopFrame {
   readonly W: number;
   readonly D: number;
@@ -37,6 +64,7 @@ export class ShopFrame {
   constructor(
     readonly shop: ShopDef,
     readonly y: number,
+    readonly walls: WallFaces = { left: 0.15, right: 0.15, back: 0.15 },
     door: Opening = shop.entrances[0],
   ) {
     this.e = edgeOf(shop.rect, door.side);
@@ -126,7 +154,28 @@ export class Kit {
     readonly products: ProductSet,
     readonly seats: Seat[],
     readonly rng: Rng,
+    readonly decor: DecorSlot[] = [],
   ) {}
+
+  /**
+   * 墙上的海报/横幅位：side 哪面墙，along 沿墙位置（左右墙是 v，后墙是 u），h0 底边高度。
+   * 图片由运行时按店铺用途挑选；没有合适的图就空着。
+   */
+  wallArt(side: 'left' | 'right' | 'back', along: number, h0: number, maxW: number, maxH: number, shape: 'portrait' | 'landscape') {
+    const off = this.f.walls[side] + 0.015;
+    const [u, v, du, dv] = side === 'left' ? [off, along, 1, 0] : side === 'right' ? [this.W - off, along, -1, 0] : [along, this.D - off, 0, -1];
+    this.pushDecor(undefined, -1, u, v, h0 + maxH / 2, du, dv, false, maxW, maxH, shape);
+  }
+
+  /** 图集卡片：竖着时 (u,v,h) 是图中心、面朝 (du,dv)；平放时 h 是桌面高度、图的上方朝 -(du,dv) */
+  card(image: string, cell: number, u: number, v: number, h: number, du: number, dv: number, w: number, hh: number, flat = false) {
+    this.pushDecor(image, cell, u, v, h, du, dv, flat, w, hh);
+  }
+
+  private pushDecor(image: string | undefined, cell: number, u: number, v: number, h: number, du: number, dv: number, flat: boolean, w: number, hh: number, shape?: 'portrait' | 'landscape') {
+    const f = this.f;
+    this.decor.push({ shopId: f.shop.id, floor: f.shop.floor, image, shape, cell, x: f.x(u, v), y: f.y + h, z: f.z(u, v), yaw: f.yaw(du, dv), flat, w, h: hh });
+  }
 
   get W() {
     return this.f.W;

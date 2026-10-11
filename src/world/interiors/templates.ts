@@ -20,6 +20,14 @@ const PASTEL = ['#ffc8dd', '#ffafcc', '#bde0fe', '#a2d2ff', '#cdb4db', '#fdffb6'
 const SPORT = ['#f94144', '#f3722c', '#f9c74f', '#90be6d', '#43aa8b', '#577590', '#277da1', '#ffffff', '#1d3557'];
 const COSMETIC = ['#ffafcc', '#ff8fab', '#fb6f92', '#ffe5ec', '#ffffff', '#cdb4db', '#e5989b'];
 
+/** 餐厅菜单板上放哪几格美食图（美食图集 3×2：拉面、寿司、咖喱饭 / 汉堡薯条、意面、饺子） */
+const FOOD_CELLS: Partial<Record<ShopCategory, number[]>> = {
+  ramen: [0, 5],
+  curry: [2],
+  grill: [3],
+  italian: [4],
+};
+
 // ---------- 通用部件 ----------
 
 /** 收银台：沿 u 放在 (u, v)，店员站在柜台里面（更深处）面朝门口 */
@@ -40,12 +48,16 @@ function wallShelves(k: Kit, o: { vFrom?: number; back?: boolean; left?: boolean
 }
 
 /** 门口内侧两张展示台（“第一眼”的陈列） */
-function frontTables(k: Kit, v: number, palette: string[], o: { w?: number; d?: number; h?: number; stacks?: boolean } = {}) {
+function frontTables(k: Kit, v: number, palette: string[], o: { w?: number; d?: number; h?: number; stacks?: boolean } = {}): [number, number][] {
   const mid = (k.f.door.u0 + k.f.door.u1) / 2;
   const w = o.w ?? 1.6;
   const gapHalf = 1.4;
-  k.displayTable(mid - gapHalf - w / 2, v, w, o.d ?? 0.9, { palette, h: o.h ?? 0.8, stacks: o.stacks });
-  k.displayTable(mid + gapHalf + w / 2, v, w, o.d ?? 0.9, { palette, h: o.h ?? 0.8, stacks: o.stacks });
+  const centers: [number, number][] = [
+    [mid - gapHalf - w / 2, v],
+    [mid + gapHalf + w / 2, v],
+  ];
+  for (const [u, cv] of centers) k.displayTable(u, cv, w, o.d ?? 0.9, { palette, h: o.h ?? 0.8, stacks: o.stacks });
+  return centers;
 }
 
 /** 店内休息用的沙发，靠右墙、面朝店中间 */
@@ -149,8 +161,19 @@ const toys: Template = (k) => {
 };
 
 const bricks: Template = (k) => {
-  toys(k);
   const { W, D } = k;
+  wallShelves(k, { palette: TOYS, height: 2.1, levels: 5 });
+  // 门口展示台：立着的积木盒，盒面朝门口（积木盒图集 2×2）
+  for (const [tu, tv] of frontTables(k, 2.6, [])) {
+    for (let i = 0; i < 3; i++) {
+      const u = tu - 0.5 + i * 0.5;
+      const hh = k.range(0.32, 0.42);
+      k.product(u, tv, 0.8, 0.44, hh, 0.12, true, k.pick(TOYS));
+      k.card('atlas-brickboxes', (i + Math.floor(tu)) % 4, u, tv - 0.061, 0.8 + hh / 2, 0, -1, 0.42, hh - 0.02);
+    }
+  }
+  grid(2.4, W - 2.4, 5.0, D * 0.7, 3.2, 2.8, (u, v) => k.gondola('u', u - 1.1, u + 1.1, v, { palette: TOYS, height: 1.35, levels: 3 }));
+  cash(k, W - 4.2, D * 0.72 + 0.8);
   // 门口的大积木雕塑
   const mid = (k.f.door.u0 + k.f.door.u1) / 2;
   let h = 0;
@@ -182,7 +205,10 @@ const blindbox: Template = (k) => {
     k.box(u - 0.5, v - 0.5, u + 0.5, v + 0.5, 0.9, 1.6, 'glass');
     k.box(u - 0.5, v - 0.5, u + 0.5, v + 0.5, 1.6, 1.64, 'prop', '#ffffff');
     k.solid(u - 0.5, v - 0.5, u + 0.5, v + 0.5, 1.64);
-    for (let i = 0; i < 3; i++) k.product(u - 0.25 + i * 0.25, v, 0.95, 0.12, 0.2, 0.12, true, k.pick(PASTEL));
+    for (let i = 0; i < 3; i++) {
+      k.product(u - 0.28 + i * 0.28, v, 0.9, 0.24, 0.02, 0.2, true, '#ffffff');
+      k.card('atlas-blindbox', Math.floor(k.rng() * 9), u - 0.28 + i * 0.28, v - 0.05, 1.08, 0, -1, 0.22, 0.22);
+    }
   });
   cash(k, W / 2 - 1.1, D * 0.65 + 1.4, 2.2, '#8e6cef');
 };
@@ -198,6 +224,8 @@ const capsuleToys: Template = (k) => {
       k.box(u - 0.25, v - 0.23, u + 0.25, v + 0.23, h0 + 0.5, h0 + 0.92, 'glass');
       k.box(u - 0.27, v - 0.25, u + 0.27, v + 0.25, h0 + 0.92, h0 + 0.95, 'prop', col);
       for (let i = 0; i < 4; i++) k.product(u - 0.12 + (i % 2) * 0.24, v - 0.05 + face * 0.02, h0 + 0.52 + Math.floor(i / 2) * 0.12, 0.1, 0.1, 0.1, true, k.pick(PASTEL));
+      // 扭蛋机正面的展示卡（机器沿 v 排，正面朝 ±u）
+      k.card('atlas-blindbox', Math.floor(k.rng() * 9), u + face * 0.271, v, h0 + 0.26, face, 0, 0.36, 0.36);
     }
   };
   const rowV0 = 2.4;
@@ -318,8 +346,17 @@ const books: Template = (k) => {
   const { W, D } = k;
   const spines = { palette: BOOKS, item: { w: [0.03, 0.06] as [number, number], h: [0.18, 0.28] as [number, number] } };
   wallShelves(k, { ...spines, height: 2.2, levels: 6, depth: 0.32, color: '#8b6f55' });
-  // 门口的平台（平放的新书）
-  frontTables(k, 2.6, BOOKS, { stacks: true, w: 1.8 });
+  // 门口的平台：平放的新书，封面朝上（书封图集 4×4）
+  for (const [tu, tv] of frontTables(k, 2.6, [], { w: 1.8 })) {
+    for (let i = 0; i < 4; i++)
+      for (let j = 0; j < 2; j++) {
+        const u = tu - 0.66 + i * 0.44;
+        const v = tv - 0.2 + j * 0.4;
+        const th = k.range(0.04, 0.12);
+        k.product(u, v, 0.8, 0.3, th, 0.36, true, k.pick(BOOKS));
+        k.card('atlas-books', Math.floor(k.rng() * 16), u, v, 0.8 + th, 0, -1, 0.28, 0.34, true);
+      }
+  }
   // 后半部分：一排排书架（沿 v）
   const vA = Math.max(5.0, D * 0.4);
   for (let c = 3.0; c < W * 0.62; c += 2.6) k.gondola('v', vA, D - 2.0, c, { ...spines, height: 1.6, levels: 5, depth: 0.3, color: '#8b6f55' });
@@ -409,7 +446,8 @@ const foodcourt: Template = (k) => {
     k.counter(u0 + 0.4, sv, u1 - 0.4, sv + 0.7, { color: col, top: '#f8f9fa', register: false });
     k.box(u0, D - M - 0.6, u1, D - M, 0, 0.95, 'metal');
     k.solid(u0, D - M - 0.6, u1, D - M, 0.95);
-    backPanel(k, u0 + 0.4, u1 - 0.4, 2.6, 3.3, col);
+    backPanel(k, u0 + 0.4, u1 - 0.4, 2.4, 3.7, col);
+    k.card('atlas-food', i % 6, (u0 + u1) / 2, D - M - 0.045, 3.05, 0, -1, 1.15, 1.15);
     // 档口隔板
     k.box(u0 - 0.2, sv, u0 - 0.1, D - M, 0, 2.4, 'prop', '#e5e5e5');
     k.solid(u0 - 0.2, sv, u0 - 0.1, D - M, 2.4);
@@ -435,7 +473,9 @@ const restaurant =
     k.counter(1.0, D - 2.8, W - 1.0, D - 2.15, { color: shade(primary, 0.85), register: false });
     k.box(1.0, D - M - 0.6, W - 1.0, D - M, 0, 0.95, 'metal');
     k.solid(1.0, D - M - 0.6, W - 1.0, D - M, 0.95);
-    backPanel(k, 1.5, W - 1.5, 1.9, 2.6, shade(primary, 1.2));
+    backPanel(k, 1.5, W - 1.5, 1.8, 3.0, shade(primary, 1.2));
+    const menu = FOOD_CELLS[k.f.shop.category] ?? [];
+    menu.forEach((cell, i) => k.card('atlas-food', cell, W / 2 + (i - (menu.length - 1) / 2) * 1.3, D - M - 0.045, 2.4, 0, -1, 1.0, 1.0));
     k.staff(W / 2, D - 1.6, 0, -1);
     if (o.bar) for (let u = 1.6; u < W - 1.2; u += 0.75) k.stool(u, D - 3.35, 0, 1, o.chair ?? '#3d405b');
     // 卡座（左墙）：沙发 + 桌子
@@ -449,6 +489,7 @@ const restaurant =
 
 const sushi: Template = (k) => {
   const { W, D } = k;
+  for (let i = 0; i < 3; i++) k.card('atlas-food', 1, W / 2 + (i - 1) * 1.6, D - M - 0.02, 2.5, 0, -1, 1.1, 0.7);
   // 回转寿司：一圈吧台，里面是师傅，外面一圈凳子
   const u0 = 2.4;
   const u1 = W - 2.4;
