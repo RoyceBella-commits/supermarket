@@ -317,9 +317,10 @@ export class Kit {
     for (let i = 0; i < levels; i++) {
       const h = base + i * gap;
       let a = a0 + 0.06;
-      while (a < a1 - 0.1) {
+      while (a < a1 - 0.08) {
         const w = Math.min(this.range(item.w[0], item.w[1]), a1 - 0.06 - a);
-        if (w < 0.06) break;
+        // 剩下的空间放不下最窄的商品就换下一层（书脊、笔之类只有几厘米宽）
+        if (w < item.w[0] * 0.8) break;
         if (this.rng() > 0.07) {
           const hh = Math.min(this.range(item.h[0], item.h[1]), gap - 0.06);
           const col = this.pick(palette);
@@ -605,38 +606,62 @@ export class Kit {
   }
 
   /** 冷柜（玻璃门、亮内胆）：靠墙，沿 axis，face 朝向通道 */
-  fridge(axis: 'u' | 'v', a0: number, a1: number, c: number, face: 1 | -1, palette = DRINKS) {
-    const depth = 0.75;
-    const h = 2.1;
+  /**
+   * 冷柜：靠墙，沿 axis，face 朝向通道。
+   * open：敞开式多层冷柜（蔬果、鲜鱼、精肉，没有玻璃门，下沿一道挡板，顶上灯条）；
+   * trays：商品是白色托盘装（生鲜），否则是瓶罐。
+   */
+  fridge(axis: 'u' | 'v', a0: number, a1: number, c: number, face: 1 | -1, palette = DRINKS, o: { open?: boolean; trays?: boolean; levels?: number; item?: { w: [number, number]; h: [number, number] } } = {}) {
+    const depth = o.open ? 0.9 : 0.75;
+    const h = o.open ? 2.0 : 2.1;
     const c1 = c + face * depth;
     const R = (p0: number, p1: number, q0: number, q1: number, h0: number, h1: number, mat: MatKey, tint?: string) =>
       axis === 'u' ? this.box(p0, Math.min(q0, q1), p1, Math.max(q0, q1), h0, h1, mat, tint) : this.box(Math.min(q0, q1), p0, Math.max(q0, q1), p1, h0, h1, mat, tint);
     R(a0, a1, c, c + face * 0.08, 0, h, 'prop', '#dfe7ec');
     R(a0, a1, c, c1, 0, 0.18, 'prop', '#9aa5b1');
-    R(a0, a1, c, c1, h - 0.22, h, 'prop', '#9aa5b1');
+    R(a0, a1, c, c + face * (o.open ? 0.5 : depth), h - 0.22, h, 'prop', '#9aa5b1');
     R(a0, a0 + 0.05, c, c1, 0, h, 'prop', '#c3ccd5');
     R(a1 - 0.05, a1, c, c1, 0, h, 'prop', '#c3ccd5');
-    // 门框竖条
-    for (let a = a0 + 0.75; a < a1 - 0.3; a += 0.75) R(a - 0.02, a + 0.02, c1 - face * 0.03, c1, 0.18, h - 0.22, 'metal');
-    R(a0, a1, c1 - face * 0.02, c1, 0.18, h - 0.22, 'glass');
+    if (o.open) {
+      // 下沿挡板 + 顶上灯条
+      R(a0, a1, c1 - face * 0.05, c1, 0.18, 0.45, 'prop', '#e9ecef');
+      R(a0, a1, c + face * 0.45, c + face * 0.5, h - 0.25, h - 0.22, 'prop', '#fff8e1');
+    } else {
+      // 门框竖条
+      for (let a = a0 + 0.75; a < a1 - 0.3; a += 0.75) R(a - 0.02, a + 0.02, c1 - face * 0.03, c1, 0.18, h - 0.22, 'metal');
+      R(a0, a1, c1 - face * 0.02, c1, 0.18, h - 0.22, 'glass');
+    }
     if (axis === 'u') this.solid(a0, Math.min(c, c1), a1, Math.max(c, c1), h);
     else this.solid(Math.min(c, c1), a0, Math.max(c, c1), a1, h);
-    // 内部隔板和商品（瓶子：窄、高）
-    const inner = { depth: depth - 0.12, height: h - 0.4, levels: 5, color: '#eef3f6', palette, item: { w: [0.07, 0.11] as [number, number], h: [0.2, 0.28] as [number, number] }, base: 0.2 };
-    const pc = c + face * 0.08;
-    let a = a0 + 0.06;
-    const gap = (inner.height - inner.base) / inner.levels;
-    for (let i = 0; i < inner.levels; i++) {
-      const hh0 = inner.base + i * gap;
-      R(a0 + 0.05, a1 - 0.05, pc, pc + face * inner.depth, hh0 - 0.02, hh0, 'prop', inner.color);
-      a = a0 + 0.08;
+    // 内部隔板和商品：敞开式越往下越深（阶梯）
+    const levels = o.levels ?? (o.open ? 4 : 5);
+    const base = o.open ? 0.45 : 0.2;
+    const top = h - 0.4;
+    const gap = (top - base) / levels;
+    const item = o.item ?? (o.trays ? { w: [0.22, 0.28] as [number, number], h: [0.05, 0.08] as [number, number] } : { w: [0.07, 0.11] as [number, number], h: [0.2, 0.28] as [number, number] });
+    for (let i = 0; i < levels; i++) {
+      const hh0 = base + i * gap;
+      const d = o.open ? (depth - 0.15) * (1 - i * 0.12) : depth - 0.12;
+      const pc = c + face * 0.08;
+      R(a0 + 0.05, a1 - 0.05, pc, pc + face * d, hh0 - 0.02, hh0, 'prop', '#eef3f6');
+      const mid = pc + face * (d / 2);
+      let a = a0 + 0.08;
       while (a < a1 - 0.1) {
-        const w = this.range(inner.item.w[0], inner.item.w[1]);
-        const hh = this.range(inner.item.h[0], Math.min(inner.item.h[1], gap - 0.05));
+        const w = Math.min(this.range(item.w[0], item.w[1]), a1 - 0.08 - a);
+        if (w < item.w[0] * 0.8) break;
+        const hh = this.range(item.h[0], Math.min(item.h[1], gap - 0.05));
         const col = this.pick(palette);
-        const mid = pc + face * (inner.depth / 2);
-        if (axis === 'u') this.product(a + w / 2, mid, hh0, w * 0.85, hh, inner.depth * 0.8, true, col);
-        else this.product(mid, a + w / 2, hh0, w * 0.85, hh, inner.depth * 0.8, false, col);
+        if (o.trays) {
+          // 白托盘 + 上面一层食材颜色
+          if (axis === 'u') {
+            this.product(a + w / 2, mid, hh0, w * 0.9, 0.025, d * 0.75, true, '#ffffff');
+            this.product(a + w / 2, mid, hh0 + 0.025, w * 0.7, hh - 0.025, d * 0.55, true, col);
+          } else {
+            this.product(mid, a + w / 2, hh0, w * 0.9, 0.025, d * 0.75, false, '#ffffff');
+            this.product(mid, a + w / 2, hh0 + 0.025, w * 0.7, hh - 0.025, d * 0.55, false, col);
+          }
+        } else if (axis === 'u') this.product(a + w / 2, mid, hh0, w * 0.85, hh, d * 0.8, true, col);
+        else this.product(mid, a + w / 2, hh0, w * 0.85, hh, d * 0.8, false, col);
         a += w;
       }
     }

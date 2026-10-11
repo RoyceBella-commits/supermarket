@@ -213,3 +213,21 @@ export function glassCase(k: Kit, u0: number, v0: number, u1: number, v1: number
     }
   }
 }
+
+/** 圆形衣架（G6 圆架）：底座 + 立杆 + 一圈挂杆，四周挂衣服 */
+export function roundRack(k: Kit, cu: number, cv: number, palette: string[], r = 0.55, h = 1.3) {
+  k.cyl(cu, cv, 0, 0.25, 0.04, '#adb5bd');
+  k.box(cu - 0.025, cv - 0.025, cu + 0.025, cv + 0.025, 0.04, h, 'metal');
+  k.cyl(cu, cv, h - 0.03, r, 0.03, '#adb5bd');
+  const n = 14;
+  for (let i = 0; i < n; i++) {
+    const a = (i / n) * Math.PI * 2;
+    const u = cu + Math.cos(a) * r;
+    const v = cv + Math.sin(a) * r;
+    const len = k.range(0.6, 0.8);
+    const along = Math.abs(Math.cos(a)) > Math.abs(Math.sin(a));
+    // 衣服大致朝外：靠 u 轴两侧的衣服沿 u 展开，靠 v 轴两侧的沿 v 展开
+    k.product(u, v, h - 0.05 - len, along ? 0.42 : 0.05, len, along ? 0.05 : 0.42, true, k.pick(palette));
+  }
+  k.solid(cu - r - 0.2, cv - r - 0.2, cu + r + 0.2, cv + r + 0.2, h);
+}

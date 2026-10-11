@@ -13,6 +13,7 @@ import {
   TOYS,
   backPanel,
   cash,
+  floorFinish,
   doorMid,
   fittingRooms,
   frontTables,
@@ -22,6 +23,7 @@ import {
   isAnchor,
   place,
   retailRules,
+  roundRack,
   stoolRow,
   wallShelves,
   windowDisplays,
@@ -459,13 +461,22 @@ export const camera: Template = (k) => {
   cash(k, mid, wb - 2.6);
 };
 
-/** PixelFox（主力店）：门口吉祥物雕像、试玩亭（坐式 + 高凳）、后墙大屏 + 小舞台 + 观众长凳、软件墙、历代主机展柜 */
+/**
+ * PixelFox（主力店）：门口吉祥物雕像、中轴两侧试玩亭（坐式 + 高凳）、后墙大屏 + 小舞台 + 观众长凳；
+ * 左翼周边区（巨型吉祥物拍照点、毛绒货架、T 恤挂杆、手办玻璃柜岛、角色主题小区），
+ * 右翼软件和主机区（软件货架、主机展示桌、电竞桌椅体验）、历代主机展柜、后墙右段收银 + 排队道。
+ */
 export const consoles: Template = (k) => {
   const { W, D } = k;
   const mid = doorMid(k);
   const door = k.f.door;
   retailRules(k, { axisEnd: 11.6 });
+  const wb = wallB(k);
   for (const u of [door.u0 - 1.4, door.u1 + 1.4]) k.statue(u, 1.8, 1.2, ['#ff6b35', '#ffffff', '#1a1a2e', '#ff9f1c']);
+  // 收银先占位：后墙右段长柜台，前面排队道
+  cash(k, W - 8, wb - 2.6, { w: 4.4 });
+  k.stanchions('u', W - 12.5, W - 9.6, wb - 4.6);
+  k.staffDoor(wallR(k) - 0.85);
   // 试玩亭：两列背靠背，坐式，每台一张高凳
   for (const cu of [mid - 5.2, mid + 5.2]) {
     for (let i = 0; i < 4; i++) {
@@ -481,25 +492,49 @@ export const consoles: Template = (k) => {
     k.solid(cu - 0.65, 3.1, cu + 0.65, 3.6 + 3 * 1.1 + 0.45, 1.5);
   }
   // 后墙：大屏 + 小舞台 + 观众长凳
-  const wb = wallB(k);
   k.screen('u', mid - 3.0, mid + 3.0, wb, -1, 1.2, 4.2, '#ffb347');
   k.box(mid - 2.0, wb - 3.0, mid + 2.0, wb - 0.2, 0, 0.3, 'prop', '#1a1a2e');
   k.solid(mid - 2.0, wb - 3.0, mid + 2.0, wb - 0.2, 0.3);
   for (const v of [wb - 4.2, wb - 5.4]) k.bench('u', mid - 1.4, mid + 1.4, v, 0, 1, { color: '#ff6b35' });
-  // 左翼：周边（挂杆、毛绒、手办墙）
-  for (let v = 4.0; v < 8.0; v += 2.0) k.rack('u', 4.0, 10.0, v, { palette: ['#ff6b35', '#1a1a2e', '#ffffff', '#06d6a0'] });
+  k.backFeature = true;
+
+  // ---- 左翼前区：周边 ----
+  // 巨型吉祥物拍照点（圆台）
+  const su = 10.5;
+  const sv = 4.6;
+  k.cyl(su, sv, 0, 1.3, 0.2, '#ffd166');
+  k.statue(su, sv, 1.6, ['#ff6b35', '#ffffff', '#ff9f1c', '#1a1a2e']);
+  // 毛绒货架（低）、T 恤挂杆
+  for (const c of [3.0, 5.6]) place(k, c, 4.7, 0.9, 5.4, () => k.gondola('v', 2.0, 7.4, c, { palette: PASTEL, height: 1.35, levels: 3, item: { w: [0.22, 0.32], h: [0.2, 0.3] } }), 0.3);
+  for (const v of [2.6, 4.4, 6.2]) place(k, 15.6, v, 2.6, 0.6, () => k.rack('u', 14.3, 16.9, v, { palette: ['#ff6b35', '#1a1a2e', '#ffffff', '#06d6a0', '#ffd166'] }), 0.3);
+  // ---- 左翼后区：手办玻璃柜岛 + 角色主题小区 ----
+  for (const v of [12.2, 14.6])
+    for (let u = 2.6; u < 12.6; u += 0.7) glassCase(k, u, v, u + 0.6, v + 0.5, { tall: true, palette: [...TOYS, '#ffffff'] });
   k.shelf('v', 1.6, D - 1.6, wallL(k), 1, { palette: PASTEL, height: 2.2, levels: 5 });
   k.shelf('u', wallL(k), 14, wb, -1, { palette: TOYS, height: 2.2, levels: 6, depth: 0.35 });
-  // 右翼：软件墙（一层层游戏盒）、主机桌、历代主机展柜
-  const soft = { palette: ['#e63946', '#3a86ff', '#ffd166', '#06d6a0', '#ffffff'], height: 2.2, levels: 7, depth: 0.25, item: { w: [0.14, 0.14] as [number, number], h: [0.18, 0.18] as [number, number] } };
-  k.shelf('v', 1.6, D - 1.6, wallR(k), -1, soft);
-  for (const u of [W - 12, W - 8]) place(k, u, 5.0, 1.6, 0.9, () => k.displayTable(u, 5.0, 1.6, 0.9, { palette: ['#1a1a2e', '#e5e5e5'], h: 0.8 }), 0.4);
+  floorFinish(k, '#fff3b0', 15.0, 11.4, 22.6, wb - 0.2);
+  k.box(15.0, 11.4, 22.6, 11.5, 0, 0.5, 'prop', '#ffd166');
+  k.box(15.0, 11.4, 15.1, wb - 0.2, 0, 0.5, 'prop', '#ffd166');
+  k.solid(15.2, 11.4, 22.6, 11.5, 0.5);
+  k.solid(15.0, 11.4, 15.1, wb - 0.2, 0.5);
+  k.statue(19.0, 14.2, 1.0, ['#ffd166', '#e63946', '#ffffff', '#1a1a2e']);
+  k.shelf('u', 15.4, 22.4, wb, -1, { palette: ['#ffd166', '#e63946', '#ffffff'], height: 1.8, levels: 4 });
+  k.displayTable(17.0, 16.0, 1.4, 0.8, { palette: ['#ffd166', '#e63946'], h: 0.7, stacks: true });
+
+  // ---- 右翼前区：软件货架 + 主机展示桌 ----
+  const soft = { palette: ['#e63946', '#3a86ff', '#ffd166', '#06d6a0', '#ffffff'], height: 1.5, levels: 5, depth: 0.3, item: { w: [0.14, 0.14] as [number, number], h: [0.18, 0.18] as [number, number] } };
+  for (const c of [35.0, 37.8, 40.6]) place(k, c, 4.7, 0.6, 5.4, () => k.gondola('v', 2.0, 7.4, c, soft), 0.3);
+  for (const u of [45.0, 48.6]) for (const v of [3.0, 6.0]) place(k, u, v, 1.6, 0.9, () => k.displayTable(u, v, 1.6, 0.9, { palette: ['#1a1a2e', '#e5e5e5', '#ff6b35'], h: 0.8 }), 0.4);
+  k.shelf('v', 1.6, D - 1.6, wallR(k), -1, { ...soft, height: 2.2, levels: 7, depth: 0.25 });
+  // ---- 右翼后区：电竞桌椅体验 + 历代主机展柜 ----
+  for (const u of [30.4, 33.6, 36.8]) {
+    const v = 12.6;
+    if (!k.fits(u - 0.8, v - 0.5, u + 0.8, v + 1.4)) continue;
+    k.table(u, v, 1.4, 0.7, { top: '#1a1a2e', color: '#3d405b' });
+    k.box(u - 0.45, v + 0.2, u + 0.45, v + 0.25, 0.74, 1.25, 'prop', '#3a86ff');
+    k.chair(u, v + 0.8, 0, -1, { color: '#ff6b35', w: 0.5 });
+  }
   for (let u = mid + 6.5; u < mid + 10.5; u += 0.7) glassCase(k, u, wb - 0.5, u + 0.6, wb, { tall: true, palette: ['#8d99ae', '#e5e5e5', '#2b2d42'] });
-  // 收银：后墙右段长柜台，前面排队道
-  cash(k, W - 8, wb - 2.6, { w: 4.4 });
-  k.stanchions('u', W - 12.5, W - 9.6, wb - 4.6);
-  k.staffDoor(wallR(k) - 0.85);
-  k.backFeature = true;
 };
 
 // ---------- 7. 服装 / 鞋 / 包 / 饰品 ----------
@@ -548,11 +583,35 @@ export const apparel =
         k.solid(su - 0.3, wb - 5.0, su + 0.3, wb - 4.5, 1.25);
       }
     }
-    // 中区：2.4 m 网格交替放折叠台和挂架（避开前面已经放好的试衣间、收银）
+    if (anchor) {
+      // 后墙通长挂杆（试衣间和中轴之间）、两翼人台组、品类吊旗
+      k.rack('u', wl + 8.6, mid - 2.0, wb - 0.5, { palette: o.palette, h: 1.6 });
+      k.rack('u', mid + 8.0, wr - 6.8, wb - 0.5, { palette: o.palette, h: 1.6 });
+      for (const pu of [12.0, W - 12.0]) {
+        if (!k.fits(pu - 1.2, 6.2, pu + 1.2, 7.4)) continue;
+        k.box(pu - 1.2, 6.2, pu + 1.2, 7.4, 0, 0.2, 'prop', '#f1ece4');
+        k.solid(pu - 1.2, 6.2, pu + 1.2, 7.4, 2.0);
+        for (const du of [-0.7, 0, 0.7]) k.mannequin(pu + du, 6.8, k.pick(o.mannequin), 0.2, false);
+      }
+      for (const hu of [8, 17, W - 17, W - 8]) hangingSign(k, hu, 9.4, 2.4, k.pick(o.mannequin), true, 2.7, 3.6);
+    }
+    // 中区：网格交替放套叠主推台、双杆挂架、圆形衣架（避开前面已经放好的试衣间、收银）
     const gu0 = anchor ? 2.5 : 2.4;
-    grid(gu0, W - 2.4, 4.6, D - 3.6, 2.4, 2.4, (u, v, i, j) => {
-      if ((i + j) % 2) place(k, u, v, 1.4, 0.8, () => k.displayTable(u, v, 1.4, 0.8, { palette: o.palette, h: 0.75, stacks: true }), 0.55);
-      else place(k, u, v, 1.4, 0.6, () => k.rack('u', u - 0.7, u + 0.7, v, { palette: o.palette, h: o.kids ? 1.1 : 1.4 }), 0.55);
+    const pitch = anchor ? 2.3 : 2.4;
+    grid(gu0, W - 2.4, 4.4, D - 3.2, pitch, pitch, (u, v, i, j) => {
+      const t = (i + j * 2) % 3;
+      if (t === 0)
+        place(k, u, v, 1.6, 0.9, () => {
+          k.displayTable(u, v, 1.6, 0.9, { palette: o.palette, h: 0.75, stacks: true });
+          k.box(u - 0.5, v - 0.3, u + 0.5, v + 0.3, 0.75, 0.95, 'prop', '#efe6d8');
+          for (let n = 0; n < 3; n++) k.product(u - 0.32 + n * 0.32, v, 0.95, 0.28, k.range(0.1, 0.2), 0.24, true, k.pick(o.palette));
+        }, 0.5);
+      else if (t === 1)
+        place(k, u, v, 1.6, 1.2, () => {
+          k.rack('u', u - 0.8, u + 0.8, v - 0.3, { palette: o.palette, h: o.kids ? 1.1 : 1.4 });
+          k.rack('u', u - 0.8, u + 0.8, v + 0.3, { palette: o.palette, h: o.kids ? 1.1 : 1.4 });
+        }, 0.5);
+      else place(k, u, v, 1.5, 1.5, () => roundRack(k, u, v, o.palette, 0.55, o.kids ? 1.05 : 1.3), 0.45);
     });
     // 全身镜
     k.panel('v', 1.0, 1.5, wl, 1, 0.1, 1.9, '#dff3f8');
@@ -705,6 +764,8 @@ export const books: Template = (k) => {
     if (!place(k, c, 8.6, 1.0, 6.2, () => k.gondola('v', 5.6, 11.6, c, { ...spines, height: 1.5, levels: 5, depth: 0.3, color: DARK_WOOD, base: 0.35 }), 0.3)) continue;
     k.box(c - 0.5, 5.6, c + 0.5, 11.6, 0, 0.35, 'prop', shade(DARK_WOOD, 0.9));
     hangingSign(k, c, 8.6, 1.4, k.pick(BOOKS), false);
+    // 朝门口的端面：封面朝外的书（面陈）
+    for (const h of [0.75, 1.15]) for (const du of [-0.18, 0.18]) k.card('atlas-books', Math.floor(k.rng() * 16), c + du, 5.585, h, 0, -1, 0.26, 0.32);
   }
   // 右后角：阅读咖啡角（长桌 + 扶手椅 + 小饮品台）
   const ru = W - 4.6;
@@ -893,23 +954,195 @@ export const eyewear: Template = (k) => {
 
 // ---------- 17. 超市 ----------
 
+/** 中区货架每列的品类配色和高度（零食、面类、调料、罐头、咖啡茶、谷物、日用品、纸品、宠物、婴儿、酒） */
+const AISLES: { palette: string[]; h: number; sign: string }[] = [
+  { palette: ['#ffbe0b', '#fb5607', '#ff006e', '#8338ec', '#3a86ff'], h: 1.6, sign: '#fb5607' },
+  { palette: ['#f4a261', '#e9c46a', '#e76f51', '#ffffff'], h: 1.6, sign: '#e9c46a' },
+  { palette: ['#9d0208', '#6a040f', '#e85d04', '#ffba08', '#3d405b'], h: 1.6, sign: '#9d0208' },
+  { palette: ['#adb5bd', '#e63946', '#457b9d', '#f1faee'], h: 1.6, sign: '#457b9d' },
+  { palette: ['#6f4e37', '#a68a64', '#2d6a4f', '#ddb892'], h: 1.6, sign: '#6f4e37' },
+  { palette: ['#e9c46a', '#f4a261', '#90be6d', '#ffffff'], h: 1.6, sign: '#90be6d' },
+  { palette: ['#8ecae6', '#219ebc', '#ffffff', '#caf0f8'], h: 1.8, sign: '#219ebc' },
+  { palette: ['#ffffff', '#f8f9fa', '#bde0fe', '#ffc8dd'], h: 1.8, sign: '#a2d2ff' },
+  { palette: ['#bc6c25', '#dda15e', '#606c38', '#fefae0'], h: 1.6, sign: '#bc6c25' },
+  { palette: ['#ffc8dd', '#bde0fe', '#caffbf', '#ffffff'], h: 1.6, sign: '#ffafcc' },
+  { palette: ['#5c0f1b', '#2d6a4f', '#e9c46a', '#3d2b1f'], h: 1.6, sign: '#5c0f1b' },
+];
+/** 卧式岛柜（冷冻、肉类）：矮柜身 + 四边围栏 + 玻璃盖，里面的商品看得见 */
+function chestCase(k: Parameters<Template>[0], u0: number, v0: number, u1: number, v1: number, palette: string[], trays = false) {
+  k.box(u0, v0, u1, v1, 0, 0.5, 'prop', '#e9ecef');
+  k.box(u0, v0, u1, v0 + 0.06, 0.5, 0.85, 'prop', '#dee2e6');
+  k.box(u0, v1 - 0.06, u1, v1, 0.5, 0.85, 'prop', '#dee2e6');
+  k.box(u0, v0, u0 + 0.06, v1, 0.5, 0.85, 'prop', '#dee2e6');
+  k.box(u1 - 0.06, v0, u1, v1, 0.5, 0.85, 'prop', '#dee2e6');
+  k.box(u0 + 0.06, v0 + 0.06, u1 - 0.06, v1 - 0.06, 0.82, 0.85, 'glass');
+  const alongU = u1 - u0 >= v1 - v0;
+  const [a0, a1] = alongU ? [u0, u1] : [v0, v1];
+  const [b0, b1] = alongU ? [v0, v1] : [u0, u1];
+  for (let a = a0 + 0.25; a < a1 - 0.15; a += 0.32)
+    for (let b = b0 + 0.22; b < b1 - 0.12; b += 0.36) {
+      const [pu, pv] = alongU ? [a, b] : [b, a];
+      if (trays) {
+        k.product(pu, pv, 0.5, 0.26, 0.02, 0.3, true, '#ffffff');
+        k.product(pu, pv, 0.52, 0.2, 0.05, 0.22, true, k.pick(palette));
+      } else k.product(pu, pv, 0.5, 0.26, k.range(0.1, 0.22), 0.28, true, k.pick(palette));
+    }
+  k.solid(u0, v0, u1, v1, 0.85);
+}
+
+const FISH = ['#f8f9fa', '#ced4da', '#ffb4a2', '#e5989b', '#a8dadc', '#ff8fab'];
+const MEAT = ['#c1121f', '#e63946', '#ffb4a2', '#9d0208', '#f4a261'];
+const DAIRY = ['#ffffff', '#fefae0', '#f1faee', '#e9c46a', '#a8dadc'];
+const VEG = ['#90be6d', '#43aa8b', '#a7c957', '#6a994e', '#f8961e', '#e63946', '#ffd166'];
+
 /**
- * Daily Harvest（日本 AEON 式）：门的左半入口、右半出口挨着收银线；顺时针环线——
- * 西侧前区和西墙青果，后墙鲜鱼→精肉（墙上作业间玻璃窗），东墙日配和惣菜，最后回到收银。
- * 中区南北向货架列 + 吊牌，东北角冷冻岛柜；收银线后面是一排装袋台。
+ * Daily Harvest（日本 AEON 式，B1）。门的左 5 m 是入口，右 7 m 是出口挨着收银线。
+ * 西侧前区：蔬菜水果区（斜面果蔬台、分层水果台、根菜木箱、香蕉架、靠墙敞开冷柜、门口花架）。
+ * 后墙：生鲜区（鲜鱼 → 精肉敞开冷柜、上方作业间玻璃窗、对面售卖柜台、冰鲜台、肉类岛柜、试吃台），东段日配。
+ * 中区：货架区，11 列不同品类的双面货架，两端端架堆促销品，头顶分类吊牌；西侧米袋堆头和面包架。
+ * 东侧：熟食便当、饮料酒水冷柜、冷冻岛柜；东前区收银线、装袋台、服务柜台。地面按区换颜色。
  */
 export const supermarket: Template = (k) => {
-  const { W } = k;
+  const { W, D } = k;
   const door = k.f.door;
-  const entry = door.u0 + 5;
-  k.reserve(door.u0, 0, door.u1, 2.4);
-  // 入口内侧篮子架
-  for (let i = 0; i < 3; i++) {
-    const u = door.u0 + 0.5 + i * 0.6;
-    k.product(u, 2.9, 0, 0.5, 0.75, 0.35, true, ['#e63946', '#ffd166', '#e63946'][i]);
+  const wl = wallL(k);
+  const wr = wallR(k);
+  const wb = wallB(k);
+  const entry1 = door.u0 + 5;
+  // 通道：入口、出口、前区横向主通道、货架区后通道
+  k.reserve(door.u0 + 0.4, 0, entry1, 3.0);
+  k.reserve(entry1, 0, door.u1, 2.0);
+  k.reserve(wl + 1.2, 8.2, wr - 1.2, 10.4);
+  k.reserve(wl + 1.2, 19.6, 42, 21.2);
+  // 地面分区
+  floorFinish(k, '#efe3c8', wl + 0.3, 0.3, door.u0 - 0.1, 8.1);
+  floorFinish(k, '#dde8ee', wl + 0.3, 21.3, 41.5, wb - 0.1);
+  floorFinish(k, '#e6ddd0', door.u1 + 0.3, 0.3, wr - 0.3, 7.6);
+
+  // ---- 入口：篮子、门口花架 ----
+  for (let i = 0; i < 3; i++) for (let j = 0; j < 8; j++) k.product(door.u0 + 0.7 + i * 0.6, 3.4, j * 0.12, 0.5, 0.12, 0.35, true, ['#e63946', '#ffd166', '#e63946'][i]);
+  k.solid(door.u0 + 0.4, 3.2, door.u0 + 2.2, 3.6, 0.95);
+  const fu = door.u0 - 1.3;
+  k.box(fu - 0.9, 0.6, fu + 0.9, 1.6, 0, 0.5, 'prop', '#8d6e63');
+  for (let i = 0; i < 6; i++) {
+    const u = fu - 0.7 + (i % 3) * 0.7;
+    const v = 0.85 + Math.floor(i / 3) * 0.5;
+    k.cyl(u, v, 0.5, 0.15, 0.3, '#6c757d');
+    for (let j = 0; j < 4; j++) k.cyl(u + k.range(-0.08, 0.08), v + k.range(-0.08, 0.08), 0.8 + k.range(0, 0.15), 0.06, 0.06, k.pick(['#ff006e', '#ffbe0b', '#ffffff', '#fb5607', '#8338ec']));
   }
-  k.solid(door.u0 + 0.2, 2.7, door.u0 + 2.0, 3.1, 0.75);
-  // 收银线：出口往东 8 条，每条后面一台自助结算机；收银线和南墙之间是装袋台
+  k.solid(fu - 0.9, 0.6, fu + 0.9, 1.6, 1.0);
+
+  // ---- 蔬菜水果区（西侧前区）----
+  k.fridge('u', wl + 0.6, door.u0 - 3.0, 0.25, 1, VEG, { open: true, item: { w: [0.12, 0.2], h: [0.1, 0.16] } });
+  k.fridge('v', 1.6, 12.2, wl, 1, VEG, { open: true, item: { w: [0.12, 0.2], h: [0.1, 0.16] } });
+  const slope = (u: number, v: number, palette: string[]) =>
+    place(k, u, v, 2.0, 1.0, () => {
+      k.box(u - 1.0, v - 0.5, u + 1.0, v + 0.5, 0, 0.7, 'prop', '#8d6e63');
+      k.box(u - 1.0, v, u + 1.0, v + 0.5, 0.7, 0.85, 'prop', '#8d6e63');
+      for (let i = 0; i < 6; i++) for (let j = 0; j < 2; j++) k.cyl(u - 0.85 + i * 0.34, v - 0.25 + j * 0.5, 0.7 + j * 0.15, 0.13, 0.14, k.pick(palette));
+      k.box(u - 1.0, v - 0.52, u + 1.0, v - 0.5, 0.55, 0.65, 'prop', '#fff3b0');
+      k.solid(u - 1.0, v - 0.5, u + 1.0, v + 0.5, 0.85);
+    }, 0.45);
+  for (let u = 3.4; u < door.u0 - 3.5; u += 2.9) {
+    slope(u, 3.0, VEG);
+    slope(u, 5.0, FRUIT);
+  }
+  // 分层水果台（圆）
+  for (const u of [5.0, 12.0])
+    place(k, u, 7.0, 1.6, 1.6, () => {
+      for (const [r, h0, h1] of [
+        [0.8, 0, 0.5],
+        [0.55, 0.5, 0.8],
+        [0.3, 0.8, 1.1],
+      ] as const) {
+        k.cyl(u, 7.0, h0, r, h1 - h0, '#d4a373');
+        const n = Math.round(r * 12);
+        for (let i = 0; i < n; i++) {
+          const a = (i / n) * Math.PI * 2;
+          k.cyl(u + Math.cos(a) * (r - 0.1), 7.0 + Math.sin(a) * (r - 0.1), h1, 0.08, 0.1, k.pick(FRUIT));
+        }
+      }
+      k.solid(u - 0.8, 6.2, u + 0.8, 7.8, 1.1);
+    }, 0.3);
+  // 根菜木箱一排
+  for (let u = 15.0; u < door.u0 - 4.0; u += 0.9) {
+    k.box(u - 0.4, 6.7, u + 0.4, 7.4, 0, 0.55, 'prop', '#a0522d');
+    for (let i = 0; i < 4; i++) k.cyl(u - 0.24 + (i % 2) * 0.48, 6.9 + Math.floor(i / 2) * 0.3, 0.55, 0.11, 0.08, k.pick(['#bc6c25', '#dda15e', '#f4a261', '#7f5539']));
+  }
+  k.solid(14.6, 6.7, door.u0 - 4.0, 7.4, 0.6);
+  // 香蕉架
+  const bu = door.u0 - 2.3;
+  k.box(bu - 0.03, 4.4, bu + 0.03, 4.46, 0, 1.6, 'metal');
+  for (let i = 0; i < 4; i++) k.cyl(bu + (i % 2 ? 0.16 : -0.16), 4.43, 0.9 + Math.floor(i / 2) * 0.35, 0.09, 0.22, '#ffd60a', 'u');
+  k.solid(bu - 0.35, 4.2, bu + 0.35, 4.7, 1.6);
+  hangingSign(k, 10, 4.5, 2.0, '#2d6a4f', true, 2.8, 3.3);
+
+  // ---- 货架区（中区）----
+  const g0 = 11.2;
+  const g1 = 18.8;
+  for (let i = 0; i < AISLES.length; i++) {
+    const c = 9.6 + i * 2.9;
+    const a = AISLES[i];
+    k.gondola('v', g0, g1, c, { palette: a.palette, height: a.h });
+    hangingSign(k, c, (g0 + g1) / 2, 0.9, a.sign, false, 2.6, 2.95);
+    // 端架：两端各一个朝主通道，上面堆促销品
+    for (const [v0, v1, face] of [
+      [g0 - 0.5, g0, -1],
+      [g1, g1 + 0.5, 1],
+    ] as const) {
+      k.box(c - 0.45, v0, c + 0.45, v1, 0, 0.9, 'prop', '#f3efe7');
+      k.solid(c - 0.45, v0, c + 0.45, v1, 0.9);
+      for (let l = 0; l < 3; l++) for (let j = 0; j < 3 - l; j++) k.product(c - 0.26 + l * 0.13 + j * 0.26, (v0 + v1) / 2, 0.9 + l * 0.18, 0.24, 0.18, 0.4, true, k.pick(a.palette));
+      k.box(c - 0.3, face < 0 ? v0 - 0.01 : v1, c + 0.3, face < 0 ? v0 : v1 + 0.01, 1.55, 1.75, 'prop', '#ffe600');
+    }
+  }
+  // 米袋堆头（西侧，靠近货架区）
+  for (let i = 0; i < 3; i++) {
+    const u = 2.2 + i * 1.5;
+    k.box(u - 0.6, 13.4, u + 0.6, 14.4, 0, 0.12, 'prop', '#a68a64');
+    for (let l = 0; l < 4; l++) for (let j = 0; j < 2; j++) k.product(u - 0.28 + j * 0.56, 13.9, 0.12 + l * 0.16, 0.5, 0.15, 0.85, true, l % 2 ? '#ffffff' : '#fefae0');
+  }
+  k.solid(1.6, 13.4, 6.4, 14.4, 0.8);
+  // 面包架（西墙）
+  k.shelf('v', 14.8, 19.2, wl, 1, { palette: BREAD, height: 1.6, levels: 4, depth: 0.5 });
+
+  // ---- 生鲜区（后墙）----
+  k.fridge('u', wl + 0.3, 18.0, wb, -1, FISH, { open: true, trays: true });
+  k.fridge('u', 18.2, 40.0, wb, -1, MEAT, { open: true, trays: true });
+  for (let u = 3; u < 38; u += 7) k.box(u, wb - 0.01, u + 1.6, wb, 2.3, 3.3, 'glass');
+  // 鲜鱼对面售卖柜台（玻璃柜里冰上的鱼）+ 冰鲜台
+  glassCase(k, 3.0, 22.4, 9.0, 23.1, { base: '#457b9d', palette: FISH });
+  k.box(3.0, 23.1, 9.0, 23.15, 0, 1.0, 'prop', '#f1faee');
+  k.box(11.0, 22.3, 14.0, 23.3, 0, 0.8, 'prop', '#457b9d');
+  k.box(11.05, 22.35, 13.95, 23.25, 0.8, 0.85, 'prop', '#ffffff');
+  for (let i = 0; i < 10; i++) k.cyl(11.3 + (i % 5) * 0.6, 22.6 + Math.floor(i / 5) * 0.4, 0.92, 0.07, 0.4, k.pick(['#adb5bd', '#ced4da', '#e63946']), 'u');
+  k.solid(11.0, 22.3, 14.0, 23.3, 0.9);
+  // 肉类岛柜（两台）
+  for (const u0 of [20.0, 25.0]) chestCase(k, u0, 22.3, u0 + 3.0, 23.3, MEAT, true);
+  // 试吃台
+  k.box(33.0, 22.4, 33.9, 22.9, 0, 0.9, 'prop', '#f8f9fa');
+  k.cyl(33.25, 22.65, 0.9, 0.12, 0.05, '#2b2d42');
+  k.cyl(33.65, 22.65, 0.9, 0.05, 0.1, '#e9c46a');
+  k.solid(33.0, 22.4, 33.9, 22.9, 0.95);
+  hangingSign(k, 9, 22.0, 2.0, '#457b9d', true, 2.8, 3.3);
+  hangingSign(k, 28, 22.0, 2.0, '#c1121f', true, 2.8, 3.3);
+  // 日配（后墙东段）+ 员工门
+  k.fridge('u', 40.6, wr - 2.6, wb, -1, DAIRY);
+  k.staffDoor(wr - 1.4);
+
+  // ---- 东侧：熟食便当、饮料酒水、冷冻 ----
+  for (const v of [7.0, 11.7]) {
+    k.box(wr - 1.0, v - 1.1, wr, v + 1.1, 0, 0.9, 'prop', '#e9e2d4');
+    k.box(wr - 1.0, v - 1.1, wr, v + 1.1, 0.9, 1.15, 'glass');
+    for (let i = 0; i < 7; i++) k.product(wr - 0.5, v - 0.95 + i * 0.3, 0.9, 0.25, 0.06, 0.2, false, k.pick(['#f4a261', '#e9c46a', '#90be6d', '#ffffff', '#bc6c25']));
+    k.solid(wr - 1.0, v - 1.1, wr, v + 1.1, 1.15);
+  }
+  k.fridge('v', 13.0, wb - 1.3, wr, -1, DRINKS);
+  for (const c of [W - 15.5, W - 12.0, W - 8.5])
+    place(k, c, 16.5, 2.0, 5.0, () => chestCase(k, c - 1.0, 14.0, c + 1.0, 19.0, ['#ffffff', '#bde0fe', '#e63946', '#ffd166', '#8ecae6']), 0.3);
+  hangingSign(k, W - 12, 16.5, 2.0, '#48cae4', true, 2.8, 3.3);
+
+  // ---- 收银线（东前区）：出口往东 8 条，每条后面一台自助结算机，南墙前装袋台，出口旁服务柜台 ----
   const lane0 = door.u1 + 0.6;
   const lanes = Math.min(8, Math.floor((W - 2 - lane0) / 2.3));
   for (let i = 0; i < lanes; i++) {
@@ -926,47 +1159,8 @@ export const supermarket: Template = (k) => {
     k.box(u, 0.25, u + 3.0, 0.85, 0, 0.85, 'prop', '#e9e2d4');
     k.solid(u, 0.25, u + 3.0, 0.85, 0.85);
   }
-  // 出口旁服务柜台
   k.counter(door.u1 + 0.4, 0.4, door.u1 + 2.0, 1.0, { color: '#2d6a4f' });
-  // 西侧前区青果：斜面台（前低后高），后面贴西墙的敞开冷柜
-  grid(2.2, entry - 6.0, 2.8, 8.0, 3.2, 2.4, (u, v) =>
-    place(k, u, v, 2.0, 1.0, () => {
-      k.box(u - 1.0, v - 0.5, u + 1.0, v + 0.5, 0, 0.7, 'prop', '#8d6e63');
-      k.box(u - 1.0, v, u + 1.0, v + 0.5, 0.7, 0.85, 'prop', '#8d6e63');
-      for (let i = 0; i < 6; i++)
-        for (let j = 0; j < 2; j++) k.cyl(u - 0.85 + i * 0.34, v - 0.25 + j * 0.5, 0.7 + j * 0.15, 0.13, 0.14, k.pick(FRUIT));
-      k.solid(u - 1.0, v - 0.5, u + 1.0, v + 0.5, 0.85);
-    }, 0.5),
-  );
-  const wl = wallL(k);
-  const wr = wallR(k);
-  const wb = wallB(k);
-  k.fridge('v', 1.2, 12.0, wl, 1, FRUIT);
-  // 后墙：鲜鱼 → 精肉（白托盘），上方作业间玻璃窗
-  k.fridge('u', wl + 0.2, wr - 2.6, wb, -1, ['#ffffff', '#f1faee', '#ffb4a2', '#e5989b', '#a8dadc']);
-  for (let u = 6; u < W - 8; u += 9) k.box(u, wb - 0.01, u + 1.5, wb, 2.4, 3.4, 'glass');
-  k.staffDoor(wr - 1.4);
-  // 东墙：日配 + 惣菜/便当（玻璃罩平台）+ 面包架
-  k.fridge('v', 13.0, wb - 2.0, wr, -1, ['#ffffff', '#fefae0', '#f1faee', '#e9c46a']);
-  for (const v of [8.2, 10.6]) {
-    k.box(wr - 1.0, v - 1.2, wr, v + 1.2, 0, 0.9, 'prop', '#e9e2d4');
-    k.box(wr - 1.0, v - 1.2, wr, v + 1.2, 0.9, 1.15, 'glass');
-    for (let i = 0; i < 8; i++) k.product(wr - 0.5, v - 1.05 + i * 0.3, 0.9, 0.25, 0.06, 0.2, false, k.pick(['#f4a261', '#e9c46a', '#90be6d', '#ffffff']));
-    k.solid(wr - 1.0, v - 1.2, wr, v + 1.2, 1.15);
-  }
-  k.shelf('v', 12.6, 13.0, wl, 1, { palette: BREAD, height: 1.6, levels: 4 });
-  // 中区：南北向货架列（端架朝主通道）+ 吊牌
-  for (let c = 8.0; c < W - 16; c += 3.0) {
-    if (place(k, c, 16.0, 0.9, 12.4, () => k.gondola('v', 9.8, 22.2, c, { palette: PANTRY, height: 1.6 }), 0.2)) hangingSign(k, c, 16.0, 0.9, '#2d6a4f', false);
-  }
-  // 东北角：冷冻岛柜（两台对拼，上面盖玻璃）
-  for (let c = W - 13; c < W - 4; c += 3.0)
-    place(k, c, 16.5, 2.0, 5.0, () => {
-      k.box(c - 1.0, 14.0, c + 1.0, 19.0, 0, 0.75, 'prop', '#e9ecef');
-      k.box(c - 1.0, 14.0, c + 1.0, 19.0, 0.75, 0.85, 'glass');
-      for (let v = 14.3; v < 18.8; v += 0.4) for (const du of [-0.5, 0, 0.5]) k.product(c + du, v, 0.55, 0.3, 0.18, 0.3, true, k.pick(['#ffffff', '#bde0fe', '#e63946', '#ffd166']));
-      k.solid(c - 1.0, 14.0, c + 1.0, 19.0, 0.85);
-    }, 0.3);
+  void D;
 };
 
 // ---------- 19. 小服务店 ----------

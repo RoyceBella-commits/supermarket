@@ -273,8 +273,7 @@ export class Game {
       floor = zone.floor;
       this.hud.setZone(zone);
     }
-    // 商品只画玩家所在楼层和上下相邻层（隔得更远的被楼板挡住）
-    if (this.products) for (const m of this.products.children) m.visible = Math.abs((m.userData.floor as number) - floor) <= 1;
+    this.updateFloorVisibility(floor);
 
     if (this.debugLines) {
       const { vertices, colors } = this.physics.world.debugRender();
@@ -333,6 +332,11 @@ export class Game {
     const cur = this.interaction.current;
     const hidePrompt = !cur || this.elevatorPanel.isOpen || this.musicPanel.isOpen || cur.id === this.npcs?.activeInteractId;
     this.hud?.setPrompt(hidePrompt ? null : cur.prompt());
+  }
+
+  /** 商品和装饰图只画玩家所在楼层和上下相邻层（隔得更远的被楼板挡住） */
+  private updateFloorVisibility(floor: number) {
+    if (this.products) for (const m of this.products.children) m.visible = Math.abs((m.userData.floor as number) - floor) <= 1;
   }
 
   private sitDown(seat: Seat) {
@@ -593,6 +597,7 @@ export class Game {
       /** 立即按当前状态渲染一帧（浏览器面板隐藏、渲染循环暂停时截图用） */
       renderOnce(dt = 1 / 60) {
         const feet = game.player.feetPosition(1, new THREE.Vector3());
+        if (game.zones) game.updateFloorVisibility(game.zones.locate(feet.x, feet.y, feet.z).floor);
         game.updateDynamicWorld(dt, feet);
         game.updateAvatar(dt, feet);
         const d = game.cameraRig.update(dt, game.player, 1, game.seatedView());
@@ -611,7 +616,7 @@ export class Game {
         return res.text();
       },
       /** 店内俯瞰：相机放在店门一角的高处、斜看向对角，看整家店的布置（调试用） */
-      async overview(ids: string[], name: string) {
+      async overview(ids: string[], name: string, side: 1 | -1 = 1) {
         const layout = game.layout;
         if (!layout) return null;
         const cam = game.renderer.camera;
@@ -636,10 +641,10 @@ export class Game {
           // 站在门内、开口一侧的高处，看向店铺另一侧的远角
           const inX = -c.outX;
           const inZ = -c.outZ;
-          const px = c.x + inX * 0.6 + (inZ !== 0 ? -0.35 * r.w : 0);
-          const pz = c.z + inZ * 0.6 + (inX !== 0 ? -0.35 * r.d : 0);
-          const tx = r.x + r.w / 2 + inX * r.w * 0.2 + (inZ !== 0 ? 0.25 * r.w : 0);
-          const tz = r.z + r.d / 2 + inZ * r.d * 0.2 + (inX !== 0 ? 0.25 * r.d : 0);
+          const px = c.x + inX * 0.6 + (inZ !== 0 ? -0.35 * side * r.w : 0);
+          const pz = c.z + inZ * 0.6 + (inX !== 0 ? -0.35 * side * r.d : 0);
+          const tx = r.x + r.w / 2 + inX * r.w * 0.2 + (inZ !== 0 ? 0.25 * side * r.w : 0);
+          const tz = r.z + r.d / 2 + inZ * r.d * 0.2 + (inX !== 0 ? 0.25 * side * r.d : 0);
           hooks.teleport(px, y + 0.05, pz, 0);
           hooks.renderOnce();
           for (const m of game.products?.children ?? []) m.visible = Math.abs((m.userData.floor as number) - s.floor) <= 1;

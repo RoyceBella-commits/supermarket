@@ -32,14 +32,20 @@ function bike(k: Kit, u: number, v: number, color: string, h0 = 0, vertical = fa
   k.box(u - 0.25, v - 0.47, u + 0.25, v - 0.43, h0 + 0.95, h0 + 0.98, 'metal');
 }
 
-/** Arc（主力店）：主推台 + 运动员人台、中轴尽头篮球框 + 草皮试玩区（网围）、左翼鞋墙 + 试鞋凳、右翼球笼 + 跑步机 + 哑铃架、吊挂品类旗 */
+/**
+ * Arc（主力店）：主推台 + 运动员人台、中轴尽头篮球框 + 草皮试玩区（网围）；
+ * 左翼鞋区（全店最长的鞋墙、鞋款展示台、试鞋凳）和运动服区（挂杆、人台）；
+ * 右翼球类区（球笼、球拍货架）和健身区（跑步机、动感单车、哑铃架、瑜伽垫架，橡胶地面）；吊挂品类旗。
+ */
 export const sports: Template = (k) => {
   const { W, D } = k;
   const mid = doorMid(k);
   retailRules(k);
+  const wb = wallB(k);
+  cash(k, mid + 4.6, wb - 4.4);
+  k.staffDoor(wallR(k) - 0.85);
   for (const [u, v] of frontTables(k, SPORT, { stacks: true })) k.mannequin(u + (u < mid ? -1.2 : 1.2), v, '#f3722c');
   // 中轴尽头：草皮 + 篮球框，三面网
-  const wb = wallB(k);
   const t0 = wb - 5.6;
   floorFinish(k, '#52b788', mid - 2.0, t0, mid + 2.0, wb);
   for (const s of [-1, 1]) {
@@ -51,39 +57,76 @@ export const sports: Template = (k) => {
   k.box(mid - 0.9, wb - 0.62, mid + 0.9, wb - 0.56, 2.9, 3.95, 'prop', '#ffffff');
   k.cyl(mid, wb - 0.85, 3.05, 0.23, 0.03, '#f3722c');
   k.solid(mid - 0.5, wb - 1.5, mid + 0.5, wb - 0.2, 3.0);
+  for (let i = 0; i < 6; i++) k.cyl(mid - 1.4 + (i % 3) * 0.3, t0 + 0.4 + Math.floor(i / 3) * 0.3, 0, 0.12, 0.24, '#f3722c');
   k.backFeature = true;
-  // 左翼：全店最长的鞋墙 + 试鞋凳
+
+  // ---- 左翼：鞋区 + 运动服区 ----
   k.shelf('v', 1.6, D - 1.6, wallL(k), 1, shoeWall);
   k.shelf('u', wallL(k), mid - 3.0, wb, -1, shoeWall);
-  for (const u of [8.0, 13.0]) k.bench('u', u - 1.2, u + 1.2, 13.4, 0, -1, { color: '#277da1' });
-  // 右翼：球笼成排、跑步机、哑铃架、球拍墙
-  for (let u = mid + 6; u < W - 3; u += 2.4)
-    place(k, u, 5.0, 1.2, 0.6, () => {
-      k.box(u - 0.6, 4.7, u + 0.6, 5.3, 0, 1.2, 'glass');
-      for (let i = 0; i < 8; i++) k.cyl(u - 0.45 + (i % 4) * 0.3, 4.85 + Math.floor(i / 4) * 0.3, 0.6 + k.range(0, 0.35), 0.11, 0.22, k.pick(['#f3722c', '#ffffff', '#f9c74f']));
-      k.solid(u - 0.6, 4.7, u + 0.6, 5.3, 1.2);
-    }, 0.6);
-  for (const u of [W - 9, W - 6.5]) {
-    k.box(u - 0.4, 12.5, u + 0.4, 14.5, 0, 0.25, 'prop', '#2b2d42');
-    k.box(u - 0.4, 12.4, u + 0.4, 12.55, 0.25, 1.4, 'prop', '#2b2d42');
-    k.solid(u - 0.4, 12.4, u + 0.4, 14.5, 0.25);
+  for (const u of [4.0, 7.4, 10.8, 14.2]) for (const v of [3.0, 5.8])
+    place(k, u, v, 1.6, 0.8, () => {
+      k.displayTable(u, v, 1.6, 0.8, { palette: [], h: 0.75, color: '#e9ecef' });
+      for (let i = 0; i < 4; i++) k.product(u - 0.55 + i * 0.37, v, 0.75, 0.12, 0.1, 0.28, true, k.pick(SPORT));
+    }, 0.5);
+  for (const u of [5.6, 12.4]) place(k, u, 7.4, 2.4, 0.5, () => k.bench('u', u - 1.2, u + 1.2, 7.4, 0, -1, { color: '#277da1' }), 0.2);
+  for (const v of [11.8, 13.6, 15.4]) place(k, 11.0, v, 12.0, 0.6, () => k.rack('u', 5.0, 17.0, v, { palette: SPORT }), 0.3);
+  for (const [u, v] of [
+    [19.5, 12.4],
+    [19.5, 15.0],
+  ]) if (k.fits(u - 0.3, v - 0.3, u + 0.3, v + 0.3, 0.3)) k.mannequin(u, v, k.pick(SPORT));
+
+  // ---- 右翼前区：球类 ----
+  for (let u = mid + 6; u < W - 9; u += 2.2)
+    place(k, u, 3.0, 1.2, 0.6, () => {
+      k.box(u - 0.6, 2.7, u + 0.6, 3.3, 0, 1.2, 'glass');
+      for (let i = 0; i < 8; i++) k.cyl(u - 0.45 + (i % 4) * 0.3, 2.85 + Math.floor(i / 4) * 0.3, 0.6 + k.range(0, 0.35), 0.11, 0.22, k.pick(['#f3722c', '#ffffff', '#f9c74f']));
+      k.solid(u - 0.6, 2.7, u + 0.6, 3.3, 1.2);
+    }, 0.5);
+  for (const c of [W - 7.0, W - 4.4]) place(k, c, 4.8, 0.6, 5.2, () => k.gondola('v', 2.2, 7.4, c, { palette: SPORT, height: 1.5, levels: 2, depth: 0.25, item: { w: [0.05, 0.05], h: [0.6, 0.65] } }), 0.3);
+  k.shelf('v', 1.6, D - 1.6, wallR(k), -1, { palette: SPORT, height: 2.2, levels: 6, depth: 0.35, item: { w: [0.3, 0.38], h: [0.14, 0.2] } });
+  for (let u = mid + 6; u < W - 9; u += 2.2) place(k, u, 6.0, 1.6, 0.8, () => k.displayTable(u, 6.0, 1.6, 0.8, { palette: SPORT, h: 0.8, stacks: true }), 0.5);
+
+  // ---- 右翼后区：健身区（橡胶地面）----
+  const fu0 = mid + 8.0;
+  floorFinish(k, '#3d405b', fu0, 11.2, wallR(k) - 0.5, wb - 0.3);
+  for (const u of [fu0 + 1.0, fu0 + 2.4]) {
+    k.box(u - 0.4, 12.0, u + 0.4, 14.0, 0, 0.25, 'prop', '#2b2d42');
+    k.box(u - 0.4, 11.9, u + 0.4, 12.05, 0.25, 1.4, 'prop', '#2b2d42');
+    k.solid(u - 0.4, 11.9, u + 0.4, 14.0, 1.4);
   }
-  k.box(W - 4.2, 12.6, W - 2.7, 13.2, 0, 0.9, 'metal');
-  for (let i = 0; i < 6; i++) k.cyl(W - 4.05 + i * 0.25, 12.9, 0.9, 0.06, 0.18, '#2b2d42', 'v');
-  k.solid(W - 4.2, 12.6, W - 2.7, 13.2, 0.9);
-  k.shelf('v', 1.6, D - 1.6, wallR(k), -1, { palette: SPORT, height: 2.2, levels: 2, depth: 0.25, item: { w: [0.05, 0.05], h: [0.65, 0.7] } });
-  cash(k, mid + 4.6, wb - 4.4);
+  for (const u of [fu0 + 4.2, fu0 + 5.6]) {
+    k.box(u - 0.25, 12.4, u + 0.25, 13.6, 0, 0.12, 'prop', '#2b2d42');
+    k.box(u - 0.04, 13.1, u + 0.04, 13.2, 0.12, 0.85, 'prop', '#f3722c');
+    k.box(u - 0.15, 13.05, u + 0.15, 13.35, 0.85, 0.92, 'prop', '#2b2d42');
+    k.box(u - 0.04, 12.5, u + 0.04, 12.6, 0.12, 1.1, 'prop', '#f3722c');
+    k.box(u - 0.25, 12.45, u + 0.25, 12.55, 1.05, 1.1, 'metal');
+    k.cyl(u, 12.85, 0.35, 0.22, 0.05, '#adb5bd', 'u');
+    k.solid(u - 0.25, 12.4, u + 0.25, 13.6, 1.1);
+  }
+  const du = fu0 + 7.6;
+  k.box(du - 0.75, 12.6, du + 0.75, 13.2, 0, 0.9, 'metal');
+  for (let i = 0; i < 6; i++) k.cyl(du - 0.6 + i * 0.24, 12.9, 0.9, 0.06, 0.18, '#2b2d42', 'v');
+  k.solid(du - 0.75, 12.6, du + 0.75, 13.2, 0.9);
+  k.box(du - 0.4, 15.4, du + 0.4, 15.8, 0, 0.9, 'prop', WOOD);
+  for (let i = 0; i < 5; i++) k.cyl(du - 0.3 + i * 0.15, 15.6, 0.9, 0.06, 0.6, k.pick(SPORT));
+  k.solid(du - 0.4, 15.4, du + 0.4, 15.8, 1.5);
   // 吊挂品类旗
-  for (const u of [10, 18, W - 18, W - 10]) hangingSign(k, u, 9.4, 2.0, k.pick(SPORT), true, 2.6, 4.4);
-  k.staffDoor(wallR(k) - 0.85);
+  for (const u of [8, 16, W - 16, W - 8]) hangingSign(k, u, 9.4, 2.0, k.pick(SPORT), true, 2.6, 4.4);
 };
 
-/** Summit Outdoor（主力店）：入口展示帐篷（木平台 + 露营椅）、天花吊独木舟、背包墙、登山鞋墙 + 试鞋坡、冲锋衣挂架、地图台、后墙收银 */
+/**
+ * Summit Outdoor（主力店）：入口展示帐篷（木平台 + 露营椅）、天花吊独木舟；
+ * 左翼装备区（炊具灯具货架、露营椅展示）、背包墙、登山鞋墙 + 试鞋坡 + 试鞋凳、攀登绳墙；
+ * 右翼冲锋衣挂架、睡袋炉具中岛、地图台（服务台）、租借柜台、落地皮划艇展架；后墙收银 + 户外主视觉。
+ */
 export const outdoor: Template = (k) => {
   const { W, D } = k;
   const mid = doorMid(k);
   retailRules(k);
-  // 展示帐篷：0.2 高木平台上一顶圆顶帐篷（叠几层模拟弧顶），旁边露营椅和炉具
+  const wb = wallB(k);
+  cash(k, mid, wb - 2.8, { w: 3.0 });
+  k.staffDoor(wallR(k) - 0.85);
+  // 展示帐篷：0.2 高木平台上一顶圆顶帐篷，旁边露营椅和炉具
   const tu = mid - 5.0;
   const tv = 5.0;
   k.box(tu - 2.0, tv - 1.6, tu + 2.0, tv + 1.6, 0, 0.2, 'prop', WOOD, 'solid');
@@ -98,25 +141,51 @@ export const outdoor: Template = (k) => {
   for (const [u, v] of [
     [mid - 3.0, 9.4],
     [mid + 4.0, 9.0],
+    [10.0, 9.4],
+    [W - 10.0, 9.2],
   ]) {
-    k.box(u - 2.25, v - 0.4, u + 2.25, v + 0.4, 3.0, 3.35, 'prop', u < mid ? '#f3722c' : '#f9c74f');
+    k.box(u - 2.25, v - 0.4, u + 2.25, v + 0.4, 3.0, 3.35, 'prop', k.pick(['#f3722c', '#f9c74f', '#277da1']));
     k.box(u - 1.6, v - 0.3, u + 1.6, v + 0.3, 3.35, 3.4, 'prop', '#2b2d42');
   }
-  // 左翼：背包墙 + 登山鞋墙 + 试鞋坡（几级台阶模拟坡面 + 扶手）
+
+  // ---- 左翼前区：装备货架 + 露营椅展示 ----
+  const gear = ['#adb5bd', '#6c757d', '#f3722c', '#2a9d8f', '#e9c46a', '#264653'];
+  for (const c of [4.0, 6.8, 9.6, 12.4]) place(k, c, 4.7, 0.9, 5.4, () => k.gondola('v', 2.0, 7.4, c, { palette: gear, height: 1.5, levels: 4 }), 0.3);
+  for (let i = 0; i < 4; i++) {
+    const u = 15.2 + i * 0.8;
+    if (k.fits(u - 0.25, 2.0, u + 0.25, 2.5)) k.chair(u, 2.2, 0, 1, { color: k.pick(['#bc4749', '#2a9d8f', '#f9c74f']), seatH: 0.45, w: 0.46 });
+  }
+  // ---- 左翼后区：背包墙、登山鞋墙 + 试鞋坡 + 试鞋凳、攀登绳 ----
   k.shelf('v', 1.6, D - 1.6, wallL(k), 1, { palette: SPORT, height: 2.4, levels: 4, depth: 0.45, item: { w: [0.3, 0.38], h: [0.4, 0.5] } });
-  const wb = wallB(k);
   k.shelf('u', wallL(k), 15, wb, -1, shoeWall);
   for (let i = 0; i < 5; i++) k.box(9.0 + i * 0.3, 13.0, 9.3 + i * 0.3, 14.0, 0, 0.05 + i * 0.1, 'prop', '#8d6e63');
   k.box(9.0, 12.95, 10.5, 13.0, 0, 1.0, 'metal');
   k.box(9.0, 14.0, 10.5, 14.05, 0, 1.0, 'metal');
   k.solid(9.0, 12.95, 10.5, 14.05, 0.5);
-  // 右翼：冲锋衣挂架、睡袋和炉具中岛、地图台、租借柜台
-  for (let v = 4.0; v < 8.0; v += 2.0) k.rack('u', mid + 5, W - 4, v, { palette: SPORT });
-  grid(mid + 5, W - 3, 11.2, 15.0, 3.2, 2.6, (u, v) => place(k, u, v, 1.8, 0.9, () => k.displayTable(u, v, 1.8, 0.9, { palette: SPORT, h: 0.8, stacks: true }), 0.5));
+  for (const u of [4.5, 13.5]) place(k, u, 13.5, 2.4, 0.5, () => k.bench('u', u - 1.2, u + 1.2, 13.5, 0, 1, { color: '#6a994e' }), 0.3);
+  for (let i = 0; i < 5; i++) k.cyl(16.6 + i * 0.6, wb - 0.15, 1.5, 0.22, 0.12, k.pick(['#f3722c', '#277da1', '#f9c74f', '#90be6d']), 'v');
+  k.solid(16.2, wb - 0.4, 19.6, wb, 1.8);
+
+  // ---- 右翼：冲锋衣挂架、睡袋炉具中岛、地图台、租借柜台、皮划艇展架 ----
+  for (const v of [2.4, 4.2, 6.0]) place(k, (mid + 5 + W - 4) / 2, v, W - 4 - mid - 5, 0.6, () => k.rack('u', mid + 5, W - 4, v, { palette: SPORT }), 0.3);
   k.shelf('v', 1.6, D - 1.6, wallR(k), -1, { palette: SPORT, height: 2.2 });
-  // 收银：后墙中段（背后户外主视觉）
-  cash(k, mid, wb - 2.8, { w: 3.0 });
-  k.staffDoor(wallR(k) - 0.85);
+  grid(mid + 5, W - 9, 11.4, 15.4, 3.0, 2.6, (u, v) => place(k, u, v, 1.8, 0.9, () => k.displayTable(u, v, 1.8, 0.9, { palette: SPORT, h: 0.8, stacks: true }), 0.5));
+  // 地图台（服务台）
+  const mu = W - 6.5;
+  place(k, mu, 12.0, 1.6, 0.9, () => {
+    k.counter(mu - 0.8, 11.55, mu + 0.8, 12.45, { color: WOOD, top: '#e9f5db', register: false });
+    for (let i = 0; i < 3; i++) k.product(mu - 0.5 + i * 0.5, 12.0, 0.95, 0.4, 0.005, 0.5, true, k.pick(['#e9f5db', '#a7c957', '#90e0ef']));
+  }, 0.3);
+  // 租借柜台
+  k.counter(W - 5.0, wb - 2.4, W - 2.0, wb - 1.7, { color: '#386641' });
+  k.shelf('u', W - 5.2, W - 2.0, wb, -1, { palette: SPORT, height: 2.0, levels: 3 });
+  // 皮划艇落地展架
+  const ku = mid + 9.0;
+  place(k, ku, wb - 1.0, 4.6, 0.9, () => {
+    for (const du of [-1.6, 1.6]) k.box(ku + du - 0.05, wb - 1.35, ku + du + 0.05, wb - 0.65, 0, 0.6, 'prop', WOOD);
+    k.box(ku - 2.25, wb - 1.4, ku + 2.25, wb - 0.6, 0.6, 0.95, 'prop', '#f9c74f');
+    k.solid(ku - 2.25, wb - 1.4, ku + 2.25, wb - 0.6, 0.95);
+  }, 0.2);
 };
 
 /** Stride：鞋墙、两条试鞋凳、步态分析角（跑步机 + 三脚架摄像机 + 屏幕 + 足型扫描台）、地上的试跑道、门口收银 */
