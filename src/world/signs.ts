@@ -4,9 +4,10 @@ import { edgeOf, openingCenter } from './rectOps.ts';
 import { OUTSIDE_FLOOR } from './StaticBatch.ts';
 import { LOCKER_HEIGHT, SERVICE_PANEL_HEIGHT, amenityFrame, facingVector } from './amenities.ts';
 import { stairDoor } from './stairs.ts';
+import { drawLogoSign } from './logos.ts';
 
-// 招牌：Canvas 画文字贴到平面上。店名一律英文；设施和楼梯的牌子中英双语，不随界面语言变化。
-// 阶段 4 会换成带原创 logo 的招牌。
+// 招牌：Canvas 画贴图贴到平面上。店铺招牌是原创 logo（品类图标徽章 + 英文字标，见 logos.ts）；
+// 设施和楼梯的牌子中英双语，不随界面语言变化。
 
 const FONT = '"Avenir Next", "PingFang SC", "Helvetica Neue", Arial, sans-serif';
 // 每米多少像素：招牌有六十多块，太高会占很多显存
@@ -34,19 +35,13 @@ export function buildSigns(layout: MallLayout): THREE.Group {
     const c = openingCenter(s.rect, entry);
     const y = s.floor * H;
     const openH = entry.height ?? (entry.kind === 'storefront' ? b.storefrontHeight : b.doorHeight);
-    const style: SignStyle = {
-      bg: s.theme.primary,
-      fg: readableOn(s.theme.primary),
-      accent: s.theme.accent,
-      height: 0.95,
-      maxWidth: Math.max(4, Math.min(entry.width + 2, 12)),
-    };
+    const texture = canvasTexture(drawLogoSign(s, Math.round(0.95 * PX_PER_M)));
     // 门外上方的大招牌
-    addSign(group, s.name, style, c.x + c.outX * offset, y + openH + 0.75, c.z + c.outZ * offset, c.outX, c.outZ, s.floor);
+    addTextureSign(group, `sign:${s.id}`, texture, 0.95, Math.max(4, Math.min(entry.width + 2, 12)), c.x + c.outX * offset, y + openH + 0.75, c.z + c.outZ * offset, c.outX, c.outZ, s.floor);
     // 门内上方的小招牌（室外区域没有）
     if (s.kind !== 'outdoor') {
       const inset = b.partition + offset;
-      addSign(group, s.name, { ...style, height: 0.55, maxWidth: 5 }, c.x - c.outX * inset, y + openH + 0.6, c.z - c.outZ * inset, -c.outX, -c.outZ, s.floor);
+      addTextureSign(group, `sign-in:${s.id}`, texture, 0.55, 5, c.x - c.outX * inset, y + openH + 0.6, c.z - c.outZ * inset, -c.outX, -c.outZ, s.floor);
     }
   }
 
@@ -108,19 +103,32 @@ export function buildSigns(layout: MallLayout): THREE.Group {
 }
 
 function addSign(group: THREE.Group, text: string, style: SignStyle, x: number, y: number, z: number, outX: number, outZ: number, floor: number) {
-  const { texture, aspect } = signTexture(text, style);
-  let w = style.height * aspect;
-  let h = style.height;
-  if (style.maxWidth && w > style.maxWidth) {
-    h *= style.maxWidth / w;
-    w = style.maxWidth;
+  const { texture } = signTexture(text, style);
+  addTextureSign(group, `sign:${text}`, texture, style.height, style.maxWidth, x, y, z, outX, outZ, floor);
+}
+
+function canvasTexture(c: HTMLCanvasElement): THREE.CanvasTexture {
+  const texture = new THREE.CanvasTexture(c);
+  texture.colorSpace = THREE.SRGBColorSpace;
+  texture.anisotropy = 8;
+  return texture;
+}
+
+/** 按贴图宽高比放一块招牌；超过 maxWidth 时等比缩小 */
+function addTextureSign(group: THREE.Group, name: string, texture: THREE.CanvasTexture, height: number, maxWidth: number | undefined, x: number, y: number, z: number, outX: number, outZ: number, floor: number) {
+  const img = texture.image as HTMLCanvasElement;
+  let w = height * (img.width / img.height);
+  let h = height;
+  if (maxWidth && w > maxWidth) {
+    h *= maxWidth / w;
+    w = maxWidth;
   }
   const mat = new THREE.MeshBasicMaterial({ map: texture, transparent: true, toneMapped: false });
   const mesh = new THREE.Mesh(new THREE.PlaneGeometry(w, h), mat);
   mesh.position.set(x, y, z);
   mesh.rotation.y = Math.atan2(outX, outZ);
   mesh.userData.floor = floor;
-  mesh.name = `sign:${text}`;
+  mesh.name = name;
   group.add(mesh);
 }
 
@@ -162,10 +170,7 @@ function signTexture(text: string, style: SignStyle): { texture: THREE.CanvasTex
     g.globalAlpha = 1;
   }
 
-  const texture = new THREE.CanvasTexture(c);
-  texture.colorSpace = THREE.SRGBColorSpace;
-  texture.anisotropy = 8;
-  return { texture, aspect: w / h };
+  return { texture: canvasTexture(c), aspect: w / h };
 }
 
 function roundRect(g: CanvasRenderingContext2D, x: number, y: number, w: number, h: number, r: number) {
@@ -176,11 +181,4 @@ function roundRect(g: CanvasRenderingContext2D, x: number, y: number, w: number,
   g.arcTo(x, y + h, x, y, r);
   g.arcTo(x, y, x + w, y, r);
   g.closePath();
-}
-
-/** 根据背景亮度选白字或深色字。 */
-function readableOn(hex: string): string {
-  const n = parseInt(hex.slice(1), 16);
-  const lum = (0.2126 * ((n >> 16) & 255) + 0.7152 * ((n >> 8) & 255) + 0.0722 * (n & 255)) / 255;
-  return lum > 0.62 ? '#1f2430' : '#ffffff';
 }
