@@ -1,6 +1,7 @@
 import * as THREE from 'three';
-import { BloomEffect, EffectComposer, EffectPass, NormalPass, RenderPass, ToneMappingEffect, ToneMappingMode } from 'postprocessing';
+import { BloomEffect, EffectComposer, EffectPass, NormalPass, Pass, RenderPass, ToneMappingEffect, ToneMappingMode } from 'postprocessing';
 import { ToonEdgeEffect } from './ToonEdgeEffect.ts';
+import { DayCycle, createSkyDome } from './DayCycle.ts';
 
 export interface RendererOptions {
   /** 关闭后处理（调试或低配时用 ?nofx） */
@@ -16,8 +17,12 @@ export class Renderer {
   readonly scene = new THREE.Scene();
   readonly camera: THREE.PerspectiveCamera;
   private composer: EffectComposer | null = null;
+  /** 不参与描边的物体（光束这类半透明效果）：画法线时暂时隐藏 */
+  private readonly noOutline: THREE.Object3D[] = [];
   private readonly sky: THREE.Mesh;
   readonly sun: THREE.DirectionalLight;
+  /** 昼夜循环（太阳、天空、雾、补光） */
+  readonly day: DayCycle;
 
   constructor(container: HTMLElement, opts: RendererOptions = {}) {
     const postFx = opts.postFx ?? true;
@@ -39,16 +44,18 @@ export class Renderer {
     this.camera.rotation.order = 'YXZ';
 
     this.scene.background = new THREE.Color('#cfe9ff');
-    this.scene.fog = new THREE.Fog('#dcefff', 120, 420);
-    this.sky = createSky();
+    const fog = new THREE.Fog('#dcefff', 120, 420);
+    this.scene.fog = fog;
+    this.sky = createSkyDome();
     this.scene.add(this.sky);
 
-    // 卡通明暗主要来自这盏主光（方向决定墙面落在哪一段），补光把暗部抬亮
+    // 卡通明暗主要来自这盏主光（方向决定墙面落在哪一段），补光把暗部抬亮；颜色和方向由昼夜循环驱动
     this.sun = new THREE.DirectionalLight('#fff4e2', 2.1);
     this.sun.position.set(30, 80, 45);
     const hemi = new THREE.HemisphereLight('#fdfbff', '#efe4d2', 1.1);
     const ambient = new THREE.AmbientLight('#ffffff', 0.25);
     this.scene.add(this.sun, hemi, ambient);
+    this.day = new DayCycle({ sun: this.sun, hemi, ambient, fog, sky: this.sky });
 
     if (postFx) this.setupPostFx();
     window.addEventListener('resize', () => this.resize());
@@ -61,12 +68,19 @@ export class Renderer {
     });
     composer.addPass(new RenderPass(this.scene, this.camera));
     const normalPass = new NormalPass(this.scene, this.camera);
+    composer.addPass(new VisibilityPass(this.noOutline, false));
     composer.addPass(normalPass);
+    composer.addPass(new VisibilityPass(this.noOutline, true));
     const edges = new ToonEdgeEffect({ normalBuffer: normalPass.texture, thickness: Math.min(window.devicePixelRatio, 2) * 0.75 });
     const bloom = new BloomEffect({ luminanceThreshold: 0.92, luminanceSmoothing: 0.08, intensity: 0.45, mipmapBlur: true, radius: 0.6 });
     const tone = new ToneMappingEffect({ mode: ToneMappingMode.NEUTRAL });
     composer.addPass(new EffectPass(this.camera, edges, bloom, tone));
     this.composer = composer;
+  }
+
+  /** 这个物体不描边（例如加法混合的光束） */
+  excludeFromOutline(obj: THREE.Object3D) {
+    this.noOutline.push(obj);
   }
 
   get canvas(): HTMLCanvasElement {
@@ -92,39 +106,25 @@ export class Renderer {
   }
 }
 
-/** 上蓝下浅的渐变天空球（不受雾影响）。阶段 5 再做日落。 */
-function createSky(): THREE.Mesh {
-  const geo = new THREE.SphereGeometry(600, 32, 16);
-  const mat = new THREE.ShaderMaterial({
-    side: THREE.BackSide,
-    depthWrite: false,
-    fog: false,
-    uniforms: {
-      top: { value: new THREE.Color('#6fb9f2') },
-      horizon: { value: new THREE.Color('#e6f4ff') },
-      bottom: { value: new THREE.Color('#f3efe6') },
-    },
-    vertexShader: /* glsl */ `
-      varying vec3 vDir;
-      void main() {
-        vDir = normalize(position);
-        gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
-      }`,
-    fragmentShader: /* glsl */ `
-      uniform vec3 top;
-      uniform vec3 horizon;
-      uniform vec3 bottom;
-      varying vec3 vDir;
-      void main() {
-        float h = vDir.y;
-        vec3 c = h > 0.0 ? mix(horizon, top, pow(smoothstep(0.0, 0.7, h), 0.8)) : mix(horizon, bottom, smoothstep(0.0, -0.2, h));
-        gl_FragColor = vec4(c, 1.0);
-        #include <colorspace_fragment>
-      }`,
-  });
-  const sky = new THREE.Mesh(geo, mat);
-  sky.name = 'sky';
-  sky.frustumCulled = false;
-  sky.renderOrder = -1;
-  return sky;
+/** 在后处理链中途切换一组物体的可见性（画法线前隐藏，画完再恢复原来的可见性） */
+class VisibilityPass extends Pass {
+  constructor(
+    private readonly objects: THREE.Object3D[],
+    private readonly show: boolean,
+  ) {
+    super('VisibilityPass');
+    this.needsSwap = false;
+  }
+
+  render() {
+    for (const o of this.objects) {
+      if (this.show) o.visible = hiddenState.get(o) ?? o.visible;
+      else {
+        hiddenState.set(o, o.visible);
+        o.visible = false;
+      }
+    }
+  }
 }
+
+const hiddenState = new WeakMap<THREE.Object3D, boolean>();

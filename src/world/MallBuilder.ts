@@ -2,7 +2,7 @@ import * as THREE from 'three';
 import { ESCALATOR, floorByLevel, levelRange, type FloorDef, type MallLayout, type Opening, type Rect, type ShopDef, type Side } from '../data/layoutTypes.ts';
 import type { PhysicsWorld } from '../systems/physics/PhysicsWorld.ts';
 import { createWorldMaterials } from '../render/worldMaterials.ts';
-import { OUTSIDE_FLOOR, StaticBatch } from './StaticBatch.ts';
+import { OUTSIDE_FLOOR, StaticBatch, type MatKey } from './StaticBatch.ts';
 import { containsRect, sideOnBoundary } from './rectOps.ts';
 import { addWall } from './walls.ts';
 import { buildStairCore, stairHoles } from './stairs.ts';
@@ -29,6 +29,8 @@ export interface BuiltMall {
   decor: DecorSlot[];
   /** 开发检查：店内布置的问题 */
   issues: string[];
+  /** 世界材质（昼夜循环要调室外材质的明暗） */
+  materials: Record<MatKey, THREE.Material>;
 }
 
 /** 根据 mallLayout 生成整座灰盒商场：楼板、外墙、店铺空壳、栏杆、楼梯间、屋顶、广场和招牌。 */
@@ -63,10 +65,11 @@ export function buildMall(layout: MallLayout, physics: PhysicsWorld): BuiltMall 
   for (const el of layout.circulation.elevators) buildElevatorShaft(layout, el, batch);
   buildRoof(layout, top, roofY, batch);
 
-  const root = batch.build(createWorldMaterials(), physics);
+  const materials = createWorldMaterials();
+  const root = batch.build(materials, physics);
   root.add(buildSigns(layout, interiors.backLogos));
   root.add(interiors.products);
-  return { root, batch, seats, npcSpots: interiors.npcSpots, products: interiors.products, decor: interiors.decor, issues: interiors.issues };
+  return { root, batch, seats, npcSpots: interiors.npcSpots, products: interiors.products, decor: interiors.decor, issues: interiors.issues, materials };
 }
 
 function buildGround(layout: MallLayout, batch: StaticBatch) {

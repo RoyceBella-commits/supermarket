@@ -30,6 +30,7 @@ import { VoicePlayer } from '../systems/audio/VoicePlayer.ts';
 import { DialogueBox } from '../ui/DialogueBox.ts';
 import { NpcSystem } from '../npc/NpcSystem.ts';
 import { buildDecor } from '../world/decor.ts';
+import { LightShafts } from '../world/lightShafts.ts';
 
 const FIXED_DT = 1 / 60;
 const MAX_STEPS = 5;
@@ -92,6 +93,19 @@ export class Game {
       world = built.root;
       this.seats.addAll(built.seats);
       this.interiorIssues = built.issues;
+      // 天窗光束：跟着太阳斜照，日落发橙，夜里消失
+      const shafts = new LightShafts(this.layout);
+      this.renderer.scene.add(shafts.group);
+      this.renderer.excludeFromOutline(shafts.group);
+      this.renderer.day.onChange(() => shafts.update(this.renderer.day));
+      shafts.update(this.renderer.day);
+      const m = built.materials;
+      this.renderer.day.setOutdoorMaterials([
+        { mat: m.ground, dark: 0.45 },
+        { mat: m.plaza, dark: 0.55 },
+        { mat: m.exterior, dark: 0.6 },
+        { mat: m.roof, dark: 0.5 },
+      ]);
       if (import.meta.env.DEV) this.reportLayoutProblems(this.layout);
       this.npcSpots = built.npcSpots;
       this.products = built.products;
@@ -195,7 +209,7 @@ export class Game {
       console.warn('[music]', err);
       toast.show(i18n.t('music.loadFailed'), { error: true });
     });
-    this.musicPanel = new MusicPanel(this.music);
+    this.musicPanel = new MusicPanel(this.music, this.renderer.day);
     this.musicPanel.onClose = () => this.closeMusicPanel(true);
   }
 
@@ -236,6 +250,9 @@ export class Game {
     let dt = (now - this.last) / 1000;
     this.last = now;
     if (dt > 0.25) dt = 0.25;
+
+    this.renderer.day.update(dt);
+    this.hud?.setClock(this.renderer.day.clock, this.renderer.day.night > 0.5);
 
     const mouse = this.input.consumeMouse();
     const [minPitch, maxPitch] = this.cameraRig.pitchLimits;
@@ -567,6 +584,13 @@ export class Game {
         game.interaction.update(game.player.curr);
         if (game.elevatorPanel.isOpen) game.closeElevatorPanel(false);
         else game.interaction.interact();
+      },
+      /** 设置游戏内时间（小时） */
+      setTime(hours: number) {
+        game.renderer.day.setHours(hours);
+      },
+      get day() {
+        return game.renderer.day;
       },
       setYaw(deg: number) {
         game.player.yaw = (deg * Math.PI) / 180;

@@ -2,6 +2,7 @@ import type { MusicDirector } from '../systems/audio/MusicDirector.ts';
 import type { PlaylistItem } from '../systems/audio/Playlist.ts';
 import { AUDIO_ACCEPT } from '../systems/audio/formatSupport.ts';
 import { i18n } from './i18n.ts';
+import type { DayCycle } from '../render/DayCycle.ts';
 
 /**
  * 音乐面板（M 键）：正在播放、进度、播放控制、模式、音量、歌单（勾选 / 移除）、导入本地音乐（多选或拖放）。
@@ -14,7 +15,12 @@ export class MusicPanel {
   private timer = 0;
   onClose: () => void = () => {};
 
-  constructor(private readonly music: MusicDirector) {
+  private timeDragging = false;
+
+  constructor(
+    private readonly music: MusicDirector,
+    private readonly day: DayCycle | null = null,
+  ) {
     this.root = document.createElement('div');
     this.root.className = 'music-panel hidden';
     this.fileInput = document.createElement('input');
@@ -90,6 +96,15 @@ export class MusicPanel {
           <input type="range" min="0" max="100" value="${Math.round(m.getVolume() * 100)}" data-act="volume" />
         </label>
       </div>
+      ${
+        this.day
+          ? `<div class="mp-time">
+        <div class="mp-time-head"><span>${t('time.label')}</span><b class="mp-clock">${this.day.clock}</b>
+          <button type="button" data-act="timePause" class="mp-chip">${this.day.paused ? t('time.resume') : t('time.pause')}</button></div>
+        <input type="range" class="mp-time-range" min="0" max="1440" step="5" value="${Math.round(this.day.hours * 60)}" data-act="time" />
+      </div>`
+          : ''
+      }
       <ul class="mp-list">
         ${items.length === 0 ? `<li class="mp-empty">${t('music.empty')}</li>` : items.map((it) => this.row(it, cur)).join('')}
       </ul>
@@ -126,6 +141,12 @@ export class MusicPanel {
 
   private updateProgress() {
     if (!this.open) return;
+    if (this.day) {
+      const clock = this.root.querySelector<HTMLElement>('.mp-clock');
+      if (clock) clock.textContent = this.day.clock;
+      const range = this.root.querySelector<HTMLInputElement>('.mp-time-range');
+      if (range && !this.timeDragging) range.value = String(Math.round(this.day.hours * 60));
+    }
     const m = this.music;
     const dur = m.currentDuration;
     const time = m.currentTime;
@@ -144,6 +165,12 @@ export class MusicPanel {
     if (!el || el.tagName === 'INPUT') return;
     const id = el.dataset.id ?? '';
     switch (el.dataset.act) {
+      case 'timePause':
+        if (this.day) {
+          this.day.setPaused(!this.day.paused);
+          this.render();
+        }
+        break;
       case 'close':
         this.onClose();
         break;
@@ -177,6 +204,7 @@ export class MusicPanel {
 
   private onChange(e: Event) {
     const el = e.target as HTMLInputElement;
+    if (el.dataset.act === 'time') this.timeDragging = false;
     switch (el.dataset.act) {
       case 'enable':
         this.music.setEnabled(el.dataset.id ?? '', el.checked);
@@ -192,6 +220,12 @@ export class MusicPanel {
 
   private onInput(e: Event) {
     const el = e.target as HTMLInputElement;
+    if (el.dataset.act === 'time' && this.day) {
+      this.timeDragging = true;
+      this.day.setHours(Number(el.value) / 60);
+      const clock = this.root.querySelector<HTMLElement>('.mp-clock');
+      if (clock) clock.textContent = this.day.clock;
+    }
     if (el.dataset.act === 'volume') this.music.setVolume(Number(el.value) / 100);
     if (el.dataset.act === 'seek') {
       this.seeking = true;

@@ -816,3 +816,32 @@ body.dropping::after {
   color: #2a1a00;
   border-color: transparent;
 }
+
+/* ---------- 时间 ---------- */
+.hud-clock {
+  font-variant-numeric: tabular-nums;
+  font-weight: 600;
+}
+
+.mp-time {
+  margin: 10px 0 4px;
+  padding: 10px 12px;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.mp-time-head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 6px;
+}
+
+.mp-time-head .mp-clock {
+  font-variant-numeric: tabular-nums;
+  flex: 1;
+}
+
+.mp-time-range {
+  width: 100%;
+}

@@ -11,6 +11,8 @@ export class Hud {
   private readonly music: HTMLDivElement;
   private readonly crosshair: HTMLDivElement;
   private readonly prompt: HTMLDivElement;
+  private readonly clock: HTMLDivElement;
+  private clockText = '';
   private promptText = '';
   private zone: ZoneInfo | null = null;
   private musicTitle = '';
@@ -20,10 +22,12 @@ export class Hud {
     this.root.className = 'hud';
     this.root.innerHTML = `
       <div class="hud-card hud-floor"><span class="hud-floor-label"></span><span class="hud-floor-theme"></span></div>
-      <div class="hud-card hud-zone"></div>`;
+      <div class="hud-card hud-zone"></div>
+      <div class="hud-card hud-clock"></div>`;
     this.floorLabel = this.root.querySelector('.hud-floor-label')!;
     this.floorTheme = this.root.querySelector('.hud-floor-theme')!;
     this.zoneCard = this.root.querySelector('.hud-zone')!;
+    this.clock = this.root.querySelector('.hud-clock')!;
     this.music = document.createElement('div');
     this.music.className = 'hud-card hud-music';
     this.crosshair = document.createElement('div');
@@ -43,6 +47,14 @@ export class Hud {
     this.music.style.display = v ? '' : 'none';
     this.crosshair.style.display = v ? '' : 'none';
     this.prompt.style.display = v ? '' : 'none';
+  }
+
+  /** 游戏内时间（只在分钟变化时改 DOM）；night 时显示月亮 */
+  setClock(text: string, night: boolean) {
+    const t = `${night ? '☾' : '☀'} ${text}`;
+    if (t === this.clockText) return;
+    this.clockText = t;
+    this.clock.textContent = t;
   }
 
   /** 底部的“按 E …”提示；null 隐藏 */

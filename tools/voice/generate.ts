@@ -21,6 +21,10 @@ import { homedir } from 'node:os';
 import { dirname, join, relative } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { type DialogueLine, type NpcDef, npcs } from '../../src/data/npcDialogue.ts';
+import { announcerSpeakers } from '../../src/data/announcements.ts';
+
+/** 所有说话人：店员 + 商场广播员（正式音色 announcer，试音候选 announcer-a/b/c） */
+const speakers: NpcDef[] = [...npcs, ...announcerSpeakers()];
 
 // ---------- 配置 ----------
 const HOME = homedir();
@@ -92,7 +96,7 @@ if (!audition && !all && !only) {
   process.exit(1);
 }
 if (only) {
-  for (const id of only) if (!npcs.some((n) => n.shopId === id)) throw new Error(`没有这家店的店员：${id}`);
+  for (const id of only) if (!speakers.some((n) => n.shopId === id)) throw new Error(`没有这个说话人：${id}`);
 }
 
 // ---------- 小工具 ----------
@@ -400,7 +404,7 @@ function loadManifest(): Manifest {
 }
 
 const lineOrder = new Map<string, number>();
-npcs.forEach((n, i) => n.lines.forEach((l, j) => lineOrder.set(l.id, i * 100 + j)));
+speakers.forEach((n, i) => n.lines.forEach((l, j) => lineOrder.set(l.id, i * 100 + j)));
 
 function saveManifest(m: Manifest): void {
   const ids = Object.keys(m.lines).sort((a, b) => (lineOrder.get(a) ?? 1e9) - (lineOrder.get(b) ?? 1e9) || a.localeCompare(b));
@@ -473,7 +477,7 @@ function runQa(jobs: Job[]): QaResult[] {
 }
 
 // ---------- 试音合集 ----------
-async function buildAuditionMix(): Promise<void> {
+async function buildAuditionMix(list0: NpcDef[]): Promise<void> {
   const GAP = 0.8;
   const LEAD = 0.3;
   const shopInfo = new Map<string, { name: string; floor: string }>();
@@ -490,14 +494,14 @@ async function buildAuditionMix(): Promise<void> {
   let t = LEAD;
   const gap = new Uint8Array(Math.round(GAP * SR) * 2);
   const list: string[] = [
-    '店员试音合集（每位店员的第 1 句）',
+    '试音合集（每位说话人的第 1 句）',
     `合成文件：tools/voice/work/audition-all.m4a（各段之间停 ${GAP} 秒）`,
     `引擎：Qwen3-TTS ${MODEL}（VoiceDesign，语言 ${LANGUAGE}），离线生成；后期 −16 LUFS / ≤ −1 dBTP / AAC ${POST.bitrateK} kbps`,
     `生成时间：${new Date().toLocaleString('zh-CN', { hour12: false })}`,
     '',
   ];
   let n = 0;
-  for (const npc of npcs) {
+  for (const npc of list0) {
     const job = makeJob(npc, npc.lines[0]);
     if (!existsSync(job.outAbs)) {
       list.push(`--  ${npc.shopId}：还没有试音文件`, '');
@@ -529,12 +533,13 @@ async function buildAuditionMix(): Promise<void> {
     total.set(c, off);
     off += c.length;
   }
-  const mixPath = join(workDir, 'audition-all.m4a');
+  const mixName = list0.every((n) => n.shopId.startsWith('announcer')) ? 'audition-announcer' : only ? 'audition-some' : 'audition-all';
+  const mixPath = join(workDir, `${mixName}.m4a`);
   ff(['-v', 'error', '-y', '-f', 's16le', '-ar', String(SR), '-ac', '1', '-i', 'pipe:0',
     '-c:a', 'aac_at', '-aac_at_mode', 'cvbr', '-b:a', '96k', '-movflags', '+faststart', mixPath], total);
   list.splice(4, 0, `共 ${n} 段，总长 ${(total.length / 2 / SR).toFixed(1)} 秒`);
-  writeFileSync(join(workDir, 'audition-list.txt'), `${list.join('\n')}\n`);
-  console.log(`\n试音合集：${rel(mixPath)}（${n} 段，${(total.length / 2 / SR).toFixed(1)} s）\n试音清单：${rel(join(workDir, 'audition-list.txt'))}`);
+  writeFileSync(join(workDir, `${mixName}-list.txt`), `${list.join('\n')}\n`);
+  console.log(`\n试音合集：${rel(mixPath)}（${n} 段，${(total.length / 2 / SR).toFixed(1)} s）\n试音清单：${rel(join(workDir, `${mixName}-list.txt`))}`);
 }
 
 // ---------- 主流程 ----------
@@ -551,7 +556,8 @@ async function main(): Promise<void> {
     /* 布局文件正在被改时跳过核对 */
   }
 
-  const selected = npcs.filter((n) => !only || only.has(n.shopId));
+  // 默认（不带 --only）只处理店员和正式广播员，不处理试音候选
+  const selected = speakers.filter((n) => (only ? only.has(n.shopId) : !/^announcer-[a-z]$/.test(n.shopId)));
   const jobs = selected.flatMap((n) => (audition && !all ? [n.lines[0]] : n.lines).map((l) => makeJob(n, l)));
 
   const manifest = loadManifest();
@@ -610,7 +616,7 @@ async function main(): Promise<void> {
   }
 
   if (prune) {
-    const valid = new Set(npcs.flatMap((n) => n.lines.map((l) => l.id)));
+    const valid = new Set(speakers.filter((n) => !/^announcer-[a-z]$/.test(n.shopId)).flatMap((n) => n.lines.map((l) => l.id)));
     for (const id of Object.keys(manifest.lines)) if (!valid.has(id)) delete manifest.lines[id];
     saveManifest(manifest);
   }
@@ -636,7 +642,7 @@ async function main(): Promise<void> {
     }
   }
 
-  if (audition && !qaOnly) await buildAuditionMix();
+  if (audition && !qaOnly) await buildAuditionMix(selected);
 
   if (warnings.length) console.log(`\n提醒：\n  ${warnings.join('\n  ')}`);
   if (failures.length) {
