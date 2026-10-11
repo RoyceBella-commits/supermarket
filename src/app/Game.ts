@@ -16,6 +16,9 @@ import { DebugOverlay } from '../ui/DebugOverlay.ts';
 import { toast } from '../ui/Toast.ts';
 import { i18n } from '../ui/i18n.ts';
 import { devFlags } from './devFlags.ts';
+import { AudioEngine } from '../systems/audio/AudioEngine.ts';
+import { MusicDirector } from '../systems/audio/MusicDirector.ts';
+import { MusicPanel } from '../ui/MusicPanel.ts';
 
 const FIXED_DT = 1 / 60;
 const MAX_STEPS = 5;
@@ -43,6 +46,11 @@ export class Game {
   private readonly tmp = new THREE.Vector3();
   /** 有面板打开时，失去指针锁定不显示暂停界面 */
   private panelOpen = false;
+  private started = false;
+  private readonly audio = new AudioEngine();
+  private music!: MusicDirector;
+  private musicPanel!: MusicPanel;
+  private musicReady: Promise<void> = Promise.resolve();
 
   constructor(container: HTMLElement) {
     this.renderer = new Renderer(container);
@@ -67,7 +75,13 @@ export class Game {
 
     this.input = new Input(this.renderer.canvas);
     this.input.bind('KeyL', () => i18n.toggle());
+    this.input.bind('KeyM', () => this.toggleMusicPanel());
+    this.input.bind('Escape', () => {
+      if (this.musicPanel.isOpen) this.closeMusicPanel(false);
+    });
     this.input.onLockChange((locked) => this.onLockChange(locked));
+
+    this.setupMusic();
 
     if (this.layout) {
       this.zones = new ZoneIndex(this.layout);
@@ -87,10 +101,62 @@ export class Game {
     requestAnimationFrame(this.frame);
   }
 
-  /** 点击开始/继续：在同一个用户手势里请求指针锁定（Chrome 刚按过 Esc 时会拒绝）。 */
+  /** 点击开始/继续：在同一个用户手势里请求指针锁定（Chrome 刚按过 Esc 时会拒绝）并解锁音频。 */
   private activate() {
     void this.input.lock().then((ok) => {
       if (!ok) this.overlay.setNote(i18n.t('start.relockWait'));
+    });
+    void this.audio.unlock();
+    if (!this.started) {
+      this.started = true;
+      void this.musicReady.then(() => this.music.start());
+    }
+  }
+
+  private setupMusic() {
+    this.music = new MusicDirector(this.audio, {
+      onBuiltinLoaded: (source) => {
+        if (source === 'placeholder') toast.show(i18n.t('music.placeholder'));
+        console.info(`[music] 内置歌单：${source}`);
+      },
+      onTrackChange: (item) => this.hud?.setMusic(item ? item.title : ''),
+      onImportResult: (r) => {
+        if (r.added > 0) toast.show(i18n.t('music.added', { n: r.added }));
+        for (const name of r.notAudio) toast.show(i18n.t('music.notAudio', { name }), { error: true });
+        for (const name of r.unsupported) toast.show(i18n.t('music.unsupported', { name }), { error: true });
+      },
+    });
+    this.musicReady = this.music.loadBuiltin(devFlags.bgmSeek).catch((err) => {
+      console.warn('[music]', err);
+      toast.show(i18n.t('music.loadFailed'), { error: true });
+    });
+    this.musicPanel = new MusicPanel(this.music);
+    this.musicPanel.onClose = () => this.closeMusicPanel(true);
+  }
+
+  private toggleMusicPanel() {
+    if (!this.started) return;
+    if (this.musicPanel.isOpen) this.closeMusicPanel(true);
+    else this.openMusicPanel();
+  }
+
+  private openMusicPanel() {
+    this.panelOpen = true;
+    this.overlay.setMode('hidden');
+    this.input.unlock();
+    this.musicPanel.show();
+  }
+
+  /** relock：用 M 键或关闭按钮关闭时直接回到游戏；按 Esc 关闭时显示暂停界面。 */
+  private closeMusicPanel(relock: boolean) {
+    this.musicPanel.hide();
+    this.panelOpen = false;
+    if (!relock) {
+      this.overlay.setMode('paused');
+      return;
+    }
+    void this.input.lock().then((ok) => {
+      if (!ok) this.overlay.setMode('paused');
     });
   }
 
@@ -249,6 +315,24 @@ export class Game {
       },
       setPanelOpen(v: boolean) {
         game.panelOpen = v;
+      },
+      get music() {
+        return game.music;
+      },
+      get audio() {
+        return game.audio;
+      },
+      /** 测试用：不经过点击直接开始（音频可能仍被浏览器挂起） */
+      startWithoutGesture() {
+        game.overlay.setMode('hidden');
+        game.activate();
+      },
+      openMusicPanel() {
+        game.started = true;
+        game.openMusicPanel();
+      },
+      closeMusicPanel() {
+        game.closeMusicPanel(false);
       },
     };
   }

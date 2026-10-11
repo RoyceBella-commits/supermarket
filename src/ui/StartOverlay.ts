@@ -43,8 +43,8 @@ export class StartOverlay {
     const k = (s: string) => `<span class="kbd">${s}</span>`;
     const cta = this.mode === 'loading' ? t('start.loading') : this.mode === 'paused' ? t('start.resume') : t('start.click');
     this.root.innerHTML = `
-      <button class="lang-toggle" type="button">中 / EN</button>
       <div class="overlay-card">
+        <button class="lang-toggle" type="button">中 / EN</button>
         <h1 class="overlay-title">${t('app.title')}</h1>
         <p class="overlay-subtitle">${t('app.subtitle')}</p>
         <div class="overlay-controls">
