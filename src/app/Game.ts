@@ -26,6 +26,9 @@ import { ElevatorSystem } from '../world/elevator.ts';
 import { InteractionSystem } from '../systems/Interaction.ts';
 import { ElevatorPanel } from '../ui/ElevatorPanel.ts';
 import { SeatSystem, type Seat } from '../systems/Seats.ts';
+import { VoicePlayer } from '../systems/audio/VoicePlayer.ts';
+import { DialogueBox } from '../ui/DialogueBox.ts';
+import { NpcSystem } from '../npc/NpcSystem.ts';
 
 const FIXED_DT = 1 / 60;
 const MAX_STEPS = 5;
@@ -65,6 +68,9 @@ export class Game {
   private readonly interaction = new InteractionSystem();
   private readonly elevatorPanel = new ElevatorPanel();
   private readonly seats = new SeatSystem();
+  private readonly voice = new VoicePlayer(this.audio);
+  private readonly dialogue = new DialogueBox();
+  private npcs: NpcSystem | null = null;
   private seated: Seat | null = null;
 
   constructor(container: HTMLElement) {
@@ -89,6 +95,10 @@ export class Game {
     this.renderer.scene.add(world);
     if (this.layout) this.setupCirculation(this.layout);
     this.setupSeating();
+    if (this.layout) {
+      this.npcs = new NpcSystem(this.layout, this.renderer.scene, this.physics, this.interaction, this.voice, this.dialogue);
+      void this.voice.loadManifest();
+    }
 
     this.player = new PlayerController(this.physics);
     const spawn = this.spawnPoint();
@@ -305,9 +315,11 @@ export class Game {
   private updateDynamicWorld(dt: number, feet: THREE.Vector3) {
     this.escalators?.update(dt);
     for (const el of this.elevators) el.update();
+    this.npcs?.update(dt, feet);
     this.interaction.update(feet);
     const cur = this.interaction.current;
-    this.hud?.setPrompt(cur && !this.elevatorPanel.isOpen && !this.musicPanel.isOpen ? cur.prompt() : null);
+    const hidePrompt = !cur || this.elevatorPanel.isOpen || this.musicPanel.isOpen || cur.id === this.npcs?.activeInteractId;
+    this.hud?.setPrompt(hidePrompt ? null : cur.prompt());
   }
 
   private sitDown(seat: Seat) {
@@ -540,6 +552,20 @@ export class Game {
       },
       setYaw(deg: number) {
         game.player.yaw = (deg * Math.PI) / 180;
+      },
+      get npcs() {
+        return game.npcs;
+      },
+      /** 传送到某家店的店员面前并开始对话 */
+      talkTo(shopId: string) {
+        const n = game.npcs?.list.find((x) => x.def.shopId === shopId);
+        if (!n) return null;
+        const yaw = n.homeYaw;
+        const pos = n.home.clone().add(new THREE.Vector3(Math.sin(yaw) * 1.7, 0.05, Math.cos(yaw) * 1.7));
+        game.teleportTo(pos, yaw);
+        game.updateDynamicWorld(1 / 60, game.player.curr);
+        game.interaction.interact();
+        return game.npcs?.talkingTo?.def.lines[game.npcs.talkingTo.lineIndex] ?? null;
       },
       get seats() {
         return game.seats.seats;

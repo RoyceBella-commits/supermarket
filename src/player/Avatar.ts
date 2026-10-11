@@ -41,8 +41,11 @@ export class Avatar {
     this.shadow.scale.setScalar(this.height * 0.42);
   }
 
-  /** 加载 VRM；失败时返回胶囊占位并在 error 里给出原因。 */
-  static async load(url = DEFAULT_AVATAR_URL): Promise<{ avatar: Avatar; error?: unknown }> {
+  /**
+   * 加载 VRM；失败时返回胶囊占位并在 error 里给出原因。
+   * firstPerson：玩家自己的模型才需要（第一人称时隐藏头部）；NPC 传 false，否则第一人称下会看不到 NPC 的头。
+   */
+  static async load(url = DEFAULT_AVATAR_URL, opts: { firstPerson?: boolean; quiet?: boolean } = {}): Promise<{ avatar: Avatar; error?: unknown }> {
     try {
       const loader = new GLTFLoader();
       loader.register((parser) => new VRMLoaderPlugin(parser));
@@ -60,10 +63,10 @@ export class Avatar {
         const mats = Array.isArray(mesh.material) ? mesh.material : [mesh.material];
         for (const m of mats) if ((m as { isOutline?: boolean }).isOutline) m.visible = false;
       });
-      vrm.firstPerson?.setup();
+      if (opts.firstPerson !== false) vrm.firstPerson?.setup();
       return { avatar: new Avatar(vrm, vrm.scene) };
     } catch (error) {
-      console.warn('[avatar] VRM 加载失败，改用占位模型', error);
+      if (!opts.quiet) console.warn('[avatar] VRM 加载失败，改用占位模型', error);
       return { avatar: new Avatar(null, createPlaceholder()), error };
     }
   }
@@ -136,6 +139,7 @@ export class Avatar {
 
   setVisible(v: boolean) {
     this.root.visible = v;
+    if (!v) this.shadow.visible = false;
   }
 }
 

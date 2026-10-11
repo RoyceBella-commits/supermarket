@@ -748,3 +748,71 @@ body.dropping::after {
   font-size: 11px;
   color: var(--ui-muted);
 }
+
+/* ---------- 对话框 ---------- */
+.dialogue-box {
+  position: fixed;
+  left: 50%;
+  bottom: 5%;
+  transform: translateX(-50%);
+  width: min(640px, calc(100vw - 32px));
+  background: var(--ui-bg-strong);
+  color: var(--ui-fg);
+  border-radius: 18px;
+  padding: 14px 18px 12px;
+  z-index: 25;
+  pointer-events: none;
+  user-select: none;
+  box-shadow: 0 14px 40px rgba(0, 0, 0, 0.3);
+}
+
+.dialogue-box.hidden {
+  display: none;
+}
+
+.dialogue-box.pop {
+  animation: db-pop 0.18s ease-out;
+}
+
+@keyframes db-pop {
+  from {
+    opacity: 0.4;
+    transform: translateX(-50%) translateY(6px);
+  }
+}
+
+.db-head {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  margin-bottom: 6px;
+}
+
+.db-head b {
+  color: var(--ui-accent);
+  font-size: 15px;
+}
+
+.db-head span {
+  color: var(--ui-muted);
+  font-size: 13px;
+}
+
+.db-text {
+  font-size: 17px;
+  line-height: 1.55;
+}
+
+.db-foot {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 8px;
+  color: var(--ui-muted);
+  font-size: 12px;
+}
+
+.db-foot .kbd {
+  background: var(--ui-accent);
+  color: #2a1a00;
+  border-color: transparent;
+}
