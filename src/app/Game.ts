@@ -53,7 +53,7 @@ export class Game {
   private musicReady: Promise<void> = Promise.resolve();
 
   constructor(container: HTMLElement) {
-    this.renderer = new Renderer(container);
+    this.renderer = new Renderer(container, { postFx: !devFlags.nofx });
     this.overlay = new StartOverlay();
   }
 
@@ -216,7 +216,7 @@ export class Game {
       g.setAttribute('color', new THREE.BufferAttribute(colors, 4));
     }
 
-    this.renderer.render();
+    this.renderer.render(dt);
 
     if (this.debug) {
       const info = this.renderer.renderer.info.render;
@@ -310,6 +310,12 @@ export class Game {
       },
       setYaw(deg: number) {
         game.player.yaw = (deg * Math.PI) / 180;
+      },
+      /** 立即按当前状态渲染一帧（浏览器面板隐藏、渲染循环暂停时截图用） */
+      renderOnce() {
+        game.player.eyePosition(1, game.renderer.camera.position);
+        game.renderer.camera.rotation.set(game.player.pitch, game.player.yaw, 0);
+        game.renderer.render(1 / 60);
       },
       /** 同步模拟若干秒的物理步（不依赖渲染循环，页面在后台也能测）。返回脚底位置。 */
       simulate(forward: number, right: number, seconds: number, run = false, jump = false) {

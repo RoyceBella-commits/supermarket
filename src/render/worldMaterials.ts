@@ -1,16 +1,20 @@
 import * as THREE from 'three';
 import type { MatKey } from '../world/StaticBatch.ts';
 
-/** 灰盒阶段的材质：Lambert + 顶点色（店铺着色），地面带 1 m 网格方便判断距离和速度。阶段 2 换成卡通材质。 */
-export function createGreyboxMaterials(): Record<MatKey, THREE.Material> {
+/**
+ * “明亮柔和”的三段卡通材质（MeshToonMaterial + 渐变贴图），保留顶点色（店铺着色）和程序贴图。
+ * 描边由后处理统一画（render/ToonEdgeEffect），这里不做描边。
+ */
+export function createWorldMaterials(): Record<MatKey, THREE.Material> {
   const grid = gridTexture('#ffffff', 'rgba(60,60,70,0.16)');
   const fineGrid = gridTexture('#ffffff', 'rgba(60,60,70,0.09)');
   const paving = gridTexture('#ffffff', 'rgba(90,80,70,0.22)');
   const stripes = stripeTexture();
   const lockerDoors = lockerTexture();
 
+  const gradientMap = toonGradient();
   const lambert = (color: string, map?: THREE.Texture) =>
-    new THREE.MeshLambertMaterial({ color, map: map ?? null, vertexColors: true });
+    new THREE.MeshToonMaterial({ color, map: map ?? null, vertexColors: true, gradientMap });
 
   const glass = new THREE.MeshLambertMaterial({
     color: '#bfe3ff',
@@ -40,6 +44,22 @@ export function createGreyboxMaterials(): Record<MatKey, THREE.Material> {
     locker: lambert('#ffffff', lockerDoors),
     prop: lambert('#ffffff'),
   };
+}
+
+/**
+ * 卡通明暗的渐变贴图：三段，暗部不压得太黑（亮 1.0 / 中 0.84 / 暗 0.66），整体明亮柔和。
+ * 用 NearestFilter 保证分段是硬边。
+ */
+export function toonGradient(): THREE.DataTexture {
+  const steps = [168, 214, 255];
+  const data = new Uint8Array(steps.length * 4);
+  steps.forEach((v, i) => data.set([v, v, v, 255], i * 4));
+  const t = new THREE.DataTexture(data, steps.length, 1, THREE.RGBAFormat);
+  t.minFilter = THREE.NearestFilter;
+  t.magFilter = THREE.NearestFilter;
+  t.generateMipmaps = false;
+  t.needsUpdate = true;
+  return t;
 }
 
 /** 256 px 对应 2 m（UV 每 2 m 重复一次），画 2 × 2 格，即 1 m 一格。 */

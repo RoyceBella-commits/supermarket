@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import type { PhysicsWorld } from '../systems/physics/PhysicsWorld.ts';
-import { createGreyboxMaterials } from '../render/greyboxMaterials.ts';
+import { createWorldMaterials } from '../render/worldMaterials.ts';
 import { StaticBatch } from './StaticBatch.ts';
 
 /**
@@ -52,5 +52,5 @@ export function buildTestbed(physics: PhysicsWorld): THREE.Group {
   // 天花板：2.4 m 高，测试顶头
   b.box(4, 2.4, -26, 12, 2.6, -20, 'roof', 0);
 
-  return b.build(createGreyboxMaterials(), physics);
+  return b.build(createWorldMaterials(), physics);
 }

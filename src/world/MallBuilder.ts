@@ -1,7 +1,7 @@
 import * as THREE from 'three';
 import { floorByLevel, levelRange, type FloorDef, type MallLayout, type Opening, type Rect, type ShopDef, type Side } from '../data/layoutTypes.ts';
 import type { PhysicsWorld } from '../systems/physics/PhysicsWorld.ts';
-import { createGreyboxMaterials } from '../render/greyboxMaterials.ts';
+import { createWorldMaterials } from '../render/worldMaterials.ts';
 import { OUTSIDE_FLOOR, StaticBatch } from './StaticBatch.ts';
 import { containsRect, sideOnBoundary } from './rectOps.ts';
 import { addWall } from './walls.ts';
@@ -45,7 +45,7 @@ export function buildMall(layout: MallLayout, physics: PhysicsWorld): BuiltMall 
   buildAmenities(layout, batch);
   buildRoof(layout, top, roofY, batch);
 
-  const root = batch.build(createGreyboxMaterials(), physics);
+  const root = batch.build(createWorldMaterials(), physics);
   root.add(buildSigns(layout));
   return { root, batch };
 }
