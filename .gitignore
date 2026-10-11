@@ -14,3 +14,6 @@ public/audio/bgm/playlist.local.json
 # Python 缓存
 __pycache__/
 *.pyc
+
+# 开发截图
+tools/.shots/

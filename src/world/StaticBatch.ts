@@ -25,13 +25,14 @@ export type FaceDir = 'top' | 'bottom' | 'side';
 
 /**
  * 一个轴对齐盒子。画面和碰撞都从它生成，所以不会对不上。
- * collide：solid 有碰撞且可见；none 只显示；invisible 只有碰撞。
+ * collide：solid 有碰撞且可见；none 只显示；invisible 只有碰撞（也挡相机）；
+ * playerOnly 只挡玩家的隐形挡板（栏杆加高、广场边界），第三人称相机可以穿过。
  */
 export interface BoxSpec {
   min: [number, number, number];
   max: [number, number, number];
   mat: MatKey;
-  collide: 'solid' | 'none' | 'invisible';
+  collide: 'solid' | 'none' | 'invisible' | 'playerOnly';
   /** 所属楼层（分层加载用），-99 表示楼外 */
   floor: number;
   /** 颜色覆盖（店铺墙用店铺主题色），不填用材质默认色；只作用于使用 mat 的面 */
@@ -128,8 +129,8 @@ export class StaticBatch {
     };
 
     for (const b of this.boxes) {
-      if (b.collide !== 'none') physics.addBox(b.min, b.max);
-      if (b.collide === 'invisible') continue;
+      if (b.collide !== 'none') physics.addBox(b.min, b.max, b.collide === 'playerOnly');
+      if (b.collide === 'invisible' || b.collide === 'playerOnly') continue;
       for (const q of boxFaces(b)) push(q);
     }
     for (const q of this.quads) push(q);

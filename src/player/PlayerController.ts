@@ -1,11 +1,11 @@
 import * as THREE from 'three';
 import type { Collider, KinematicCharacterController, RigidBody } from '@dimforge/rapier3d-compat';
-import type { PhysicsWorld } from '../systems/physics/PhysicsWorld.ts';
+import { COLLIDE_PLAYER, type PhysicsWorld } from '../systems/physics/PhysicsWorld.ts';
 
-/** 手感参数（阶段 1 试玩后可调）。身高 = 2 × (halfHeight + radius) = 1.7 m。 */
+/** 手感参数（试玩后可调）。身体尺寸会按 VRM 角色的身高调整（configureBody）。 */
 export const PLAYER = {
-  radius: 0.3,
-  halfHeight: 0.55,
+  radius: 0.28,
+  height: 1.7,
   eyeHeight: 1.6,
   walkSpeed: 4.5,
   runSpeed: 7.5,
@@ -28,29 +28,35 @@ export interface MoveIntent {
 }
 
 /**
- * 第一人称角色：Rapier 运动学胶囊 + KinematicCharacterController。
+ * 玩家角色的物理部分：Rapier 运动学胶囊 + KinematicCharacterController。
+ * yaw / pitch 是相机朝向；移动方向相对 yaw（第一、第三人称一致）。
  * 位置以脚底为准；每个固定步记录前后两帧，渲染时插值，避免高刷屏抖动。
  */
-export class FirstPersonController {
+export class PlayerController {
   yaw = 0;
   pitch = 0;
   grounded = false;
   readonly prev = new THREE.Vector3();
   readonly curr = new THREE.Vector3();
-  private readonly vel = new THREE.Vector3();
-  private vy = 0;
+  /** 水平速度（m/s） */
+  readonly vel = new THREE.Vector3();
+  /** 竖直速度（m/s） */
+  vy = 0;
+  /** 上一步实际移动的水平速度 */
+  readonly moveVel = new THREE.Vector3();
+  height = PLAYER.height;
+  eyeHeight = PLAYER.eyeHeight;
   private readonly body: RigidBody;
-  private readonly collider: Collider;
+  private collider: Collider;
   private readonly kcc: KinematicCharacterController;
-  private readonly centerOffset = PLAYER.halfHeight + PLAYER.radius;
   private snapping = true;
   private autostep = true;
   private spawn = { pos: new THREE.Vector3(), yaw: 0 };
 
-  constructor(physics: PhysicsWorld) {
+  constructor(private readonly physics: PhysicsWorld) {
     const { R, world } = physics;
     this.body = world.createRigidBody(R.RigidBodyDesc.kinematicPositionBased());
-    this.collider = world.createCollider(R.ColliderDesc.capsule(PLAYER.halfHeight, PLAYER.radius), this.body);
+    this.collider = this.createCollider();
     const k = world.createCharacterController(0.02);
     k.setUp({ x: 0, y: 1, z: 0 });
     k.setMaxSlopeClimbAngle((PLAYER.maxSlopeDeg * Math.PI) / 180);
@@ -62,18 +68,39 @@ export class FirstPersonController {
     this.kcc = k;
   }
 
+  private get centerOffset() {
+    return this.height / 2;
+  }
+
+  private createCollider(): Collider {
+    const { R, world } = this.physics;
+    const halfHeight = Math.max(0.1, this.height / 2 - PLAYER.radius);
+    const desc = R.ColliderDesc.capsule(halfHeight, PLAYER.radius).setCollisionGroups(COLLIDE_PLAYER);
+    return world.createCollider(desc, this.body);
+  }
+
+  /** 按角色身高重建胶囊（脚底位置不变）。eyeHeight 用于第一人称相机。 */
+  configureBody(height: number, eyeHeight: number) {
+    this.height = THREE.MathUtils.clamp(height, 0.9, 2.2);
+    this.eyeHeight = THREE.MathUtils.clamp(eyeHeight, 0.6, this.height);
+    this.physics.world.removeCollider(this.collider, false);
+    this.collider = this.createCollider();
+    this.teleport(this.curr.clone(), this.yaw, this.pitch);
+  }
+
   setSpawn(pos: THREE.Vector3, yaw: number) {
     this.spawn = { pos: pos.clone(), yaw };
   }
 
   /** 瞬移到脚底位置 pos，朝向 yaw（0 = 看向 -z）。 */
-  teleport(pos: THREE.Vector3, yaw = this.yaw) {
+  teleport(pos: THREE.Vector3, yaw = this.yaw, pitch = 0) {
     this.curr.copy(pos);
     this.prev.copy(pos);
     this.vel.set(0, 0, 0);
+    this.moveVel.set(0, 0, 0);
     this.vy = 0;
     this.yaw = yaw;
-    this.pitch = 0;
+    this.pitch = pitch;
     const c = { x: pos.x, y: pos.y + this.centerOffset, z: pos.z };
     this.body.setTranslation(c, true);
     this.body.setNextKinematicTranslation(c);
@@ -83,11 +110,10 @@ export class FirstPersonController {
     this.teleport(this.spawn.pos, this.spawn.yaw);
   }
 
-  look(dx: number, dy: number) {
+  look(dx: number, dy: number, minPitch = -89, maxPitch = 89) {
     this.yaw -= dx * PLAYER.mouseSensitivity;
     this.pitch -= dy * PLAYER.mouseSensitivity;
-    const lim = (89 * Math.PI) / 180;
-    this.pitch = Math.max(-lim, Math.min(lim, this.pitch));
+    this.pitch = THREE.MathUtils.clamp(this.pitch, (minPitch * Math.PI) / 180, (maxPitch * Math.PI) / 180);
   }
 
   /** 一个固定物理步。调用后需要 world.step()。 */
@@ -146,6 +172,9 @@ export class FirstPersonController {
     this.curr.set(this.curr.x + m.x, this.curr.y + m.y, this.curr.z + m.z);
     this.body.setNextKinematicTranslation({ x: this.curr.x, y: this.curr.y + this.centerOffset, z: this.curr.z });
 
+    // 实际走出的水平速度（撞墙时比 vel 小），给动画用，角色不会对着墙“原地狂奔”
+    if (dt > 0) this.moveVel.set(m.x / dt, 0, m.z / dt);
+
     this.grounded = this.kcc.computedGrounded();
     if (this.grounded && this.vy < 0) this.vy = 0;
     // 顶到天花板：向上的位移被挡住
@@ -157,7 +186,7 @@ export class FirstPersonController {
   /** 插值后的眼睛位置。alpha = 当前帧在两个物理步之间的比例。 */
   eyePosition(alpha: number, out: THREE.Vector3): THREE.Vector3 {
     out.lerpVectors(this.prev, this.curr, alpha);
-    out.y += PLAYER.eyeHeight;
+    out.y += this.eyeHeight;
     return out;
   }
 
@@ -167,6 +196,6 @@ export class FirstPersonController {
   }
 
   get horizontalSpeed(): number {
-    return Math.hypot(this.vel.x, this.vel.z);
+    return Math.hypot(this.moveVel.x, this.moveVel.z);
   }
 }

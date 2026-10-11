@@ -76,7 +76,7 @@ function buildGround(layout: MallLayout, batch: StaticBatch) {
   const z1 = plaza.z + plaza.d;
   const planter = (ax: number, az: number, bx: number, bz: number) => {
     batch.box(ax, 0, az, bx, 0.6, bz, 'rail', OUTSIDE_FLOOR, 'solid', '#7fb069');
-    batch.box(ax, 0.6, az, bx, 4, bz, 'rail', OUTSIDE_FLOOR, 'invisible');
+    batch.box(ax, 0.6, az, bx, 4, bz, 'rail', OUTSIDE_FLOOR, 'playerOnly');
   };
   planter(x0 - 0.6, z0, x0, z1 + 0.6);
   planter(x1, z0, x1 + 0.6, z1 + 0.6);
@@ -168,7 +168,7 @@ function buildOutdoorParapets(layout: MallLayout, floor: FloorDef, batch: Static
 function addWallInvisible(batch: StaticBatch, o: Omit<Parameters<typeof addWall>[1], 'mat'>) {
   const before = batch.boxes.length;
   addWall(batch, { ...o, mat: 'rail' });
-  for (let i = before; i < batch.boxes.length; i++) batch.boxes[i].collide = 'invisible';
+  for (let i = before; i < batch.boxes.length; i++) batch.boxes[i].collide = 'playerOnly';
 }
 
 /** 中庭四周的玻璃栏杆：玻璃 + 扶手只显示，另加一道 2.4 m 高的隐形碰撞墙。 */
@@ -191,7 +191,7 @@ function buildAtriumRailing(layout: MallLayout, a: Rect, level: number, batch: S
     batch.box(ax, y, az, bx, y + 0.08, bz, 'rail', level, 'none');
     batch.box(ax, y + 0.08, az, bx, y + b.railHeight - 0.06, bz, 'glass', level, 'none');
     batch.box(ax, y + b.railHeight - 0.06, az, bx, y + b.railHeight + 0.02, bz, 'rail', level, 'none');
-    batch.box(ax, y, az, bx, y + 2.4, bz, 'rail', level, 'invisible');
+    batch.box(ax, y, az, bx, y + 2.4, bz, 'rail', level, 'playerOnly');
   }
 }
 

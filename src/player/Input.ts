@@ -9,6 +9,7 @@ export class Input {
   private jumpQueued = false;
   private hotkeys = new Map<string, () => void>();
   private lockListeners = new Set<(locked: boolean) => void>();
+  private wheelListeners = new Set<(deltaY: number) => void>();
   locked = false;
 
   constructor(private readonly target: HTMLElement) {
@@ -20,6 +21,15 @@ export class Input {
       this.dx += e.movementX;
       this.dy += e.movementY;
     });
+    window.addEventListener(
+      'wheel',
+      (e) => {
+        if (!this.locked) return;
+        e.preventDefault();
+        for (const l of this.wheelListeners) l(e.deltaY);
+      },
+      { passive: false },
+    );
     document.addEventListener('pointerlockchange', () => {
       this.locked = document.pointerLockElement === this.target;
       if (!this.locked) this.keys.clear();
@@ -34,6 +44,11 @@ export class Input {
 
   onLockChange(fn: (locked: boolean) => void) {
     this.lockListeners.add(fn);
+  }
+
+  /** 鼠标滚轮（只在指针锁定时） */
+  onWheel(fn: (deltaY: number) => void) {
+    this.wheelListeners.add(fn);
   }
 
   private onKeyDown = (e: KeyboardEvent) => {

@@ -29,6 +29,8 @@ export const devFlags = {
   floor: parseFloor(params.get('floor')),
   /** 直接传送到某家店门口 */
   shop: params.get('shop'),
+  /** 开局视角：?view=first / ?view=third */
+  view: (params.get('view') === 'first' ? 'first' : params.get('view') === 'third' ? 'third' : null) as 'first' | 'third' | null,
   /** 关闭后处理（描边、泛光） */
   nofx: params.has('nofx'),
   /** 内置 BGM 起播位置：负数 = 循环接缝前多少秒，正数 = 从第几秒开始 */

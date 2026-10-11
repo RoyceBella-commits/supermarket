@@ -8,7 +8,9 @@ import { buildMall } from '../world/MallBuilder.ts';
 import { buildTestbed } from '../world/testbed.ts';
 import { ZoneIndex } from '../world/ZoneIndex.ts';
 import { openingCenter } from '../world/rectOps.ts';
-import { FirstPersonController, type MoveIntent } from '../player/FirstPersonController.ts';
+import { PlayerController, type MoveIntent } from '../player/PlayerController.ts';
+import { CameraRig, CAMERA } from '../player/CameraRig.ts';
+import { Avatar } from '../player/Avatar.ts';
 import { Input } from '../player/Input.ts';
 import { Hud } from '../ui/Hud.ts';
 import { StartOverlay } from '../ui/StartOverlay.ts';
@@ -33,7 +35,9 @@ export class Game {
   private readonly renderer: Renderer;
   private readonly overlay: StartOverlay;
   private physics!: PhysicsWorld;
-  private player!: FirstPersonController;
+  private player!: PlayerController;
+  private cameraRig!: CameraRig;
+  private avatar!: Avatar;
   private input!: Input;
   private hud?: Hud;
   private zones?: ZoneIndex;
@@ -66,16 +70,30 @@ export class Game {
     const world = this.layout ? buildMall(this.layout, this.physics).root : buildTestbed(this.physics);
     this.renderer.scene.add(world);
 
-    this.player = new FirstPersonController(this.physics);
+    this.player = new PlayerController(this.physics);
     const spawn = this.spawnPoint();
     this.player.setSpawn(spawn.pos, spawn.yaw);
     this.player.teleport(spawn.pos, spawn.yaw);
+
+    // 角色：加载 VRM，按它的身高重建碰撞胶囊
+    const { avatar, error } = await Avatar.load();
+    this.avatar = avatar;
+    avatar.addTo(this.renderer.scene);
+    if (error) toast.show(i18n.t('avatar.loadFailed'), { error: true });
+    this.player.configureBody(avatar.height, avatar.eyeHeight);
+    this.cameraRig = new CameraRig(this.renderer.camera, this.physics);
+    this.cameraRig.mode = devFlags.view ?? 'third';
+    this.avatar.applyCameraLayers(this.renderer.camera, this.cameraRig.mode === 'first');
     const start = this.devStartPoint();
     if (start) this.player.teleport(start.pos, start.yaw);
+    this.player.pitch = this.cameraRig.mode === 'third' ? -0.18 : 0;
+    this.avatar.setFacing(this.player.yaw + Math.PI);
 
     this.input = new Input(this.renderer.canvas);
     this.input.bind('KeyL', () => i18n.toggle());
     this.input.bind('KeyM', () => this.toggleMusicPanel());
+    this.input.bind('KeyV', () => this.toggleView());
+    this.input.onWheel((dy) => this.cameraRig.zoom(dy));
     this.input.bind('Escape', () => {
       if (this.musicPanel.isOpen) this.closeMusicPanel(false);
     });
@@ -173,7 +191,8 @@ export class Game {
     if (dt > 0.25) dt = 0.25;
 
     const mouse = this.input.consumeMouse();
-    this.player.look(mouse.dx, mouse.dy);
+    const [minPitch, maxPitch] = this.cameraRig.pitchLimits;
+    this.player.look(mouse.dx, mouse.dy, minPitch, maxPitch);
 
     this.acc += dt;
     let steps = 0;
@@ -197,11 +216,10 @@ export class Game {
     if (steps === MAX_STEPS) this.acc = 0;
     const alpha = this.acc / FIXED_DT;
 
-    const cam = this.renderer.camera;
-    this.player.eyePosition(alpha, cam.position);
-    cam.rotation.set(this.player.pitch, this.player.yaw, 0);
-
     const feet = this.player.feetPosition(alpha, this.tmp);
+    this.updateAvatar(dt, feet);
+    const camDist = this.cameraRig.update(dt, this.player, alpha);
+    this.avatar.setVisible(this.cameraRig.mode === 'first' || camDist > CAMERA.hideAvatarBelow);
     let floor = 0;
     if (this.zones && this.hud) {
       const zone = this.zones.locate(feet.x, feet.y, feet.z);
@@ -234,6 +252,22 @@ export class Game {
       });
     }
   };
+
+  private updateAvatar(dt: number, feet: THREE.Vector3) {
+    const p = this.player;
+    // 第一人称时身体朝向跟着视线，第三人称时朝移动方向
+    if (this.cameraRig.mode === 'first') this.avatar.setFacing(p.yaw + Math.PI);
+    const groundY = this.physics.groundBelow(feet.x, feet.y + 0.4, feet.z, 12);
+    this.avatar.update(dt, feet, this.cameraRig.mode === 'first' ? p.moveVel.clone().multiplyScalar(0) : p.moveVel, { speed: p.horizontalSpeed, grounded: p.grounded, vy: p.vy }, groundY);
+  }
+
+  private toggleView() {
+    if (!this.started) return;
+    const mode = this.cameraRig.toggle();
+    this.avatar.applyCameraLayers(this.renderer.camera, mode === 'first');
+    const [minPitch, maxPitch] = this.cameraRig.pitchLimits;
+    this.player.look(0, 0, minPitch, maxPitch);
+  }
 
   private spawnPoint(): { pos: THREE.Vector3; yaw: number } {
     if (!this.layout) return { pos: new THREE.Vector3(0, 0.05, 0), yaw: 0 };
@@ -268,6 +302,12 @@ export class Game {
     return { pos, yaw: Math.atan2(c.outX, c.outZ) };
   }
 
+  private teleportTo(pos: THREE.Vector3, yaw: number) {
+    this.player.teleport(pos, yaw, this.cameraRig.mode === 'third' ? -0.18 : 0);
+    this.avatar.setFacing(yaw + Math.PI);
+    this.cameraRig.reset();
+  }
+
   private reportLayoutProblems(layout: MallLayout) {
     const problems = validateLayout(layout);
     if (problems.length === 0) return;
@@ -282,7 +322,7 @@ export class Game {
   /** 自动化测试用：window.__game */
   private exposeTestHooks() {
     const game = this;
-    (window as unknown as { __game: unknown }).__game = {
+    const hooks = {
       get player() {
         return game.player;
       },
@@ -299,23 +339,45 @@ export class Game {
       /** n：1–5 = 1F–5F，-1 = B1 */
       teleportFloor(n: number) {
         const p = game.floorPoint(n > 0 ? n - 1 : n);
-        if (p) game.player.teleport(p.pos, p.yaw);
+        if (p) game.teleportTo(p.pos, p.yaw);
       },
       teleportShop(id: string) {
         const p = game.shopDoorPoint(id);
-        if (p) game.player.teleport(p.pos, p.yaw);
+        if (p) game.teleportTo(p.pos, p.yaw);
       },
       teleport(x: number, y: number, z: number, yawDeg = 0) {
-        game.player.teleport(new THREE.Vector3(x, y, z), (yawDeg * Math.PI) / 180);
+        game.teleportTo(new THREE.Vector3(x, y, z), (yawDeg * Math.PI) / 180);
+      },
+      setView(mode: 'first' | 'third') {
+        if (game.cameraRig.mode !== mode) {
+          game.cameraRig.toggle();
+          game.avatar.applyCameraLayers(game.renderer.camera, mode === 'first');
+        }
+      },
+      get avatar() {
+        return game.avatar;
       },
       setYaw(deg: number) {
         game.player.yaw = (deg * Math.PI) / 180;
       },
       /** 立即按当前状态渲染一帧（浏览器面板隐藏、渲染循环暂停时截图用） */
-      renderOnce() {
-        game.player.eyePosition(1, game.renderer.camera.position);
-        game.renderer.camera.rotation.set(game.player.pitch, game.player.yaw, 0);
-        game.renderer.render(1 / 60);
+      renderOnce(dt = 1 / 60) {
+        const feet = game.player.feetPosition(1, new THREE.Vector3());
+        game.updateAvatar(dt, feet);
+        const d = game.cameraRig.update(dt, game.player, 1);
+        game.avatar.setVisible(game.cameraRig.mode === 'first' || d > CAMERA.hideAvatarBelow);
+        game.renderer.render(dt);
+      },
+      /** 渲染一帧并把画面存到 tools/.shots/<name>.jpg（仅开发服务器，浏览器面板隐藏时也能用） */
+      async shot(name: string, width = 800) {
+        hooks.renderOnce();
+        const src = game.renderer.canvas;
+        const c = document.createElement('canvas');
+        c.width = width;
+        c.height = Math.round((src.height / src.width) * width);
+        c.getContext('2d')!.drawImage(src, 0, 0, c.width, c.height);
+        const res = await fetch(`/__shot?name=${encodeURIComponent(name)}`, { method: 'POST', body: c.toDataURL('image/jpeg', 0.85) });
+        return res.text();
       },
       /** 同步模拟若干秒的物理步（不依赖渲染循环，页面在后台也能测）。返回脚底位置。 */
       simulate(forward: number, right: number, seconds: number, run = false, jump = false) {
@@ -354,5 +416,6 @@ export class Game {
         game.closeMusicPanel(false);
       },
     };
+    (window as unknown as { __game: unknown }).__game = hooks;
   }
 }
