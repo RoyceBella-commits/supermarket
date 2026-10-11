@@ -170,6 +170,22 @@ export interface GlowPoint {
   floor: number;
 }
 
+/** 运行时系统要用的特殊位置（影院银幕、卡丁车赛道……），世界坐标 */
+export interface SpecialSpot {
+  shopId: string;
+  kind: string;
+  floor: number;
+  x: number;
+  y: number;
+  z: number;
+  /** 朝向（看它的人站在这个方向上） */
+  yaw: number;
+  w: number;
+  h: number;
+  /** 其他参数（局部坐标换算好的点列等） */
+  data?: Record<string, unknown>;
+}
+
 /** 局部矩形 [u0, v0, u1, v1] */
 export type LRect = [number, number, number, number];
 
@@ -191,6 +207,8 @@ export class Kit {
   backFeature = false;
   /** 夜里会亮的灯 */
   readonly glows: GlowPoint[] = [];
+  /** 特殊位置 */
+  readonly specials: SpecialSpot[] = [];
 
   constructor(
     readonly f: ShopFrame,
@@ -386,6 +404,17 @@ export class Kit {
   staff(u: number, v: number, du: number, dv: number) {
     this.npcSpot = { x: this.f.x(u, v), z: this.f.z(u, v), yaw: this.f.yaw(du, dv) };
     this.staffLocal = [u, v];
+  }
+
+  /** 记录一个特殊位置：中心 (u, v, h)，面朝 (du, dv) */
+  special(kind: string, u: number, v: number, h: number, du: number, dv: number, w: number, hh: number, data?: Record<string, unknown>) {
+    const f = this.f;
+    this.specials.push({ shopId: f.shop.id, kind, floor: f.shop.floor, x: f.x(u, v), y: f.y + h, z: f.z(u, v), yaw: f.yaw(du, dv), w, h: hh, data });
+  }
+
+  /** 局部点 → 世界坐标 [x, z] */
+  world(u: number, v: number): [number, number] {
+    return [this.f.x(u, v), this.f.z(u, v)];
   }
 
   /** 夜灯：一个发光球（白天是暗的灯罩色，夜里亮起来带泛光） */

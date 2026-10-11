@@ -3,7 +3,7 @@ import { floorByLevel, type MallLayout, type ShopDef, type Side } from '../../da
 import { sideOnBoundary } from '../rectOps.ts';
 import type { StaticBatch } from '../StaticBatch.ts';
 import type { Seat } from '../../systems/Seats.ts';
-import { Kit, ProductSet, ShopFrame, getProductMaterial, seededRng, type DecorSlot, type GlowPoint, type NpcSpot, type WallFaces } from './kit.ts';
+import { Kit, ProductSet, ShopFrame, getProductMaterial, seededRng, type DecorSlot, type GlowPoint, type NpcSpot, type SpecialSpot, type WallFaces } from './kit.ts';
 import { TEMPLATES } from './templates/index.ts';
 
 export interface BuiltInteriors {
@@ -20,6 +20,8 @@ export interface BuiltInteriors {
   issues: string[];
   /** 夜里会亮的灯 */
   glows: GlowPoint[];
+  /** 影院银幕、卡丁车赛道等特殊位置 */
+  specials: SpecialSpot[];
 }
 
 export interface BackLogo {
@@ -44,6 +46,7 @@ export function buildInteriors(layout: MallLayout, batch: StaticBatch): BuiltInt
   const backLogos: BackLogo[] = [];
   const issues: string[] = [];
   const glows: GlowPoint[] = [];
+  const specials: SpecialSpot[] = [];
   const material = getProductMaterial();
   for (const shop of layout.shops) {
     const template = TEMPLATES[shop.category];
@@ -78,12 +81,13 @@ export function buildInteriors(layout: MallLayout, batch: StaticBatch): BuiltInt
     }
     if (kit.npcSpot) npcSpots.set(shop.id, kit.npcSpot);
     glows.push(...kit.glows);
+    specials.push(...kit.specials);
     for (const mesh of set.build(kit.outdoor ? getProductMaterial(true) : material, `products:${shop.id}`)) {
       mesh.userData.floor = shop.floor;
       products.add(mesh);
     }
   }
-  return { products, seats, npcSpots, decor, backLogos, issues, glows };
+  return { products, seats, npcSpots, decor, backLogos, issues, glows, specials };
 }
 
 /**

@@ -11,7 +11,7 @@ import { addSlab, type SurfaceRoom } from './surfaces.ts';
 import { buildAmenities } from './amenities.ts';
 import type { Seat } from '../systems/Seats.ts';
 import { buildInteriors } from './interiors/index.ts';
-import type { DecorSlot, GlowPoint, NpcSpot } from './interiors/kit.ts';
+import type { DecorSlot, GlowPoint, NpcSpot, SpecialSpot } from './interiors/kit.ts';
 import { buildEscalatorStatics, escalatorFrame } from './escalators.ts';
 import { buildElevatorShaft } from './elevator.ts';
 
@@ -31,6 +31,8 @@ export interface BuiltMall {
   issues: string[];
   /** 夜里会亮的灯 */
   glows: GlowPoint[];
+  /** 影院银幕、卡丁车赛道等特殊位置 */
+  specials: SpecialSpot[];
   /** 世界材质（昼夜循环要调室外材质的明暗） */
   materials: Record<MatKey, THREE.Material>;
 }
@@ -71,7 +73,7 @@ export function buildMall(layout: MallLayout, physics: PhysicsWorld): BuiltMall 
   const root = batch.build(materials, physics);
   root.add(buildSigns(layout, interiors.backLogos));
   root.add(interiors.products);
-  return { root, batch, seats, npcSpots: interiors.npcSpots, products: interiors.products, decor: interiors.decor, issues: interiors.issues, materials, glows: interiors.glows };
+  return { root, batch, seats, npcSpots: interiors.npcSpots, products: interiors.products, decor: interiors.decor, issues: interiors.issues, materials, glows: interiors.glows, specials: interiors.specials };
 }
 
 function buildGround(layout: MallLayout, batch: StaticBatch) {

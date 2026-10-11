@@ -845,3 +845,87 @@ body.dropping::after {
 .mp-time-range {
   width: 100%;
 }
+
+/* ---------- 影院面板 ---------- */
+.cinema-panel {
+  position: fixed;
+  right: 24px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 320px;
+  background: var(--ui-bg-strong);
+  color: var(--ui-fg);
+  border-radius: 18px;
+  padding: 14px 16px;
+  z-index: 30;
+  box-shadow: 0 18px 50px rgba(0, 0, 0, 0.35);
+}
+
+.cinema-panel.hidden {
+  display: none;
+}
+
+.cp-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+  color: #f2cc8f;
+}
+
+.cp-title {
+  font-weight: 600;
+  margin-bottom: 10px;
+  word-break: break-all;
+}
+
+.cp-pick {
+  width: 100%;
+  padding: 9px 12px;
+  border: none;
+  border-radius: 10px;
+  background: #f2cc8f;
+  color: #22223b;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.cp-note,
+.cp-hint {
+  color: var(--ui-muted);
+  font-size: 12px;
+  line-height: 1.5;
+  margin: 8px 0;
+}
+
+.cp-seek {
+  width: 100%;
+}
+
+.cp-times {
+  display: flex;
+  justify-content: space-between;
+  font-size: 12px;
+  color: var(--ui-muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.cp-controls {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 8px;
+}
+
+.cp-volume {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  flex: 1;
+}
+
+.cp-volume input {
+  flex: 1;
+  min-width: 0;
+}

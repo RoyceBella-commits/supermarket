@@ -33,6 +33,8 @@ import { buildDecor } from '../world/decor.ts';
 import { LightShafts } from '../world/lightShafts.ts';
 import { NightGlow } from '../world/nightGlow.ts';
 import { getProductMaterial } from '../world/interiors/kit.ts';
+import { CinemaSystem } from '../systems/cinema/CinemaSystem.ts';
+import { CinemaPanel } from '../ui/CinemaPanel.ts';
 
 const FIXED_DT = 1 / 60;
 const MAX_STEPS = 5;
@@ -78,6 +80,8 @@ export class Game {
   private npcSpots = new Map<string, { x: number; z: number; yaw: number }>();
   private products: THREE.Group | null = null;
   private interiorIssues: string[] = [];
+  private cinema: CinemaSystem | null = null;
+  private cinemaPanel: CinemaPanel | null = null;
   private seated: Seat | null = null;
 
   constructor(container: HTMLElement) {
@@ -101,6 +105,12 @@ export class Game {
       this.renderer.excludeFromOutline(shafts.group);
       this.renderer.day.onChange(() => shafts.update(this.renderer.day));
       shafts.update(this.renderer.day);
+      // 影院银幕（播放本地视频）
+      const screenSpot = built.specials.find((s) => s.kind === 'cinemaScreen');
+      if (screenSpot) {
+        this.cinema = new CinemaSystem(screenSpot, this.audio);
+        built.products.add(this.cinema.screen);
+      }
       // 夜灯（花园灯笼等）：跟商品一样按楼层显示
       const glow = new NightGlow(built.glows);
       for (const mesh of glow.meshes) built.products.add(mesh);
@@ -129,6 +139,7 @@ export class Game {
     this.renderer.scene.add(world);
     if (this.layout) this.setupCirculation(this.layout);
     this.setupSeating();
+    this.setupCinema();
     if (this.layout) {
       this.npcs = new NpcSystem(this.layout, this.renderer.scene, this.physics, this.interaction, this.voice, this.dialogue, this.npcSpots);
       void this.voice.loadManifest();
@@ -160,12 +171,17 @@ export class Game {
     this.input.bind('KeyE', () => {
       if (!this.started) return;
       if (this.elevatorPanel.isOpen) this.closeElevatorPanel(true);
+      else if (this.cinemaPanel?.isOpen) this.closeCinemaPanel(true);
       else this.interaction.interact();
+    });
+    this.input.bind('KeyP', () => {
+      if (this.started && this.cinema && this.cinema.inside(this.player.curr)) this.cinema.toggle();
     });
     this.input.onWheel((dy) => this.cameraRig.zoom(dy));
     this.input.bind('Escape', () => {
       if (this.musicPanel.isOpen) this.closeMusicPanel(false);
       if (this.elevatorPanel.isOpen) this.closeElevatorPanel(false);
+      if (this.cinemaPanel?.isOpen) this.closeCinemaPanel(false);
     });
     this.input.onLockChange((locked) => this.onLockChange(locked));
 
@@ -356,7 +372,8 @@ export class Game {
     this.npcs?.update(dt, feet);
     this.interaction.update(feet);
     const cur = this.interaction.current;
-    const hidePrompt = !cur || this.elevatorPanel.isOpen || this.musicPanel.isOpen || cur.id === this.npcs?.activeInteractId;
+    this.cinema?.update(this.renderer.camera, feet);
+    const hidePrompt = !cur || this.elevatorPanel.isOpen || this.musicPanel.isOpen || !!this.cinemaPanel?.isOpen || cur.id === this.npcs?.activeInteractId;
     this.hud?.setPrompt(hidePrompt ? null : cur.prompt());
   }
 
@@ -446,6 +463,41 @@ export class Game {
       });
     }
     this.elevatorPanel.onClose = (relock) => this.closeElevatorPanel(relock);
+  }
+
+  private setupCinema() {
+    const cinema = this.cinema;
+    if (!cinema) return;
+    this.cinemaPanel = new CinemaPanel(cinema);
+    this.cinemaPanel.onClose = (relock) => this.closeCinemaPanel(relock);
+    this.interaction.add({
+      id: 'cinema',
+      prompt: () => i18n.t('cinema.controls'),
+      position: () => cinema.control,
+      radius: 3.5,
+      isAvailable: () => !this.seated,
+      interact: () => this.openCinemaPanel(),
+    });
+  }
+
+  private openCinemaPanel() {
+    if (!this.cinemaPanel) return;
+    this.panelOpen = true;
+    this.overlay.setMode('hidden');
+    this.input.unlock();
+    this.cinemaPanel.show();
+  }
+
+  private closeCinemaPanel(relock: boolean) {
+    this.cinemaPanel?.hide();
+    this.panelOpen = this.musicPanel.isOpen;
+    if (!relock) {
+      this.overlay.setMode('paused');
+      return;
+    }
+    void this.input.lock().then((ok) => {
+      if (!ok) this.overlay.setMode('paused');
+    });
   }
 
   private openElevatorPanel(el: ElevatorSystem) {
@@ -603,6 +655,12 @@ export class Game {
       },
       setYaw(deg: number) {
         game.player.yaw = (deg * Math.PI) / 180;
+      },
+      get cinema() {
+        return game.cinema;
+      },
+      openCinemaPanel() {
+        game.openCinemaPanel();
       },
       get npcs() {
         return game.npcs;
