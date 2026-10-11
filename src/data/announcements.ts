@@ -40,7 +40,7 @@ export const ANNOUNCER_CANDIDATES: AnnouncerVoice[] = [
 ];
 
 /** 选定的广播员音色（试音确认后改这里，再批量生成） */
-export const ANNOUNCER_VOICE: AnnouncerVoice = ANNOUNCER_CANDIDATES[0];
+export const ANNOUNCER_VOICE: AnnouncerVoice = ANNOUNCER_CANDIDATES[1];
 
 type Spec = Omit<Announcement, 'id'>;
 

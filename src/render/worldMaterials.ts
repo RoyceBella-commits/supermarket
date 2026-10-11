@@ -43,6 +43,8 @@ export function createWorldMaterials(): Record<MatKey, THREE.Material> {
     hoarding: lambert('#ffffff', stripes),
     locker: lambert('#ffffff', lockerDoors),
     prop: lambert('#ffffff'),
+    // 室外家具（空中花园）：和 prop 一样，但夜里会被昼夜循环压暗
+    outdoorProp: lambert('#ffffff'),
     metal: lambert('#c9ced6'),
     handrail: lambert('#2b2d33'),
     escalatorBody: lambert('#eef0f2'),

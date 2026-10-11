@@ -20,6 +20,7 @@ export type MatKey =
   | 'hoarding'
   | 'locker'
   | 'prop'
+  | 'outdoorProp'
   | 'metal'
   | 'handrail'
   | 'escalatorBody';

@@ -440,6 +440,81 @@
       "file": "foodalley/foodalley-04.m4a",
       "durationSec": 4.864,
       "hash": "d0d9f1131a2f51e9"
+    },
+    "announcer-01": {
+      "file": "announcer/announcer-01.m4a",
+      "durationSec": 13.717,
+      "hash": "c8b9091817e896d0"
+    },
+    "announcer-02": {
+      "file": "announcer/announcer-02.m4a",
+      "durationSec": 9.216,
+      "hash": "5067728e0f7f9614"
+    },
+    "announcer-03": {
+      "file": "announcer/announcer-03.m4a",
+      "durationSec": 9.216,
+      "hash": "7bf7dbf75816e7c6"
+    },
+    "announcer-04": {
+      "file": "announcer/announcer-04.m4a",
+      "durationSec": 9.493,
+      "hash": "5c2ac0238edcd9f5"
+    },
+    "announcer-05": {
+      "file": "announcer/announcer-05.m4a",
+      "durationSec": 8.384,
+      "hash": "fd9b068254f2c2ab"
+    },
+    "announcer-06": {
+      "file": "announcer/announcer-06.m4a",
+      "durationSec": 9.387,
+      "hash": "21072ed13fd41ef5"
+    },
+    "announcer-07": {
+      "file": "announcer/announcer-07.m4a",
+      "durationSec": 7.04,
+      "hash": "f7d6adf6b959db40"
+    },
+    "announcer-08": {
+      "file": "announcer/announcer-08.m4a",
+      "durationSec": 9.088,
+      "hash": "a03a921f85fefc89"
+    },
+    "announcer-09": {
+      "file": "announcer/announcer-09.m4a",
+      "durationSec": 7.189,
+      "hash": "e04f214cd4374927"
+    },
+    "announcer-10": {
+      "file": "announcer/announcer-10.m4a",
+      "durationSec": 10.987,
+      "hash": "76173d4740e94e2e"
+    },
+    "announcer-11": {
+      "file": "announcer/announcer-11.m4a",
+      "durationSec": 9.536,
+      "hash": "7b4be81c4cff976e"
+    },
+    "announcer-12": {
+      "file": "announcer/announcer-12.m4a",
+      "durationSec": 11.584,
+      "hash": "6b8e2c8be39259f3"
+    },
+    "announcer-a-01": {
+      "file": "announcer-a/announcer-a-01.m4a",
+      "durationSec": 12.779,
+      "hash": "97a8e9cc88136eea"
+    },
+    "announcer-b-01": {
+      "file": "announcer-b/announcer-b-01.m4a",
+      "durationSec": 13.717,
+      "hash": "c8b9091817e896d0"
+    },
+    "announcer-c-01": {
+      "file": "announcer-c/announcer-c-01.m4a",
+      "durationSec": 10.176,
+      "hash": "12873fb52c066407"
     }
   }
 }

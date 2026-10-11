@@ -31,6 +31,8 @@ import { DialogueBox } from '../ui/DialogueBox.ts';
 import { NpcSystem } from '../npc/NpcSystem.ts';
 import { buildDecor } from '../world/decor.ts';
 import { LightShafts } from '../world/lightShafts.ts';
+import { NightGlow } from '../world/nightGlow.ts';
+import { getProductMaterial } from '../world/interiors/kit.ts';
 
 const FIXED_DT = 1 / 60;
 const MAX_STEPS = 5;
@@ -99,12 +101,19 @@ export class Game {
       this.renderer.excludeFromOutline(shafts.group);
       this.renderer.day.onChange(() => shafts.update(this.renderer.day));
       shafts.update(this.renderer.day);
+      // 夜灯（花园灯笼等）：跟商品一样按楼层显示
+      const glow = new NightGlow(built.glows);
+      for (const mesh of glow.meshes) built.products.add(mesh);
+      this.renderer.day.onChange(() => glow.update(this.renderer.day));
+      glow.update(this.renderer.day);
       const m = built.materials;
       this.renderer.day.setOutdoorMaterials([
         { mat: m.ground, dark: 0.45 },
         { mat: m.plaza, dark: 0.55 },
         { mat: m.exterior, dark: 0.6 },
         { mat: m.roof, dark: 0.5 },
+        { mat: m.outdoorProp, dark: 0.55 },
+        { mat: getProductMaterial(true), dark: 0.55 },
       ]);
       if (import.meta.env.DEV) this.reportLayoutProblems(this.layout);
       this.npcSpots = built.npcSpots;

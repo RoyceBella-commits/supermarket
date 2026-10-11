@@ -131,7 +131,10 @@ export class ProductSet {
 const UNIT_BOX = new THREE.BoxGeometry(1, 1, 1);
 const UNIT_CYL = new THREE.CylinderGeometry(0.5, 0.5, 1, 14);
 let productMaterial: THREE.Material | null = null;
-export function getProductMaterial(): THREE.Material {
+let outdoorProductMaterial: THREE.Material | null = null;
+/** 商品材质；outdoor 是室外店铺用的那份（夜里被压暗） */
+export function getProductMaterial(outdoor = false): THREE.Material {
+  if (outdoor) return (outdoorProductMaterial ??= new THREE.MeshToonMaterial({ color: '#ffffff', gradientMap: toonGradient() }));
   return (productMaterial ??= new THREE.MeshToonMaterial({ color: '#ffffff', gradientMap: toonGradient() }));
 }
 
@@ -157,6 +160,16 @@ export interface NpcSpot {
 /**
  * 一家店的布置工具。h 系列参数都是离本层地面的高度。
  */
+/** 夜里会亮的灯（灯笼、串灯、招牌灯）：世界坐标，半径和颜色 */
+export interface GlowPoint {
+  x: number;
+  y: number;
+  z: number;
+  r: number;
+  color: string;
+  floor: number;
+}
+
 /** 局部矩形 [u0, v0, u1, v1] */
 export type LRect = [number, number, number, number];
 
@@ -170,10 +183,14 @@ export class Kit {
   readonly solids: LRect[] = [];
   /** 预留的通道和留空区：模板放家具前用 fits() 检查 */
   readonly reserved: LRect[] = [];
+  /** 室外店铺：家具材质换成会随夜色变暗的 outdoorProp */
+  outdoor = false;
   /** 生成时发现的问题（开发模式下显示） */
   readonly issues: string[] = [];
   /** 模板已经在后墙做了吸引物（菜单板、厨房、攀岩墙……），就不再挂 logo 灯箱 */
   backFeature = false;
+  /** 夜里会亮的灯 */
+  readonly glows: GlowPoint[] = [];
 
   constructor(
     readonly f: ShopFrame,
@@ -224,6 +241,7 @@ export class Kit {
   /** 局部矩形盒子 */
   box(u0: number, v0: number, u1: number, v1: number, h0: number, h1: number, mat: MatKey, tint?: string, collide: 'solid' | 'none' | 'invisible' = 'none') {
     const f = this.f;
+    if (this.outdoor && mat === 'prop') mat = 'outdoorProp';
     this.batch.box(f.x(u0, v0), f.y + h0, f.z(u0, v0), f.x(u1, v1), f.y + h1, f.z(u1, v1), mat, f.shop.floor, collide, tint);
   }
 
@@ -368,6 +386,12 @@ export class Kit {
   staff(u: number, v: number, du: number, dv: number) {
     this.npcSpot = { x: this.f.x(u, v), z: this.f.z(u, v), yaw: this.f.yaw(du, dv) };
     this.staffLocal = [u, v];
+  }
+
+  /** 夜灯：一个发光球（白天是暗的灯罩色，夜里亮起来带泛光） */
+  glow(u: number, v: number, h: number, r: number, color = '#ffe6a0') {
+    const f = this.f;
+    this.glows.push({ x: f.x(u, v), y: f.y + h, z: f.z(u, v), r, color, floor: f.shop.floor });
   }
 
   /** 后墙上的员工门（G12），门前 1 m 预留 */

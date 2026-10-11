@@ -3,7 +3,7 @@ import { floorByLevel, type MallLayout, type ShopDef, type Side } from '../../da
 import { sideOnBoundary } from '../rectOps.ts';
 import type { StaticBatch } from '../StaticBatch.ts';
 import type { Seat } from '../../systems/Seats.ts';
-import { Kit, ProductSet, ShopFrame, getProductMaterial, seededRng, type DecorSlot, type NpcSpot, type WallFaces } from './kit.ts';
+import { Kit, ProductSet, ShopFrame, getProductMaterial, seededRng, type DecorSlot, type GlowPoint, type NpcSpot, type WallFaces } from './kit.ts';
 import { TEMPLATES } from './templates/index.ts';
 
 export interface BuiltInteriors {
@@ -18,6 +18,8 @@ export interface BuiltInteriors {
   backLogos: BackLogo[];
   /** 开发检查发现的问题：家具重叠、座位或店员走不到 */
   issues: string[];
+  /** 夜里会亮的灯 */
+  glows: GlowPoint[];
 }
 
 export interface BackLogo {
@@ -41,6 +43,7 @@ export function buildInteriors(layout: MallLayout, batch: StaticBatch): BuiltInt
   const decor: DecorSlot[] = [];
   const backLogos: BackLogo[] = [];
   const issues: string[] = [];
+  const glows: GlowPoint[] = [];
   const material = getProductMaterial();
   for (const shop of layout.shops) {
     const template = TEMPLATES[shop.category];
@@ -48,6 +51,7 @@ export function buildInteriors(layout: MallLayout, batch: StaticBatch): BuiltInt
     const set = new ProductSet();
     const frame = new ShopFrame(shop, shop.floor * H, wallFaces(layout, shop));
     const kit = new Kit(frame, batch, set, seats, seededRng(shop.interior?.seed !== undefined ? `${shop.id}:${shop.interior.seed}` : shop.id), decor);
+    kit.outdoor = shop.kind === 'outdoor';
     template(kit);
     if (shop.kind !== 'outdoor' && kit.D > 6) {
       // 通用的墙面海报位：两侧墙中部、后墙正中，都在货架上方
@@ -73,12 +77,13 @@ export function buildInteriors(layout: MallLayout, batch: StaticBatch): BuiltInt
       for (const msg of new Set([...kit.issues, ...checkReachable(kit)])) issues.push(`${shop.id}: ${msg}`);
     }
     if (kit.npcSpot) npcSpots.set(shop.id, kit.npcSpot);
-    for (const mesh of set.build(material, `products:${shop.id}`)) {
+    glows.push(...kit.glows);
+    for (const mesh of set.build(kit.outdoor ? getProductMaterial(true) : material, `products:${shop.id}`)) {
       mesh.userData.floor = shop.floor;
       products.add(mesh);
     }
   }
-  return { products, seats, npcSpots, decor, backLogos, issues };
+  return { products, seats, npcSpots, decor, backLogos, issues, glows };
 }
 
 /**
