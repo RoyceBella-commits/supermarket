@@ -1015,3 +1015,48 @@ body.dropping::after {
   user-select: none;
   z-index: 56;
 }
+
+/* ---------- 商场广播字幕 ---------- */
+.announce-caption {
+  position: fixed;
+  top: 16px;
+  left: 50%;
+  transform: translateX(-50%);
+  max-width: min(720px, 70vw);
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+  background: var(--ui-bg-strong);
+  border-radius: var(--ui-radius);
+  padding: 10px 16px;
+  font-size: 15px;
+  line-height: 1.5;
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.2);
+  pointer-events: none;
+  user-select: none;
+  z-index: 57;
+  animation: announce-in 0.35s ease-out;
+}
+
+.announce-caption.hidden {
+  display: none;
+}
+
+body.kart-driving .announce-caption {
+  top: 132px;
+}
+
+.ac-icon {
+  font-size: 18px;
+}
+
+@keyframes announce-in {
+  from {
+    opacity: 0;
+    transform: translate(-50%, -8px);
+  }
+  to {
+    opacity: 1;
+    transform: translate(-50%, 0);
+  }
+}

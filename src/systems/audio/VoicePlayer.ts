@@ -40,6 +40,11 @@ export class VoicePlayer {
     return this.manifest?.lines[lineId]?.durationSec ?? Math.max(1.2, [...text].length * 0.17);
   }
 
+  /** 解码好的音频（广播自己播放时用）；没有这句返回 null */
+  getBuffer(lineId: string): Promise<AudioBuffer | null> {
+    return this.buffer(lineId);
+  }
+
   /** 提前解码，按 E 时不用等下载 */
   preload(lineId: string) {
     void this.buffer(lineId);

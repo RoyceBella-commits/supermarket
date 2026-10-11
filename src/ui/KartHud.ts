@@ -22,6 +22,7 @@ export class KartHud {
     if (!s.driving) {
       if (this.shown) {
         this.shown = false;
+        document.body.classList.remove('kart-driving');
         this.root.classList.add('hidden');
         this.count.classList.add('hidden');
       }
@@ -29,6 +30,7 @@ export class KartHud {
     }
     if (!this.shown) {
       this.shown = true;
+      document.body.classList.add('kart-driving');
       this.root.classList.remove('hidden');
     }
     // 倒计时：3、2、1、GO!

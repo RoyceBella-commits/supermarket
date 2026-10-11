@@ -37,6 +37,7 @@ import { CinemaSystem } from '../systems/cinema/CinemaSystem.ts';
 import { CinemaPanel } from '../ui/CinemaPanel.ts';
 import { KartSystem } from '../systems/karting/KartSystem.ts';
 import { KartHud } from '../ui/KartHud.ts';
+import { AnnouncementSystem } from '../systems/audio/Announcements.ts';
 
 const FIXED_DT = 1 / 60;
 const MAX_STEPS = 5;
@@ -87,6 +88,7 @@ export class Game {
   private seated: Seat | null = null;
   private karts: KartSystem | null = null;
   private readonly kartHud = new KartHud();
+  private announcer!: AnnouncementSystem;
   /** 玩家当前所在楼层（每帧更新，电脑车只在附近楼层时才跑） */
   private floorNow = 0;
 
@@ -252,6 +254,8 @@ export class Game {
       toast.show(i18n.t('music.loadFailed'), { error: true });
     });
     this.musicPanel = new MusicPanel(this.music, this.renderer.day);
+    this.announcer = new AnnouncementSystem(this.audio, this.voice, this.renderer.day);
+    if (this.layout) this.musicPanel.setAnnouncer(this.announcer);
     this.musicPanel.onClose = () => this.closeMusicPanel(true);
   }
 
@@ -295,6 +299,10 @@ export class Game {
 
     this.renderer.day.update(dt);
     this.hud?.setClock(this.renderer.day.clock, this.renderer.day.night > 0.5);
+    if (this.layout) {
+      const watching = !!this.cinema?.state.playing && this.cinema.inside(this.player.curr);
+      this.announcer.update(dt, this.started, watching, this.voice.playing);
+    }
 
     const mouse = this.input.consumeMouse();
     const [minPitch, maxPitch] = this.cameraRig.pitchLimits;
@@ -775,6 +783,9 @@ export class Game {
       },
       get karts() {
         return game.karts;
+      },
+      get announcer() {
+        return game.announcer;
       },
       enterKart() {
         game.enterKart();

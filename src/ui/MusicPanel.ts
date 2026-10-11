@@ -2,6 +2,7 @@ import type { MusicDirector } from '../systems/audio/MusicDirector.ts';
 import type { PlaylistItem } from '../systems/audio/Playlist.ts';
 import { AUDIO_ACCEPT } from '../systems/audio/formatSupport.ts';
 import { i18n } from './i18n.ts';
+import type { AnnouncementSystem } from '../systems/audio/Announcements.ts';
 import type { DayCycle } from '../render/DayCycle.ts';
 
 /**
@@ -16,6 +17,8 @@ export class MusicPanel {
   onClose: () => void = () => {};
 
   private timeDragging = false;
+
+  private announcer: AnnouncementSystem | null = null;
 
   constructor(
     private readonly music: MusicDirector,
@@ -44,6 +47,10 @@ export class MusicPanel {
     music.playlist.onChange(() => this.open && this.render());
     i18n.onChange(() => this.open && this.render());
     this.setupDrop();
+  }
+
+  setAnnouncer(a: AnnouncementSystem) {
+    this.announcer = a;
   }
 
   get isOpen() {
@@ -102,6 +109,12 @@ export class MusicPanel {
         <div class="mp-time-head"><span>${t('time.label')}</span><b class="mp-clock">${this.day.clock}</b>
           <button type="button" data-act="timePause" class="mp-chip">${this.day.paused ? t('time.resume') : t('time.pause')}</button></div>
         <input type="range" class="mp-time-range" min="0" max="1440" step="5" value="${Math.round(this.day.hours * 60)}" data-act="time" />
+        ${
+          this.announcer
+            ? `<div class="mp-time-head mp-announce"><span>${t('announce.label')}</span><span style="flex: 1"></span>
+          <button type="button" data-act="announce" class="mp-chip">${this.announcer.isEnabled ? t('announce.on') : t('announce.off')}</button></div>`
+            : ''
+        }
       </div>`
           : ''
       }
@@ -165,6 +178,12 @@ export class MusicPanel {
     if (!el || el.tagName === 'INPUT') return;
     const id = el.dataset.id ?? '';
     switch (el.dataset.act) {
+      case 'announce':
+        if (this.announcer) {
+          this.announcer.setEnabled(!this.announcer.isEnabled);
+          this.render();
+        }
+        break;
       case 'timePause':
         if (this.day) {
           this.day.setPaused(!this.day.paused);
