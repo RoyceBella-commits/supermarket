@@ -44,6 +44,7 @@ export class FirstPersonController {
   private readonly kcc: KinematicCharacterController;
   private readonly centerOffset = PLAYER.halfHeight + PLAYER.radius;
   private snapping = true;
+  private autostep = true;
   private spawn = { pos: new THREE.Vector3(), yaw: 0 };
 
   constructor(physics: PhysicsWorld) {
@@ -131,6 +132,12 @@ export class FirstPersonController {
       if (wantSnap) this.kcc.enableSnapToGround(PLAYER.snapDistance);
       else this.kcc.disableSnapToGround();
       this.snapping = wantSnap;
+    }
+    // 自动上台阶只在地面上生效，否则空中会被“抬”上比跳跃高度更高的矮墙
+    if (this.grounded !== this.autostep) {
+      if (this.grounded) this.kcc.enableAutostep(PLAYER.stepHeight, 0.2, false);
+      else this.kcc.disableAutostep();
+      this.autostep = this.grounded;
     }
 
     const desired = { x: this.vel.x * dt, y: this.vy * dt, z: this.vel.z * dt };
