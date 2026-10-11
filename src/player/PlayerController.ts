@@ -27,6 +27,12 @@ export interface MoveIntent {
   run: boolean;
 }
 
+/** 外部对角色的影响：扶梯输送速度、电梯“载着走”（门关着时锁定在轿厢地板上、限制在轿厢范围内）。 */
+export interface ExternalMotion {
+  conveyor?: THREE.Vector3 | null;
+  ride?: { y: number; minX: number; maxX: number; minZ: number; maxZ: number } | null;
+}
+
 /**
  * 玩家角色的物理部分：Rapier 运动学胶囊 + KinematicCharacterController。
  * yaw / pitch 是相机朝向；移动方向相对 yaw（第一、第三人称一致）。
@@ -117,7 +123,7 @@ export class PlayerController {
   }
 
   /** 一个固定物理步。调用后需要 world.step()。 */
-  fixedUpdate(dt: number, move: MoveIntent, jump: boolean) {
+  fixedUpdate(dt: number, move: MoveIntent, jump: boolean, ext: ExternalMotion = {}) {
     this.prev.copy(this.curr);
 
     // 水平速度：朝目标速度按加速度逼近，空中只有部分操控
@@ -166,14 +172,33 @@ export class PlayerController {
       this.autostep = this.grounded;
     }
 
-    const desired = { x: this.vel.x * dt, y: this.vy * dt, z: this.vel.z * dt };
+    // 电梯运行中：不走角色控制器，直接贴在轿厢地板上，只在轿厢范围内平移
+    if (ext.ride) {
+      const r = ext.ride;
+      const nx = THREE.MathUtils.clamp(this.curr.x + this.vel.x * dt, r.minX, r.maxX);
+      const nz = THREE.MathUtils.clamp(this.curr.z + this.vel.z * dt, r.minZ, r.maxZ);
+      this.moveVel.set((nx - this.curr.x) / dt, 0, (nz - this.curr.z) / dt);
+      this.curr.set(nx, r.y, nz);
+      this.vy = 0;
+      this.grounded = true;
+      const c = { x: this.curr.x, y: this.curr.y + this.centerOffset, z: this.curr.z };
+      this.body.setTranslation(c, true);
+      this.body.setNextKinematicTranslation(c);
+      return;
+    }
+
+    const cx = ext.conveyor?.x ?? 0;
+    const cy = ext.conveyor?.y ?? 0;
+    const cz = ext.conveyor?.z ?? 0;
+    const desired = { x: (this.vel.x + cx) * dt, y: (this.vy + cy) * dt, z: (this.vel.z + cz) * dt };
     this.kcc.computeColliderMovement(this.collider, desired);
     const m = this.kcc.computedMovement();
     this.curr.set(this.curr.x + m.x, this.curr.y + m.y, this.curr.z + m.z);
     this.body.setNextKinematicTranslation({ x: this.curr.x, y: this.curr.y + this.centerOffset, z: this.curr.z });
 
     // 实际走出的水平速度（撞墙时比 vel 小），给动画用，角色不会对着墙“原地狂奔”
-    if (dt > 0) this.moveVel.set(m.x / dt, 0, m.z / dt);
+    // 扣掉扶梯的输送速度：站在扶梯上不动时动画是站立，不是走路
+    if (dt > 0) this.moveVel.set(m.x / dt - cx, 0, m.z / dt - cz);
 
     this.grounded = this.kcc.computedGrounded();
     if (this.grounded && this.vy < 0) this.vy = 0;

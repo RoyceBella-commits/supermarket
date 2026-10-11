@@ -1,4 +1,5 @@
 import { floorByLevel, type MallLayout, type Rect } from '../data/layoutTypes.ts';
+import { escalatorFootprint, escalatorFrame } from '../world/escalators.ts';
 
 /** ?debug 的性能读数 和 ?map 的当前楼层平面图。 */
 export class DebugOverlay {
@@ -76,6 +77,14 @@ export class DebugOverlay {
       s += label(fac.rect, fac.label.en);
     }
     for (const a of L.amenities.filter((x) => x.floor === floor)) s += rect(a.rect, '#ffd166', '#aa8800');
+    for (const e of L.circulation.escalators.filter((x) => x.fromFloor === floor || x.fromFloor + 1 === floor)) {
+      const fp = escalatorFootprint(escalatorFrame(e, L.building.floorHeight));
+      s += rect({ x: fp.x0, z: fp.z0, w: fp.x1 - fp.x0, d: fp.z1 - fp.z0 }, e.dir === 'up' ? '#95d5b2' : '#f4a261', '#555');
+    }
+    for (const el of L.circulation.elevators.filter((x) => x.floors.includes(floor))) {
+      s += rect(el.rect, '#bde0fe', '#1d3557');
+      s += label(el.rect, 'Elev');
+    }
     for (const st of L.circulation.stairs.filter((x) => floor >= x.floors[0] && floor <= x.floors[1])) {
       s += rect(st.rect, '#adb5bd');
       s += label(st.rect, 'Stairs');

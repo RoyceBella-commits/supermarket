@@ -43,6 +43,9 @@ export function createWorldMaterials(): Record<MatKey, THREE.Material> {
     hoarding: lambert('#ffffff', stripes),
     locker: lambert('#ffffff', lockerDoors),
     prop: lambert('#ffffff'),
+    metal: lambert('#c9ced6'),
+    handrail: lambert('#2b2d33'),
+    escalatorBody: lambert('#eef0f2'),
   };
 }
 

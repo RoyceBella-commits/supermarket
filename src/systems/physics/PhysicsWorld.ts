@@ -40,15 +40,37 @@ export class PhysicsWorld {
     this.colliderCount++;
   }
 
-  addConvexHull(points: number[]) {
+  addConvexHull(points: number[], playerOnly = false) {
     const desc = RAPIER.ColliderDesc.convexHull(new Float32Array(points));
     if (!desc) {
       console.warn('convexHull 生成失败', points);
       return;
     }
-    desc.setCollisionGroups(COLLIDE_WORLD);
+    desc.setCollisionGroups(playerOnly ? COLLIDE_PLAYER_ONLY : COLLIDE_WORLD);
     this.world.createCollider(desc);
     this.colliderCount++;
+  }
+
+  /** 可开关的静态盒子（电梯厅门） */
+  addToggleBox(min: readonly number[], max: readonly number[]): RAPIER.Collider {
+    const hx = (max[0] - min[0]) / 2;
+    const hy = (max[1] - min[1]) / 2;
+    const hz = (max[2] - min[2]) / 2;
+    const desc = RAPIER.ColliderDesc.cuboid(hx, hy, hz)
+      .setTranslation(min[0] + hx, min[1] + hy, min[2] + hz)
+      .setCollisionGroups(COLLIDE_WORLD);
+    this.colliderCount++;
+    return this.world.createCollider(desc);
+  }
+
+  /**
+   * 可以移动的平台碰撞体（电梯轿厢地板）。不挂刚体，每个物理步用 collider.setTranslation 移动：
+   * 角色控制器站在运动学刚体上几乎无法水平移动（实测每步只能挪 0.3 mm），挂成无刚体的碰撞体就正常。
+   */
+  addMovableBox(halfExtents: { x: number; y: number; z: number }, pos: { x: number; y: number; z: number }): RAPIER.Collider {
+    const desc = RAPIER.ColliderDesc.cuboid(halfExtents.x, halfExtents.y, halfExtents.z).setTranslation(pos.x, pos.y, pos.z).setCollisionGroups(COLLIDE_WORLD);
+    this.colliderCount++;
+    return this.world.createCollider(desc);
   }
 
   /** 相机用的射线：返回到第一个建筑表面的距离，没有碰到返回 null。 */

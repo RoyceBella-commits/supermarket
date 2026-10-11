@@ -164,23 +164,42 @@ export interface StairDef {
   floors: [number, number];
 }
 
-/** 阶段 3 实现：扶梯。foot 为下端中心，heading 为上行方向。 */
+/** 扶梯规格（米）。坡度 30°，上下两端各有 0.8 m 平步段和 1.2 m 踏板。 */
+export const ESCALATOR = {
+  stepWidth: 1.0,
+  outerWidth: 1.6,
+  angleDeg: 30,
+  flat: 0.8,
+  plate: 1.2,
+  stepDepth: 0.4,
+  /** 运行速度（m/s，沿运行方向） */
+  speed: 1.2,
+};
+
+/** 扶梯从脚下（平步段起点）到顶端平步段终点的水平长度 */
+export function escalatorRun(floorHeight: number): number {
+  return ESCALATOR.flat * 2 + floorHeight / Math.tan((ESCALATOR.angleDeg * Math.PI) / 180);
+}
+
+/**
+ * 一台扶梯：连接 fromFloor 和 fromFloor + 1。
+ * foot 是下端平步段起点（台阶带中线），heading 是从下往上的水平方向；dir 决定台阶往哪边走。
+ */
 export interface EscalatorDef {
   id: string;
   fromFloor: number;
   dir: 'up' | 'down';
   foot: { x: number; z: number };
   heading: Side;
-  width: number;
 }
 
-/** 阶段 3 实现：观光电梯。 */
+/** 观光电梯：rect 是井道外框，floors 是停靠楼层，doorSide 是厅门朝向。 */
 export interface ElevatorDef {
   id: string;
+  label: I18nText;
   rect: Rect;
   floors: number[];
   doorSide: Side;
-  glass: boolean;
 }
 
 /** 中庭挑空：fromFloor 及以上各层的楼板在这里开洞，四周装玻璃栏杆；skylight 表示屋顶对应位置是天窗。 */

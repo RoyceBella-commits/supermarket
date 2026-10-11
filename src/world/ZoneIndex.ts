@@ -5,7 +5,7 @@ export interface ZoneInfo {
   /** 用于判断区域是否变化 */
   key: string;
   floor: number;
-  kind: 'shop' | 'facility' | 'stairs' | 'public' | 'corridor' | 'outside';
+  kind: 'shop' | 'facility' | 'stairs' | 'elevator' | 'public' | 'corridor' | 'outside';
   id: string;
   /** 店铺英文名（店铺才有） */
   shopName?: string;
@@ -32,6 +32,11 @@ export class ZoneIndex {
     for (const st of L.circulation.stairs) {
       if (floor >= st.floors[0] && floor <= st.floors[1] && containsPoint(st.rect, x, z)) {
         return { key: `stairs:${st.id}:${floor}`, floor, kind: 'stairs', id: st.id, label: st.label };
+      }
+    }
+    for (const el of L.circulation.elevators) {
+      if (containsPoint(el.rect, x, z) && floor >= Math.min(...el.floors) && floor <= Math.max(...el.floors)) {
+        return { key: `elevator:${el.id}:${floor}`, floor, kind: 'elevator', id: el.id, label: el.label };
       }
     }
     for (const s of L.shops) {

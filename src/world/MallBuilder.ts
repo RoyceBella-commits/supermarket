@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { floorByLevel, levelRange, type FloorDef, type MallLayout, type Opening, type Rect, type ShopDef, type Side } from '../data/layoutTypes.ts';
+import { ESCALATOR, floorByLevel, levelRange, type FloorDef, type MallLayout, type Opening, type Rect, type ShopDef, type Side } from '../data/layoutTypes.ts';
 import type { PhysicsWorld } from '../systems/physics/PhysicsWorld.ts';
 import { createWorldMaterials } from '../render/worldMaterials.ts';
 import { OUTSIDE_FLOOR, StaticBatch } from './StaticBatch.ts';
@@ -9,6 +9,8 @@ import { buildStairCore, stairHoles } from './stairs.ts';
 import { buildSigns } from './signs.ts';
 import { addSlab, type SurfaceRoom } from './surfaces.ts';
 import { buildAmenities } from './amenities.ts';
+import { buildEscalatorStatics, escalatorFrame } from './escalators.ts';
+import { buildElevatorShaft } from './elevator.ts';
 
 const SIDES: Side[] = ['N', 'S', 'E', 'W'];
 
@@ -43,6 +45,8 @@ export function buildMall(layout: MallLayout, physics: PhysicsWorld): BuiltMall 
     buildStairCore(batch, st, H, b.slab, outdoorAtTop, b.doorHeight);
   }
   buildAmenities(layout, batch);
+  buildEscalatorStatics(layout, batch);
+  for (const el of layout.circulation.elevators) buildElevatorShaft(layout, el, batch);
   buildRoof(layout, top, roofY, batch);
 
   const root = batch.build(createWorldMaterials(), physics);
@@ -91,6 +95,8 @@ function buildSlab(layout: MallLayout, floor: FloorDef, batch: StaticBatch) {
   const b = layout.building;
   const holes: Rect[] = [...(floor.voids ?? [])];
   for (const a of layout.atriums) if (floor.level >= a.fromFloor) holes.push(a.rect);
+  // 电梯井道穿过的楼板（最低停靠层以上）
+  for (const el of layout.circulation.elevators) if (floor.level > Math.min(...el.floors) && floor.level <= Math.max(...el.floors)) holes.push(el.rect);
   for (const st of layout.circulation.stairs) holes.push(...stairHoles(st, floor.level));
 
   const rooms: SurfaceRoom[] = [];
@@ -172,26 +178,66 @@ function addWallInvisible(batch: StaticBatch, o: Omit<Parameters<typeof addWall>
 }
 
 /** 中庭四周的玻璃栏杆：玻璃 + 扶手只显示，另加一道 2.4 m 高的隐形碰撞墙。 */
+/**
+ * 中庭四周的玻璃栏杆：玻璃 + 扶手只显示，另加一道 2.4 m 高的隐形碰撞墙（只挡人）。
+ * 扶梯穿过挑空边沿、电梯厅门所在的位置留开口（那里由扶梯扶手板 / 电梯井道挡住）。
+ */
 function buildAtriumRailing(layout: MallLayout, a: Rect, level: number, batch: StaticBatch) {
   const b = layout.building;
-  const y = level * b.floorHeight;
+  const H = b.floorHeight;
+  const y = level * H;
   const t = 0.12;
   const x0 = a.x;
   const x1 = a.x + a.w;
   const z0 = a.z;
   const z1 = a.z + a.d;
-  // 每边：沿洞口外沿放一圈（在楼板上，不在洞里）
-  const edges: [number, number, number, number][] = [
-    [x0 - t, z0 - t, x1 + t, z0], // 北
-    [x0 - t, z1, x1 + t, z1 + t], // 南
-    [x0 - t, z0, x0, z1], // 西
-    [x1, z0, x1 + t, z1], // 东
+
+  // 开口：[边, 起点, 终点]（N/S 边用 x，E/W 边用 z）
+  const gaps: { side: Side; from: number; to: number }[] = [];
+  for (const def of layout.circulation.escalators) {
+    const f = escalatorFrame(def, H);
+    for (const side of ['W', 'E'] as const) {
+      if (f.dir.z !== 0) continue; // 目前扶梯都沿 x 方向
+      const ex = side === 'W' ? x0 : x1;
+      const u = (ex - def.foot.x) * f.dir.x;
+      if (u < -ESCALATOR.plate || u > f.run + ESCALATOR.plate) continue;
+      const surface = f.y0 + f.surfaceY(u);
+      // 扶梯在这一层的行走高度附近穿过挑空边沿
+      if (surface < y - 1.5 || surface > y + 1.8) continue;
+      gaps.push({ side, from: def.foot.z - ESCALATOR.outerWidth / 2, to: def.foot.z + ESCALATOR.outerWidth / 2 });
+    }
+  }
+  for (const el of layout.circulation.elevators) {
+    if (!el.floors.includes(level)) continue;
+    const r = el.rect;
+    if (Math.abs(r.z + r.d - z1) < 0.01 || Math.abs(r.z - z0) < 0.01) {
+      gaps.push({ side: Math.abs(r.z + r.d - z1) < 0.01 ? 'S' : 'N', from: r.x, to: r.x + r.w });
+    }
+  }
+
+  const edges: { side: Side; along: 'x' | 'z'; from: number; to: number; box: (p: number, q: number) => [number, number, number, number] }[] = [
+    { side: 'N', along: 'x', from: x0 - t, to: x1 + t, box: (p, q) => [p, z0 - t, q, z0] },
+    { side: 'S', along: 'x', from: x0 - t, to: x1 + t, box: (p, q) => [p, z1, q, z1 + t] },
+    { side: 'W', along: 'z', from: z0, to: z1, box: (p, q) => [x0 - t, p, x0, q] },
+    { side: 'E', along: 'z', from: z0, to: z1, box: (p, q) => [x1, p, x1 + t, q] },
   ];
-  for (const [ax, az, bx, bz] of edges) {
-    batch.box(ax, y, az, bx, y + 0.08, bz, 'rail', level, 'none');
-    batch.box(ax, y + 0.08, az, bx, y + b.railHeight - 0.06, bz, 'glass', level, 'none');
-    batch.box(ax, y + b.railHeight - 0.06, az, bx, y + b.railHeight + 0.02, bz, 'rail', level, 'none');
-    batch.box(ax, y, az, bx, y + 2.4, bz, 'rail', level, 'playerOnly');
+  for (const e of edges) {
+    const cuts = gaps.filter((g) => g.side === e.side).sort((m, n) => m.from - n.from);
+    let cursor = e.from;
+    const pieces: [number, number][] = [];
+    for (const g of cuts) {
+      if (g.from > cursor) pieces.push([cursor, Math.min(g.from, e.to)]);
+      cursor = Math.max(cursor, g.to);
+    }
+    if (cursor < e.to) pieces.push([cursor, e.to]);
+    for (const [p, q] of pieces) {
+      if (q - p < 0.05) continue;
+      const [ax, az, bx, bz] = e.box(p, q);
+      batch.box(ax, y, az, bx, y + 0.08, bz, 'rail', level, 'none');
+      batch.box(ax, y + 0.08, az, bx, y + b.railHeight - 0.06, bz, 'glass', level, 'none');
+      batch.box(ax, y + b.railHeight - 0.06, az, bx, y + b.railHeight + 0.02, bz, 'rail', level, 'none');
+      batch.box(ax, y, az, bx, y + 2.4, bz, 'rail', level, 'playerOnly');
+    }
   }
 }
 

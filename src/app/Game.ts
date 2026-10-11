@@ -21,6 +21,10 @@ import { devFlags } from './devFlags.ts';
 import { AudioEngine } from '../systems/audio/AudioEngine.ts';
 import { MusicDirector } from '../systems/audio/MusicDirector.ts';
 import { MusicPanel } from '../ui/MusicPanel.ts';
+import { EscalatorSystem } from '../world/escalators.ts';
+import { ElevatorSystem } from '../world/elevator.ts';
+import { InteractionSystem } from '../systems/Interaction.ts';
+import { ElevatorPanel } from '../ui/ElevatorPanel.ts';
 
 const FIXED_DT = 1 / 60;
 const MAX_STEPS = 5;
@@ -55,6 +59,11 @@ export class Game {
   private music!: MusicDirector;
   private musicPanel!: MusicPanel;
   private musicReady: Promise<void> = Promise.resolve();
+  private escalators: EscalatorSystem | null = null;
+  private elevators: ElevatorSystem[] = [];
+  private readonly interaction = new InteractionSystem();
+  private readonly elevatorPanel = new ElevatorPanel();
+  private readonly conveyor = new THREE.Vector3();
 
   constructor(container: HTMLElement) {
     this.renderer = new Renderer(container, { postFx: !devFlags.nofx });
@@ -69,6 +78,7 @@ export class Game {
 
     const world = this.layout ? buildMall(this.layout, this.physics).root : buildTestbed(this.physics);
     this.renderer.scene.add(world);
+    if (this.layout) this.setupCirculation(this.layout);
 
     this.player = new PlayerController(this.physics);
     const spawn = this.spawnPoint();
@@ -93,9 +103,15 @@ export class Game {
     this.input.bind('KeyL', () => i18n.toggle());
     this.input.bind('KeyM', () => this.toggleMusicPanel());
     this.input.bind('KeyV', () => this.toggleView());
+    this.input.bind('KeyE', () => {
+      if (!this.started) return;
+      if (this.elevatorPanel.isOpen) this.closeElevatorPanel(true);
+      else this.interaction.interact();
+    });
     this.input.onWheel((dy) => this.cameraRig.zoom(dy));
     this.input.bind('Escape', () => {
       if (this.musicPanel.isOpen) this.closeMusicPanel(false);
+      if (this.elevatorPanel.isOpen) this.closeElevatorPanel(false);
     });
     this.input.onLockChange((locked) => this.onLockChange(locked));
 
@@ -208,8 +224,7 @@ export class Game {
           this.scripted = null;
         }
       }
-      this.player.fixedUpdate(FIXED_DT, move, jump);
-      this.physics.step(FIXED_DT);
+      this.fixedStep(move, jump);
       this.acc -= FIXED_DT;
       steps++;
     }
@@ -217,6 +232,7 @@ export class Game {
     const alpha = this.acc / FIXED_DT;
 
     const feet = this.player.feetPosition(alpha, this.tmp);
+    this.updateDynamicWorld(dt, feet);
     this.updateAvatar(dt, feet);
     const camDist = this.cameraRig.update(dt, this.player, alpha);
     this.avatar.setVisible(this.cameraRig.mode === 'first' || camDist > CAMERA.hideAvatarBelow);
@@ -252,6 +268,71 @@ export class Game {
       });
     }
   };
+
+  /** 一个固定物理步：电梯 → 扶梯输送 → 角色 → 物理世界。 */
+  private fixedStep(move: MoveIntent, jump: boolean) {
+    let ride = null;
+    for (const el of this.elevators) ride = el.fixedUpdate(FIXED_DT, this.player.curr) ?? ride;
+    const onEscalator = this.escalators?.conveyorAt(this.player.curr, this.conveyor) ?? false;
+    this.player.fixedUpdate(FIXED_DT, move, jump, { conveyor: onEscalator ? this.conveyor : null, ride });
+    this.physics.step(FIXED_DT);
+  }
+
+  /** 每帧：扶梯台阶、电梯画面、互动提示 */
+  private updateDynamicWorld(dt: number, feet: THREE.Vector3) {
+    this.escalators?.update(dt);
+    for (const el of this.elevators) el.update();
+    this.interaction.update(feet);
+    const cur = this.interaction.current;
+    this.hud?.setPrompt(cur && !this.elevatorPanel.isOpen && !this.musicPanel.isOpen ? cur.prompt() : null);
+  }
+
+  private setupCirculation(layout: MallLayout) {
+    const scene = this.renderer.scene;
+    this.escalators = new EscalatorSystem(layout, scene);
+    for (const def of layout.circulation.elevators) {
+      const el = new ElevatorSystem(layout, def, scene, this.physics, 0);
+      this.elevators.push(el);
+      for (const f of def.floors) {
+        this.interaction.add({
+          id: `${def.id}:call:${f}`,
+          prompt: () => i18n.t('elevator.call'),
+          position: () => el.callButtonPos(f),
+          radius: 2.0,
+          isAvailable: (feet) => !el.isPlayerInside(feet),
+          interact: () => el.request(f),
+        });
+      }
+      this.interaction.add({
+        id: `${def.id}:panel`,
+        prompt: () => i18n.t('elevator.choose'),
+        position: () => new THREE.Vector3(def.rect.x + def.rect.w / 2, el.carY, def.rect.z + def.rect.d / 2),
+        radius: 2.2,
+        isAvailable: (feet) => el.isPlayerInside(feet),
+        interact: () => this.openElevatorPanel(el),
+      });
+    }
+    this.elevatorPanel.onClose = (relock) => this.closeElevatorPanel(relock);
+  }
+
+  private openElevatorPanel(el: ElevatorSystem) {
+    this.panelOpen = true;
+    this.overlay.setMode('hidden');
+    this.input.unlock();
+    this.elevatorPanel.show(el);
+  }
+
+  private closeElevatorPanel(relock: boolean) {
+    this.elevatorPanel.hide();
+    this.panelOpen = this.musicPanel.isOpen;
+    if (!relock) {
+      this.overlay.setMode('paused');
+      return;
+    }
+    void this.input.lock().then((ok) => {
+      if (!ok) this.overlay.setMode('paused');
+    });
+  }
 
   private updateAvatar(dt: number, feet: THREE.Vector3) {
     const p = this.player;
@@ -357,12 +438,29 @@ export class Game {
       get avatar() {
         return game.avatar;
       },
+      get elevator() {
+        return game.elevators[0];
+      },
+      get escalators() {
+        return game.escalators;
+      },
+      /** 当前可互动对象的提示，以及按 E */
+      interactionPrompt() {
+        game.interaction.update(game.player.curr);
+        return game.interaction.current?.prompt() ?? null;
+      },
+      pressE() {
+        game.interaction.update(game.player.curr);
+        if (game.elevatorPanel.isOpen) game.closeElevatorPanel(false);
+        else game.interaction.interact();
+      },
       setYaw(deg: number) {
         game.player.yaw = (deg * Math.PI) / 180;
       },
       /** 立即按当前状态渲染一帧（浏览器面板隐藏、渲染循环暂停时截图用） */
       renderOnce(dt = 1 / 60) {
         const feet = game.player.feetPosition(1, new THREE.Vector3());
+        game.updateDynamicWorld(dt, feet);
         game.updateAvatar(dt, feet);
         const d = game.cameraRig.update(dt, game.player, 1);
         game.avatar.setVisible(game.cameraRig.mode === 'first' || d > CAMERA.hideAvatarBelow);
@@ -383,8 +481,8 @@ export class Game {
       simulate(forward: number, right: number, seconds: number, run = false, jump = false) {
         const n = Math.round(seconds / FIXED_DT);
         for (let i = 0; i < n; i++) {
-          game.player.fixedUpdate(FIXED_DT, { forward, right, run }, jump && i === 0);
-          game.physics.step(FIXED_DT);
+          game.fixedStep({ forward, right, run }, jump && i === 0);
+          game.escalators?.update(FIXED_DT);
         }
         const p = game.player.curr;
         return { x: p.x, y: p.y, z: p.z, grounded: game.player.grounded };

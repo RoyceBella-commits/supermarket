@@ -10,6 +10,8 @@ export class Hud {
   private readonly zoneCard: HTMLDivElement;
   private readonly music: HTMLDivElement;
   private readonly crosshair: HTMLDivElement;
+  private readonly prompt: HTMLDivElement;
+  private promptText = '';
   private zone: ZoneInfo | null = null;
   private musicTitle = '';
 
@@ -26,7 +28,9 @@ export class Hud {
     this.music.className = 'hud-card hud-music';
     this.crosshair = document.createElement('div');
     this.crosshair.className = 'crosshair';
-    document.body.append(this.root, this.music, this.crosshair);
+    this.prompt = document.createElement('div');
+    this.prompt.className = 'hud-prompt hidden';
+    document.body.append(this.root, this.music, this.crosshair, this.prompt);
     i18n.onChange(() => {
       this.renderZone(false);
       this.renderMusic();
@@ -38,6 +42,21 @@ export class Hud {
     this.root.style.display = v ? '' : 'none';
     this.music.style.display = v ? '' : 'none';
     this.crosshair.style.display = v ? '' : 'none';
+    this.prompt.style.display = v ? '' : 'none';
+  }
+
+  /** 底部的“按 E …”提示；null 隐藏 */
+  setPrompt(text: string | null) {
+    const t = text ?? '';
+    if (t === this.promptText) return;
+    this.promptText = t;
+    this.prompt.classList.toggle('hidden', !t);
+    this.prompt.innerHTML = '';
+    if (!t) return;
+    const k = document.createElement('span');
+    k.className = 'kbd';
+    k.textContent = 'E';
+    this.prompt.append(k, document.createTextNode(t));
   }
 
   setCrosshair(v: boolean) {

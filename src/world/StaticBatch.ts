@@ -19,7 +19,10 @@ export type MatKey =
   | 'roof'
   | 'hoarding'
   | 'locker'
-  | 'prop';
+  | 'prop'
+  | 'metal'
+  | 'handrail'
+  | 'escalatorBody';
 
 export type FaceDir = 'top' | 'bottom' | 'side';
 
@@ -52,10 +55,11 @@ export interface QuadSpec {
   tint?: string;
 }
 
-/** 楔形楼梯坡道：只有碰撞，画面由台阶盒子负责。points 为 6 或 8 个顶点。 */
+/** 凸包碰撞体（楼梯楔形坡道、扶梯斜面等），只有碰撞。playerOnly：只挡玩家、不挡相机。 */
 export interface HullSpec {
   points: number[];
   floor: number;
+  playerOnly?: boolean;
 }
 
 export const OUTSIDE_FLOOR = -99;
@@ -112,8 +116,38 @@ export class StaticBatch {
     this.quads.push(q);
   }
 
-  addHull(points: number[], floor: number) {
-    this.hulls.push({ points, floor });
+  addHull(points: number[], floor: number, playerOnly = false) {
+    this.hulls.push({ points, floor, playerOnly });
+  }
+
+  /**
+   * 任意朝向的六面体（8 个角：下面 4 个 + 上面 4 个，各自按同一顺序绕一圈）。
+   * 法线由面算出，用于扶梯这类斜放的构件。
+   */
+  prism(c: [number, number, number][], mat: MatKey, floor: number, tint?: string) {
+    const [a, b, cc, d, e, f, g, h] = c;
+    const faces: [number, number, number][][] = [
+      [a, d, cc, b], // 下
+      [e, f, g, h], // 上
+      [a, b, f, e],
+      [b, cc, g, f],
+      [cc, d, h, g],
+      [d, a, e, h],
+    ];
+    for (const q of faces) {
+      const n = faceNormal(q);
+      // 保证法线朝外：和六面体中心比较
+      const center = c.reduce((acc, p) => [acc[0] + p[0] / 8, acc[1] + p[1] / 8, acc[2] + p[2] / 8], [0, 0, 0]);
+      const fc = q.reduce((acc, p) => [acc[0] + p[0] / 4, acc[1] + p[1] / 4, acc[2] + p[2] / 4], [0, 0, 0]);
+      const out = (fc[0] - center[0]) * n[0] + (fc[1] - center[1]) * n[1] + (fc[2] - center[2]) * n[2];
+      const corners = out >= 0 ? q : [...q].reverse();
+      const nn: [number, number, number] = out >= 0 ? n : [-n[0], -n[1], -n[2]];
+      const ax = Math.abs(nn[0]);
+      const ay = Math.abs(nn[1]);
+      const az = Math.abs(nn[2]);
+      const uvAxes: [number, number] = ay >= ax && ay >= az ? [0, 2] : ax >= az ? [2, 1] : [0, 1];
+      this.quad({ corners, normal: nn, uvAxes, mat, floor, tint });
+    }
   }
 
   /** 生成合并后的 Mesh（按楼层分组）和碰撞体。 */
@@ -134,7 +168,7 @@ export class StaticBatch {
       for (const q of boxFaces(b)) push(q);
     }
     for (const q of this.quads) push(q);
-    for (const h of this.hulls) physics.addConvexHull(h.points);
+    for (const h of this.hulls) physics.addConvexHull(h.points, h.playerOnly);
 
     const floorGroups = new Map<number, THREE.Group>();
     for (const [key, list] of groups) {
@@ -156,6 +190,21 @@ export class StaticBatch {
     }
     return root;
   }
+}
+
+function faceNormal(q: [number, number, number][]): [number, number, number] {
+  const [p0, p1, p2] = q;
+  const ux = p1[0] - p0[0];
+  const uy = p1[1] - p0[1];
+  const uz = p1[2] - p0[2];
+  const vx = p2[0] - p0[0];
+  const vy = p2[1] - p0[1];
+  const vz = p2[2] - p0[2];
+  const nx = uy * vz - uz * vy;
+  const ny = uz * vx - ux * vz;
+  const nz = ux * vy - uy * vx;
+  const l = Math.hypot(nx, ny, nz) || 1;
+  return [nx / l, ny / l, nz / l];
 }
 
 /** 盒子的 6 个面（画面外扩 OVERLAP），顶点按从外侧看逆时针排列。 */

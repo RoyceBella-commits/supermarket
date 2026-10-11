@@ -1,5 +1,6 @@
 import type { MallLayout, Opening, Rect } from './layoutTypes.ts';
 import { containsPoint, containsRect, edgeOf, openingCenter, overlaps } from '../world/rectOps.ts';
+import { escalatorFootprint, escalatorFrame } from '../world/escalators.ts';
 
 /** 规划里的主要店铺数（有店员 NPC 的那些） */
 export const EXPECTED_MAIN_SHOPS = 21;
@@ -118,6 +119,26 @@ export function validateLayout(layout: MallLayout): string[] {
         const front: Rect = { x: c.x + c.outX * 1 - 1, z: c.z + c.outZ * 1 - 1, w: 2, d: 2 };
         if (overlaps(a.rect, front) && overlaps(a.rect, door)) problems.push(`${a.id} 挡住了 ${p.id} 的门口`);
       }
+    }
+  }
+
+  // 扶梯（含两端踏板）和电梯井道不能压到店铺、设施、楼梯间
+  const H = layout.building.floorHeight;
+  for (const e of layout.circulation.escalators) {
+    checkId(e.id);
+    const f = escalatorFrame(e, H);
+    const fp = escalatorFootprint(f);
+    const rect: Rect = { x: fp.x0, z: fp.z0, w: fp.x1 - fp.x0, d: fp.z1 - fp.z0 };
+    for (const lvl of [e.fromFloor, e.fromFloor + 1]) {
+      for (const p of byFloor(lvl)) if (overlaps(rect, p.rect)) problems.push(`${e.id} 和 ${p.id} 重叠（第 ${lvl} 层）`);
+      for (const a of layout.amenities) if (a.floor === lvl && overlaps(rect, a.rect)) problems.push(`${e.id} 和 ${a.id} 重叠`);
+    }
+  }
+  for (const el of layout.circulation.elevators) {
+    checkId(el.id);
+    for (const lvl of el.floors) {
+      for (const p of byFloor(lvl)) if (overlaps(el.rect, p.rect)) problems.push(`${el.id} 和 ${p.id} 重叠（第 ${lvl} 层）`);
+      for (const a of layout.amenities) if (a.floor === lvl && overlaps(el.rect, a.rect)) problems.push(`${el.id} 和 ${a.id} 重叠`);
     }
   }
 

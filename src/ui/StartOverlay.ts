@@ -52,6 +52,7 @@ export class StartOverlay {
           <div>${k('Shift')}</div><div>${t('controls.run')}</div>
           <div>${k('Space')}</div><div>${t('controls.jump')}</div>
           <div>${k(t('controls.mouse'))}</div><div>${t('controls.look')}</div>
+          <div>${k('E')}</div><div>${t('controls.interact')}</div>
           <div>${k('V')}</div><div>${t('controls.view')}</div>
           <div>${k(t('controls.wheel'))}</div><div>${t('controls.zoom')}</div>
           <div>${k('M')}</div><div>${t('controls.music')}</div>

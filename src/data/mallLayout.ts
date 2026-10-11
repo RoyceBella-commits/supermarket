@@ -1,9 +1,10 @@
-import type { AmenityDef, FacilityDef, MallLayout, Opening, Rect, ShopCategory, ShopDef, Side, StairDef } from './layoutTypes.ts';
+import { escalatorRun, type AmenityDef, type ElevatorDef, type EscalatorDef, type FacilityDef, type MallLayout, type Opening, type Rect, type ShopCategory, type ShopDef, type Side, type StairDef } from './layoutTypes.ts';
 
 // 商场整体：136 × 52 m 的“哑铃型”线形商场，层高 6 m，B1 + 1F–5F。参考日本 AEON / 美国区域购物中心：
 // - 两端是 18 m 宽、贯通进深的主力店（把人流拉过中间的专门店）；
 // - 中间 100 m 长的商业街宽 14 m，两侧是 15 × 19 m 的标准铺位，中央中庭两侧是 24 × 14 m 的铺位；
-// - 中央中庭（大挑空 + 天窗）和东西两个扶梯挑空（扶梯在阶段 3 加），二层以上沿挑空装玻璃栏杆；
+// - 中央中庭（大挑空 + 天窗 + 观光电梯）和东西两个扶梯挑空，沿挑空装玻璃栏杆；
+//   东侧挑空从 1F 起开洞，扶梯一直通到 B1；
 // - 两组楼梯间 + 洗手间放在对角（西北、东南），东北角是员工通道；
 // - B1 是 Daily Harvest 超市和前厅，5F 西端是室外的 Skyline Garden，东端是两层挑高的影院。
 // 改布局只改这个文件；开发模式下 validateLayout() 会检查重叠和门洞。
@@ -79,8 +80,9 @@ const secondary = (...a: Parameters<typeof shop> extends [unknown, ...infer R] ?
 
 const shops: ShopDef[] = [
   // ---------- B1 超市与生活 ----------
-  main('dailyharvest', 'Daily Harvest', 'supermarket', -1, { x: -42, z: Z0, w: 84, d: 32 }, '#2d6a4f', '#ffd166', {
-    entrances: [{ side: 'S', offset: 35, width: 14, height: 4, kind: 'storefront' }],
+  // 超市在西边，东边留出扶梯落地的前厅，南边是电梯口和超市前厅
+  main('dailyharvest', 'Daily Harvest', 'supermarket', -1, { x: -42, z: Z0, w: 60, d: 27 }, '#2d6a4f', '#ffd166', {
+    entrances: [{ side: 'S', offset: 26, width: 12, height: 4, kind: 'storefront' }],
   }),
   secondary('sweetspot', 'Sweet Spot', 'sweets', -1, { x: 22, z: 16, w: 9, d: 10 }, '#ff8fab', '#fff0f3', {
     entrances: [{ side: 'N', offset: 1.5, width: 6, kind: 'storefront' }],
@@ -234,14 +236,38 @@ facilities.push(
 const amenities: AmenityDef[] = [
   { id: 'lockers-hall', kind: 'lockers', floor: -1, rect: { x: -46, z: Z1 - 0.6, w: 14, d: 0.6 }, facing: 'N', label: { zh: '寄存柜', en: 'Lockers' } },
   { id: 'lockers-east', kind: 'lockers', floor: -1, rect: { x: MALL_X1 - 0.6, z: -5, w: 0.6, d: 8 }, facing: 'W', label: { zh: '寄存柜', en: 'Lockers' } },
-  { id: 'carts', kind: 'carts', floor: -1, rect: { x: -20, z: 8, w: 6, d: 4 }, facing: 'N', label: { zh: '购物车', en: 'Carts' } },
-  { id: 'baskets', kind: 'baskets', floor: -1, rect: { x: -11, z: 7.6, w: 1.4, d: 0.8 }, facing: 'N' },
+  { id: 'carts', kind: 'carts', floor: -1, rect: { x: -25, z: 3, w: 6, d: 4 }, facing: 'N', label: { zh: '购物车', en: 'Carts' } },
+  { id: 'baskets', kind: 'baskets', floor: -1, rect: { x: -18.6, z: 2.4, w: 1.4, d: 0.8 }, facing: 'N' },
   { id: 'service-desk', kind: 'serviceDesk', floor: -1, rect: { x: 8, z: Z1 - 3, w: 8, d: 3 }, facing: 'N', label: { zh: '服务台', en: 'Service Desk' } },
   { id: 'bench-hall-1', kind: 'bench', floor: -1, rect: { x: -8, z: 18, w: 2, d: 0.55 }, facing: 'N' },
   { id: 'bench-hall-2', kind: 'bench', floor: -1, rect: { x: -4, z: 18, w: 2, d: 0.55 }, facing: 'N' },
   { id: 'bench-lounge-1', kind: 'bench', floor: -1, rect: { x: MALL_X0, z: 12, w: 0.55, d: 2 }, facing: 'E' },
   { id: 'bench-lounge-2', kind: 'bench', floor: -1, rect: { x: MALL_X0, z: 15, w: 0.55, d: 2 }, facing: 'E' },
   { id: 'fountain', kind: 'waterFountain', floor: -1, rect: { x: MALL_X0, z: 18.2, w: 0.5, d: 0.6 }, facing: 'E', label: { zh: '饮水机', en: 'Water' } },
+];
+
+// ---------- 扶梯 ----------
+// 东西两个挑空各放一摞：南侧一条上行、北侧一条下行，每层的扶梯都从西往东爬（平行式），
+// 上到一层后绕回西端坐下一段。扶梯坡段落在挑空里，顶端正好接在挑空东沿。
+function escalatorStack(prefix: string, atrium: Rect, fromFloor: number, toFloor: number): EscalatorDef[] {
+  const out: EscalatorDef[] = [];
+  const footX = atrium.x + atrium.w - escalatorRun(6) + 0.8; // 坡段顶端 + 平步段 = 挑空东沿 + 0.8
+  const laneZ = atrium.d / 2 - 1.6; // 车道中线离挑空中线的距离
+  const cz = atrium.z + atrium.d / 2;
+  for (let f = fromFloor; f < toFloor; f++) {
+    out.push({ id: `${prefix}-up-${f}`, fromFloor: f, dir: 'up', foot: { x: footX, z: cz - laneZ }, heading: 'E' });
+    out.push({ id: `${prefix}-down-${f}`, fromFloor: f, dir: 'down', foot: { x: footX, z: cz + laneZ }, heading: 'E' });
+  }
+  return out;
+}
+const WEST_VOID: Rect = { x: -36, z: -3.5, w: 10, d: 7 };
+const EAST_VOID: Rect = { x: 26, z: -3.5, w: 10, d: 7 };
+const escalators: EscalatorDef[] = [...escalatorStack('esc-w', WEST_VOID, 0, 4), ...escalatorStack('esc-e', EAST_VOID, -1, 4)];
+
+// ---------- 观光电梯 ----------
+// 中央中庭南缘的玻璃井道，B1–5F，厅门朝南开向走廊（B1 在超市前厅、1F 在中庭广场上）
+const elevators: ElevatorDef[] = [
+  { id: 'glass-elevator', label: { zh: '观光电梯', en: 'Glass Elevator' }, rect: { x: -1.6, z: 2.4, w: 3.2, d: 3.6 }, floors: [-1, 0, 1, 2, 3, 4], doorSide: 'S' },
 ];
 
 const fullIndoor: Rect = { x: X0, z: Z0, w: X1 - X0, d: Z1 - Z0 };
@@ -260,8 +286,8 @@ export const mallLayout: MallLayout = {
   },
   atriums: [
     { id: 'center', rect: { x: -9, z: -6, w: 18, d: 12 }, fromFloor: 1, skylight: true },
-    { id: 'west', rect: { x: -36, z: -3.5, w: 10, d: 7 }, fromFloor: 1, skylight: true },
-    { id: 'east', rect: { x: 26, z: -3.5, w: 10, d: 7 }, fromFloor: 1, skylight: true },
+    { id: 'west', rect: WEST_VOID, fromFloor: 1, skylight: true },
+    { id: 'east', rect: EAST_VOID, fromFloor: 0, skylight: true },
   ],
   mainEntrance: { side: 'S', offset: (X1 - X0) / 2 - 4, width: 8, height: 4.5, kind: 'gate' },
   plaza: { x: -40, z: Z1, w: 80, d: 18 },
@@ -299,9 +325,9 @@ export const mallLayout: MallLayout = {
   publicZones: [
     { id: 'plaza', label: { zh: '正门广场', en: 'Entrance Plaza' }, rect: { x: -40, z: Z1, w: 80, d: 18 }, floors: [0] },
     { id: 'lobby', label: { zh: '正门大堂', en: 'Main Lobby' }, rect: { x: -5, z: COURT_Z, w: 10, d: Z1 - COURT_Z }, floors: [0] },
-    { id: 'market-hall', label: { zh: '超市前厅', en: 'Market Hall' }, rect: { x: MALL_X0, z: 6, w: 100, d: 20 }, floors: [-1] },
-    { id: 'b1-west', label: { zh: '西侧通道', en: 'West Passage' }, rect: { x: MALL_X0, z: Z0, w: 8, d: 32 }, floors: [-1] },
-    { id: 'b1-east', label: { zh: '东侧通道', en: 'East Passage' }, rect: { x: 42, z: Z0, w: 8, d: 32 }, floors: [-1] },
+    { id: 'market-hall', label: { zh: '超市前厅', en: 'Market Hall' }, rect: { x: MALL_X0, z: 1, w: 68, d: 25 }, floors: [-1] },
+    { id: 'b1-west', label: { zh: '西侧通道', en: 'West Passage' }, rect: { x: MALL_X0, z: Z0, w: 8, d: 27 }, floors: [-1] },
+    { id: 'b1-east', label: { zh: '东侧前厅', en: 'East Hall' }, rect: { x: 18, z: Z0, w: 32, d: 52 }, floors: [-1] },
     { id: 'center-court', label: { zh: '中央中庭', en: 'Center Court' }, rect: { x: -COURT_X, z: -COURT_Z, w: COURT_X * 2, d: COURT_Z * 2 }, floors: ABOVE_GROUND },
     { id: 'west-court', label: { zh: '西中庭', en: 'West Court' }, rect: { x: -42, z: -STREET, w: 22, d: STREET * 2 }, floors: ABOVE_GROUND },
     { id: 'east-court', label: { zh: '东中庭', en: 'East Court' }, rect: { x: 20, z: -STREET, w: 22, d: STREET * 2 }, floors: ABOVE_GROUND },
@@ -310,8 +336,7 @@ export const mallLayout: MallLayout = {
   ],
   circulation: {
     stairs,
-    // 阶段 3 再加扶梯（东西挑空里）、观光电梯（中央中庭）和 1F↔B1 购物车坡道
-    escalators: [],
-    elevators: [],
+    escalators,
+    elevators,
   },
 };
