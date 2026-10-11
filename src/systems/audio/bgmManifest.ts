@@ -38,7 +38,8 @@ export function trackUrl(t: BgmTrack): string {
 
 /** 依次尝试本机版和公开版歌单。Vite 开发服务器对不存在的文件会返回 index.html，所以要检查类型并解析。 */
 export async function loadBuiltinManifest(): Promise<{ manifest: BgmManifest; source: 'local' | 'public' } | null> {
-  for (const source of ['local', 'public'] as const) {
+  const sources = import.meta.env.DEV ? (['local', 'public'] as const) : (['public'] as const);
+  for (const source of sources) {
     const url = BASE + (source === 'local' ? 'playlist.local.json' : 'playlist.json');
     try {
       const res = await fetch(url, { cache: 'no-cache' });

@@ -6,9 +6,31 @@
 - 商场：136 × 52 m 的“哑铃型”线形商场，B1 + 1F–5F。两端是主力店，中间 100 m 商业街，有中央中庭和东西两个扶梯挑空。
 - 店铺：21 家主要店（有店员、台词和配音）+ 35 家配角店（只有店面和内部布置）。
 
-## 运行
+## 在线游玩与发布
 
-需要 Node.js 20+（开发时用的是 24）。
+项目通过 GitHub Pages 提供浏览器直接游玩的版本。推送到 `main` 后，GitHub Actions 会自动安装依赖、检查类型、构建并更新网页。
+
+首次发布需在仓库 `Settings → Pages → Source` 中选择 `GitHub Actions`。工作流自动读取网页的子目录路径，角色、贴图、配音和音乐都能从正确位置加载。
+
+公开构建仅使用公开版 BGM 歌单；本机商业音乐不上传、不发布。运行时推荐使用带键盘和鼠标的电脑浏览器。
+
+## 本机运行
+
+推荐 Node.js 24。当前 Vite 需要 Node.js 20.19+ 或 22.12+。
+
+### Windows 本机运行
+
+双击根目录的 `start.cmd`，会启动开发服务器并打开浏览器。首次运行自动从 Node.js 官方源下载项目专用的 Node.js 24.21.0（校验 SHA-256），并按锁文件安装 Windows 依赖；需要联网。运行环境和 npm 缓存保存在 `.runtime/`，不修改系统 PATH，不需要管理员权限。
+
+- `setup.cmd`：单独配置环境或重装依赖。
+- 关闭启动窗口或按 `Ctrl+C`：停止服务器。
+- 构建验证：`powershell -NoProfile -ExecutionPolicy Bypass -File tools/windows.ps1 -Action build`。
+- 类型检查：同上，将 `build` 换成 `typecheck`；构建预览则换成 `preview`。
+- 移动硬盘热更新异常时，在 PowerShell 中先执行 `$env:VITE_POLL='1'`，再运行 `.\start.cmd`。
+
+游戏运行不需要 Python、ffmpeg 或本地语音模型；这些仅供重新制作素材使用。
+
+### 已安装 Node.js/npm 的环境
 
 ```bash
 npm install

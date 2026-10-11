@@ -4,6 +4,7 @@ import { resolve } from 'node:path';
 
 // 项目位于 exFAT 移动硬盘。如果改了文件页面没有热更新，用 `VITE_POLL=1 npm run dev` 改成轮询监听。
 const poll = process.env.VITE_POLL === '1';
+const base = process.env.VITE_BASE_PATH ?? '/';
 
 /**
  * 仅开发服务器：POST /__shot?name=xxx 把页面自己渲染的截图（JPEG data URL）存到 tools/.shots/xxx.jpg。
@@ -45,6 +46,7 @@ function devShots(): Plugin {
 }
 
 export default defineConfig({
+  base,
   plugins: [devShots()],
   server: {
     host: '127.0.0.1',
