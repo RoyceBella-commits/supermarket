@@ -17,3 +17,6 @@ __pycache__/
 
 # 开发截图
 tools/.shots/
+
+# 素材原图（生图原始输出、参考图），只提交处理后的版本
+assets-src/
