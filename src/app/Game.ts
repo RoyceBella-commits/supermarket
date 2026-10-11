@@ -31,7 +31,7 @@ import { DialogueBox } from '../ui/DialogueBox.ts';
 import { NpcSystem } from '../npc/NpcSystem.ts';
 import { buildDecor } from '../world/decor.ts';
 import { LightShafts } from '../world/lightShafts.ts';
-import { NightGlow } from '../world/nightGlow.ts';
+import { NightGlow, facadeLights } from '../world/nightGlow.ts';
 import { getProductMaterial } from '../world/interiors/kit.ts';
 import { CinemaSystem } from '../systems/cinema/CinemaSystem.ts';
 import { CinemaPanel } from '../ui/CinemaPanel.ts';
@@ -133,6 +133,11 @@ export class Game {
       for (const mesh of glow.meshes) built.products.add(mesh);
       this.renderer.day.onChange(() => glow.update(this.renderer.day));
       glow.update(this.renderer.day);
+      // 外立面灯带和正门灯：从广场上看得见，不按楼层隐藏
+      const facade = new NightGlow(facadeLights(this.layout));
+      for (const mesh of facade.meshes) this.renderer.scene.add(mesh);
+      this.renderer.day.onChange(() => facade.update(this.renderer.day));
+      facade.update(this.renderer.day);
       const m = built.materials;
       this.renderer.day.setOutdoorMaterials([
         { mat: m.ground, dark: 0.45 },

@@ -168,6 +168,8 @@ export interface GlowPoint {
   r: number;
   color: string;
   floor: number;
+  /** 灯带：给出尺寸就画成发光的长方块（世界轴向），不给就是半径 r 的球 */
+  size?: [number, number, number];
 }
 
 /** 运行时系统要用的特殊位置（影院银幕、卡丁车赛道……），世界坐标 */
