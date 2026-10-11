@@ -63,7 +63,6 @@ export class Game {
   private elevators: ElevatorSystem[] = [];
   private readonly interaction = new InteractionSystem();
   private readonly elevatorPanel = new ElevatorPanel();
-  private readonly conveyor = new THREE.Vector3();
 
   constructor(container: HTMLElement) {
     this.renderer = new Renderer(container, { postFx: !devFlags.nofx });
@@ -273,8 +272,12 @@ export class Game {
   private fixedStep(move: MoveIntent, jump: boolean) {
     let ride = null;
     for (const el of this.elevators) ride = el.fixedUpdate(FIXED_DT, this.player.curr) ?? ride;
-    const onEscalator = this.escalators?.conveyorAt(this.player.curr, this.conveyor) ?? false;
-    this.player.fixedUpdate(FIXED_DT, move, jump, { conveyor: onEscalator ? this.conveyor : null, ride });
+    const esc = !ride && !jump ? (this.escalators?.locate(this.player.curr) ?? null) : null;
+    const escalators = this.escalators;
+    this.player.fixedUpdate(FIXED_DT, move, jump, {
+      ride,
+      escalator: esc && escalators ? (vel, dt, out) => escalators.advance(esc, vel, dt, out) : null,
+    });
     this.physics.step(FIXED_DT);
   }
 

@@ -21,6 +21,12 @@ function headingVector(h: Side): { x: number; z: number } {
   return { N: { x: 0, z: -1 }, S: { x: 0, z: 1 }, E: { x: 1, z: 0 }, W: { x: -1, z: 0 } }[h];
 }
 
+export interface EscalatorRide {
+  frame: EscalatorFrame;
+  u: number;
+  v: number;
+}
+
 export interface EscalatorFrame {
   def: EscalatorDef;
   y0: number;
@@ -31,6 +37,12 @@ export interface EscalatorFrame {
   /** 相对高度（下层地面为 0） */
   surfaceY(u: number): number;
   map(u: number, v: number, y: number): [number, number, number];
+  /** 台阶带沿坡面的总长度（平段 + 斜段 + 平段） */
+  pathLength: number;
+  /** 沿坡面的距离 → u */
+  uAtArc(s: number): number;
+  /** u → 沿坡面的距离 */
+  arcAtU(u: number): number;
 }
 
 export function escalatorFrame(def: EscalatorDef, floorHeight: number): EscalatorFrame {
@@ -40,7 +52,20 @@ export function escalatorFrame(def: EscalatorDef, floorHeight: number): Escalato
   const run = escalatorRun(floorHeight);
   const y0 = def.fromFloor * floorHeight;
   const flat = ESCALATOR.flat;
+  const slopeLen = rise / Math.sin(RAD);
+  const pathLength = flat * 2 + slopeLen;
   return {
+    pathLength,
+    uAtArc(s: number) {
+      if (s <= flat) return s;
+      if (s >= flat + slopeLen) return run - (pathLength - s);
+      return flat + (s - flat) * Math.cos(RAD);
+    },
+    arcAtU(u: number) {
+      if (u <= flat) return u;
+      if (u >= run - flat) return pathLength - (run - u);
+      return flat + (u - flat) / Math.cos(RAD);
+    },
     def,
     y0,
     rise,
@@ -167,10 +192,11 @@ export class EscalatorSystem {
   constructor(layout: MallLayout, scene: THREE.Scene) {
     const H = layout.building.floorHeight;
     this.frames = layout.circulation.escalators.map((d) => escalatorFrame(d, H));
-    const run = escalatorRun(H);
-    this.perEsc = Math.round(run / ESCALATOR.stepDepth);
-    this.spacing = run / this.perEsc;
-    const geo = new THREE.BoxGeometry(this.spacing * 0.95, 0.26, ESCALATOR.stepWidth - 0.04);
+    // 台阶按沿坡面的距离均匀排布、匀速移动（坡段上水平间距会变小，所以台阶做得比间距窄一点）
+    const pathLength = this.frames[0]?.pathLength ?? escalatorRun(H);
+    this.perEsc = Math.round(pathLength / ESCALATOR.stepDepth);
+    this.spacing = pathLength / this.perEsc;
+    const geo = new THREE.BoxGeometry(this.spacing * Math.cos(RAD) * 0.96, 0.26, ESCALATOR.stepWidth - 0.04);
     const gradientMap = toonGradient();
     const side = new THREE.MeshToonMaterial({ color: '#4a4e57', gradientMap });
     const top = new THREE.MeshToonMaterial({ color: '#9aa1ab', gradientMap });
@@ -230,8 +256,9 @@ export class EscalatorSystem {
       const yaw = Math.atan2(f.dir.z, f.dir.x);
       tmpQ.setFromAxisAngle(UP, -yaw);
       for (let i = 0; i < this.perEsc; i++) {
-        let u = (i + 0.5) * this.spacing + sign * this.phase;
-        u = ((u % f.run) + f.run) % f.run;
+        let sArc = (i + 0.5) * this.spacing + sign * this.phase;
+        sArc = ((sArc % f.pathLength) + f.pathLength) % f.pathLength;
+        const u = f.uAtArc(sArc);
         const onSlope = u > ESCALATOR.flat && u < f.run - ESCALATOR.flat ? 1 : 0;
         const topY = f.surfaceY(u) + 0.03 + 0.06 * onSlope;
         const [x, y, z] = f.map(u, 0, topY - 0.13);
@@ -243,10 +270,8 @@ export class EscalatorSystem {
     this.mesh.instanceMatrix.needsUpdate = true;
   }
 
-  /**
-   * 脚底在某台扶梯的台阶上时，返回 true 并把输送速度写进 out（坡段上沿坡面方向，带竖直分量）。
-   */
-  conveyorAt(feet: THREE.Vector3, out: THREE.Vector3): boolean {
+  /** 脚底站在某台扶梯的台阶上（不是跳在空中）时，返回这台扶梯和局部坐标。 */
+  locate(feet: THREE.Vector3): EscalatorRide | null {
     for (const f of this.frames) {
       const dx = feet.x - f.def.foot.x;
       const dz = feet.z - f.def.foot.z;
@@ -254,14 +279,39 @@ export class EscalatorSystem {
       if (u < 0 || u > f.run) continue;
       const v = dx * f.side.x + dz * f.side.z;
       if (Math.abs(v) > HALF_STEP + 0.08) continue;
-      if (Math.abs(feet.y - (f.y0 + f.surfaceY(u))) > 0.4) continue;
-      const onSlope = u > ESCALATOR.flat && u < f.run - ESCALATOR.flat;
-      const sign = f.def.dir === 'up' ? 1 : -1;
-      const s = ESCALATOR.speed * (onSlope ? Math.cos(RAD) : 1) * sign;
-      const vy = onSlope ? ESCALATOR.speed * Math.sin(RAD) * sign : 0;
-      out.set(f.dir.x * s, vy, f.dir.z * s);
-      return true;
+      const surface = f.y0 + f.surfaceY(u);
+      if (feet.y - surface > 0.3 || surface - feet.y > 0.4) continue;
+      return { frame: f, u, v };
     }
-    return false;
+    return null;
+  }
+
+  /**
+   * 站在扶梯上时的新脚底位置：沿台阶带走（台阶速度 + 玩家自己沿扶梯方向的速度），
+   * 横向限制在台阶宽度内，高度贴台阶面。走出两端时延伸到踏板上，下一步交回角色控制器。
+   * 台阶画面用同一套“沿坡面的距离”，所以人和台阶严格同步。
+   */
+  advance(ride: EscalatorRide, vel: THREE.Vector3, dt: number, out: THREE.Vector3): THREE.Vector3 {
+    const f = ride.frame;
+    const sign = f.def.dir === 'up' ? 1 : -1;
+    const along = vel.x * f.dir.x + vel.z * f.dir.z;
+    const lateral = vel.x * f.side.x + vel.z * f.side.z;
+    const s1 = f.arcAtU(ride.u) + (sign * ESCALATOR.speed + along) * dt;
+    const maxV = HALF_STEP - 0.26;
+    const v1 = THREE.MathUtils.clamp(ride.v + lateral * dt, -maxV, maxV);
+    let u1: number;
+    let y: number;
+    if (s1 < 0) {
+      u1 = s1;
+      y = 0;
+    } else if (s1 > f.pathLength) {
+      u1 = f.run + (s1 - f.pathLength);
+      y = f.rise;
+    } else {
+      u1 = f.uAtArc(s1);
+      y = f.surfaceY(u1);
+    }
+    const [x, yy, z] = f.map(u1, v1, y + 0.03);
+    return out.set(x, yy, z);
   }
 }

@@ -37,10 +37,15 @@ export function buildElevatorShaft(layout: MallLayout, el: ElevatorDef, batch: S
   const H = layout.building.floorHeight;
   const g = shaftGeom(layout, el);
   const fl = Math.min(...el.floors);
+  // 井道玻璃：画面是玻璃，碰撞只挡玩家（第三人称镜头可以隔着玻璃看轿厢里的人）
+  const glass = (x0: number, y0: number, z0: number, x1: number, y1: number, z1: number, floor: number) => {
+    batch.box(x0, y0, z0, x1, y1, z1, 'glass', floor, 'none');
+    batch.box(x0, y0, z0, x1, y1, z1, 'rail', floor, 'playerOnly');
+  };
   // 西、东、北三面玻璃（有碰撞）
-  batch.box(g.x0, g.bottom, g.z0, g.x0 + GLASS_T, g.top, g.z1, 'glass', fl);
-  batch.box(g.x1 - GLASS_T, g.bottom, g.z0, g.x1, g.top, g.z1, 'glass', fl);
-  batch.box(g.x0, g.bottom, g.z0, g.x1, g.top, g.z0 + GLASS_T, 'glass', fl);
+  glass(g.x0, g.bottom, g.z0, g.x0 + GLASS_T, g.top, g.z1, fl);
+  glass(g.x1 - GLASS_T, g.bottom, g.z0, g.x1, g.top, g.z1, fl);
+  glass(g.x0, g.bottom, g.z0, g.x1, g.top, g.z0 + GLASS_T, fl);
   // 门所在的一面：每层门洞两侧和上方是玻璃
   const zf0 = g.z1 - GLASS_T;
   for (let L = Math.min(...el.floors); L <= Math.max(...el.floors); L++) {
@@ -48,9 +53,9 @@ export function buildElevatorShaft(layout: MallLayout, el: ElevatorDef, batch: S
     const y1 = L === Math.max(...el.floors) ? g.top : (L + 1) * H;
     const hasDoor = el.floors.includes(L);
     if (hasDoor) {
-      batch.box(g.x0, y0, zf0, g.cx - DOOR_HALF, y1, g.z1, 'glass', L);
-      batch.box(g.cx + DOOR_HALF, y0, zf0, g.x1, y1, g.z1, 'glass', L);
-      batch.box(g.cx - DOOR_HALF, y0 + DOOR_H, zf0, g.cx + DOOR_HALF, y1, g.z1, 'glass', L);
+      glass(g.x0, y0, zf0, g.cx - DOOR_HALF, y1, g.z1, L);
+      glass(g.cx + DOOR_HALF, y0, zf0, g.x1, y1, g.z1, L);
+      glass(g.cx - DOOR_HALF, y0 + DOOR_H, zf0, g.cx + DOOR_HALF, y1, g.z1, L);
       // 门框（外侧）
       batch.box(g.cx - DOOR_HALF - 0.1, y0, g.z1, g.cx - DOOR_HALF, y0 + DOOR_H + 0.1, g.z1 + 0.05, 'metal', L, 'none');
       batch.box(g.cx + DOOR_HALF, y0, g.z1, g.cx + DOOR_HALF + 0.1, y0 + DOOR_H + 0.1, g.z1 + 0.05, 'metal', L, 'none');
@@ -59,11 +64,15 @@ export function buildElevatorShaft(layout: MallLayout, el: ElevatorDef, batch: S
       batch.box(g.cx + DOOR_HALF + 0.25, y0 + 0.95, g.z1, g.cx + DOOR_HALF + 0.45, y0 + 1.3, g.z1 + 0.04, 'metal', L, 'none');
       batch.box(g.cx + DOOR_HALF + 0.31, y0 + 1.08, g.z1 + 0.04, g.cx + DOOR_HALF + 0.39, y0 + 1.16, g.z1 + 0.06, 'prop', L, 'none', '#ffd166');
     } else {
-      batch.box(g.x0, y0, zf0, g.x1, y1, g.z1, 'glass', L);
+      glass(g.x0, y0, zf0, g.x1, y1, g.z1, L);
     }
-    // 楼板处一圈金属带
+    // 楼板高度处井道外面一圈金属边框（只在外侧，不能横穿井道，否则轿厢经过时会从人身上扫过）
     if (L > Math.min(...el.floors)) {
-      batch.box(g.x0 - 0.02, y0 - 0.3, g.z0 - 0.02, g.x1 + 0.02, y0, g.z1 + 0.02, 'metal', L, 'none');
+      const b = 0.05;
+      batch.box(g.x0 - b, y0 - 0.3, g.z0 - b, g.x1 + b, y0, g.z0, 'metal', L, 'none');
+      batch.box(g.x0 - b, y0 - 0.3, g.z1, g.x1 + b, y0, g.z1 + b, 'metal', L, 'none');
+      batch.box(g.x0 - b, y0 - 0.3, g.z0, g.x0, y0, g.z1, 'metal', L, 'none');
+      batch.box(g.x1, y0 - 0.3, g.z0, g.x1 + b, y0, g.z1, 'metal', L, 'none');
     }
   }
   // 四角立柱

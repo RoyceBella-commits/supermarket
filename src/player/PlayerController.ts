@@ -21,15 +21,21 @@ export const PLAYER = {
   respawnY: -20,
 };
 
+const tmpEsc = new THREE.Vector3();
+
 export interface MoveIntent {
   forward: number;
   right: number;
   run: boolean;
 }
 
-/** 外部对角色的影响：扶梯输送速度、电梯“载着走”（门关着时锁定在轿厢地板上、限制在轿厢范围内）。 */
+/**
+ * 外部对角色的影响：
+ * - escalator：站在扶梯台阶上时，给出这一步的新脚底位置（传入玩家自己的水平速度）；
+ * - ride：电梯门关着时锁定在轿厢地板上、限制在轿厢范围内。
+ */
 export interface ExternalMotion {
-  conveyor?: THREE.Vector3 | null;
+  escalator?: ((vel: THREE.Vector3, dt: number, out: THREE.Vector3) => THREE.Vector3) | null;
   ride?: { y: number; minX: number; maxX: number; minZ: number; maxZ: number } | null;
 }
 
@@ -187,18 +193,26 @@ export class PlayerController {
       return;
     }
 
-    const cx = ext.conveyor?.x ?? 0;
-    const cy = ext.conveyor?.y ?? 0;
-    const cz = ext.conveyor?.z ?? 0;
-    const desired = { x: (this.vel.x + cx) * dt, y: (this.vy + cy) * dt, z: (this.vel.z + cz) * dt };
+    // 扶梯：站在台阶上（没在往上跳）时不走角色控制器，由扶梯直接给出位置，人和台阶同步
+    if (ext.escalator && this.vy <= 0) {
+      const p = ext.escalator(this.vel, dt, tmpEsc);
+      this.moveVel.set(this.vel.x, 0, this.vel.z);
+      this.curr.copy(p);
+      this.vy = 0;
+      this.grounded = true;
+      this.body.setTranslation({ x: p.x, y: p.y + this.centerOffset, z: p.z }, true);
+      this.body.setNextKinematicTranslation({ x: p.x, y: p.y + this.centerOffset, z: p.z });
+      return;
+    }
+    const desired = { x: this.vel.x * dt, y: this.vy * dt, z: this.vel.z * dt };
     this.kcc.computeColliderMovement(this.collider, desired);
     const m = this.kcc.computedMovement();
     this.curr.set(this.curr.x + m.x, this.curr.y + m.y, this.curr.z + m.z);
     this.body.setNextKinematicTranslation({ x: this.curr.x, y: this.curr.y + this.centerOffset, z: this.curr.z });
 
     // 实际走出的水平速度（撞墙时比 vel 小），给动画用，角色不会对着墙“原地狂奔”
-    // 扣掉扶梯的输送速度：站在扶梯上不动时动画是站立，不是走路
-    if (dt > 0) this.moveVel.set(m.x / dt - cx, 0, m.z / dt - cz);
+    // 只算玩家自己走出的速度（不含扶梯带的那部分）：站在扶梯上不动时动画是站立
+    if (dt > 0) this.moveVel.set(m.x / dt, 0, m.z / dt);
 
     this.grounded = this.kcc.computedGrounded();
     if (this.grounded && this.vy < 0) this.vy = 0;
