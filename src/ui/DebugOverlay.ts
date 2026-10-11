@@ -64,10 +64,11 @@ export class DebugOverlay {
     let s = rect(o, '#f5f3ee', '#333');
     s += rect(f.indoor, '#ffffff', '#333');
     for (const out of f.outdoor ?? []) s += rect(out, '#d8f3dc');
-    if (floor > 0) s += rect(L.atrium.rect, '#cfe8ff', '#4a90d9', 'stroke-dasharray="0.6 0.4"');
-    else if (floor === 0) s += rect(L.atrium.rect, "#f3e3c3");
+    for (const at of L.atriums) {
+      if (floor >= at.fromFloor) s += rect(at.rect, '#cfe8ff', '#4a90d9', 'stroke-dasharray="0.6 0.4"');
+    }
     for (const shop of L.shops.filter((x) => x.floor === floor)) {
-      s += rect(shop.rect, shop.theme.primary + '55');
+      s += rect(shop.rect, shop.theme.primary + (shop.tier === 'main' ? '77' : '33'));
       s += label(shop.rect, shop.name);
     }
     for (const fac of L.facilities.filter((x) => x.floor === floor)) {

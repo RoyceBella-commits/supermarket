@@ -30,7 +30,7 @@ export function buildMall(layout: MallLayout, physics: PhysicsWorld): BuiltMall 
     buildSlab(layout, floor, batch);
     buildExterior(layout, floor, batch, floor === top);
     buildOutdoorParapets(layout, floor, batch);
-    if (floor.level > 0) buildAtriumRailing(layout, floor.level, batch);
+    for (const a of layout.atriums) if (floor.level >= a.fromFloor) buildAtriumRailing(layout, a.rect, floor.level, batch);
   }
   for (const shop of layout.shops) buildShopShell(layout, shop, batch);
   for (const f of layout.facilities) {
@@ -90,7 +90,7 @@ function buildGround(layout: MallLayout, batch: StaticBatch) {
 function buildSlab(layout: MallLayout, floor: FloorDef, batch: StaticBatch) {
   const b = layout.building;
   const holes: Rect[] = [...(floor.voids ?? [])];
-  if (floor.level > 0) holes.push(layout.atrium.rect);
+  for (const a of layout.atriums) if (floor.level >= a.fromFloor) holes.push(a.rect);
   for (const st of layout.circulation.stairs) holes.push(...stairHoles(st, floor.level));
 
   const rooms: SurfaceRoom[] = [];
@@ -172,10 +172,9 @@ function addWallInvisible(batch: StaticBatch, o: Omit<Parameters<typeof addWall>
 }
 
 /** 中庭四周的玻璃栏杆：玻璃 + 扶手只显示，另加一道 2.4 m 高的隐形碰撞墙。 */
-function buildAtriumRailing(layout: MallLayout, level: number, batch: StaticBatch) {
+function buildAtriumRailing(layout: MallLayout, a: Rect, level: number, batch: StaticBatch) {
   const b = layout.building;
   const y = level * b.floorHeight;
-  const a = layout.atrium.rect;
   const t = 0.12;
   const x0 = a.x;
   const x1 = a.x + a.w;
@@ -283,23 +282,27 @@ function buildTallRoomTop(layout: MallLayout, floor: FloorDef, rect: Rect, span:
 function buildRoof(layout: MallLayout, top: FloorDef, roofY: number, batch: StaticBatch) {
   const b = layout.building;
   const tall = layout.shops.filter((s) => s.floor === top.level && (s.spanFloors ?? 1) > 1).map((s) => s.rect);
-  const a = layout.atrium.rect;
+  const skylights = layout.atriums.filter((a) => a.skylight).map((a) => a.rect);
   addSlab(batch, {
     floor: top.level,
     y: roofY,
     thickness: b.slab,
     regions: [top.indoor],
-    holes: [a, ...tall],
+    holes: [...skylights, ...tall],
     topMat: 'roof',
     bottomMat: 'ceiling',
     edgeMat: 'slabEdge',
   });
-  if (!layout.atrium.skylight) return;
-  batch.box(a.x, roofY - 0.12, a.z, a.x + a.w, roofY - 0.08, a.z + a.d, 'glass', top.level, 'none');
-  for (let x = a.x; x <= a.x + a.w + 1e-6; x += 4) {
-    batch.box(x - 0.1, roofY - 0.4, a.z, x + 0.1, roofY - 0.12, a.z + a.d, 'rail', top.level, 'none');
+  // 天窗：玻璃 + 横竖几根梁
+  for (const a of skylights) {
+    batch.box(a.x, roofY - 0.12, a.z, a.x + a.w, roofY - 0.08, a.z + a.d, 'glass', top.level, 'none');
+    const n = Math.max(1, Math.round(a.w / 4));
+    for (let i = 0; i <= n; i++) {
+      const x = a.x + (a.w * i) / n;
+      batch.box(x - 0.1, roofY - 0.4, a.z, x + 0.1, roofY - 0.12, a.z + a.d, 'rail', top.level, 'none');
+    }
+    batch.box(a.x, roofY - 0.4, a.z + a.d / 2 - 0.1, a.x + a.w, roofY - 0.12, a.z + a.d / 2 + 0.1, 'rail', top.level, 'none');
   }
-  batch.box(a.x, roofY - 0.4, a.z + a.d / 2 - 0.1, a.x + a.w, roofY - 0.12, a.z + a.d / 2 + 0.1, 'rail', top.level, 'none');
 }
 
 /** 把颜色往白色混：amount = 0 不变，1 为纯白。 */

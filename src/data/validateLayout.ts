@@ -1,7 +1,8 @@
 import type { MallLayout, Opening, Rect } from './layoutTypes.ts';
 import { containsPoint, containsRect, edgeOf, openingCenter, overlaps } from '../world/rectOps.ts';
 
-export const EXPECTED_SHOP_COUNT = 20;
+/** 规划里的主要店铺数（有店员 NPC 的那些） */
+export const EXPECTED_MAIN_SHOPS = 21;
 
 interface Placed {
   id: string;
@@ -20,9 +21,8 @@ export function validateLayout(layout: MallLayout): string[] {
     ids.add(id);
   };
 
-  if (layout.shops.length !== EXPECTED_SHOP_COUNT) {
-    problems.push(`店铺数是 ${layout.shops.length}，应为 ${EXPECTED_SHOP_COUNT}`);
-  }
+  const mainCount = layout.shops.filter((s) => s.tier === 'main').length;
+  if (mainCount !== EXPECTED_MAIN_SHOPS) problems.push(`主要店铺数是 ${mainCount}，应为 ${EXPECTED_MAIN_SHOPS}`);
 
   const placed: Placed[] = [];
   for (const s of layout.shops) {
@@ -65,8 +65,10 @@ export function validateLayout(layout: MallLayout): string[] {
     const items = byFloor(floor.level);
     for (let i = 0; i < items.length; i++) {
       const a = items[i];
-      // 中庭从 1F 往上贯通，地下层不受限
-      if (floor.level >= 0 && !a.outdoor && overlaps(a.rect, layout.atrium.rect)) problems.push(`${a.id}：和中庭重叠（${floor.label}）`);
+      // 中庭挑空从 fromFloor 往上；1F 的中庭位置是地面广场，也不能放东西
+      for (const at of layout.atriums) {
+        if (floor.level >= at.fromFloor - 1 && !a.outdoor && overlaps(a.rect, at.rect)) problems.push(`${a.id}：和中庭 ${at.id} 重叠（${floor.label}）`);
+      }
       for (let j = i + 1; j < items.length; j++) {
         const b = items[j];
         if (a.id === b.id) continue;
@@ -93,7 +95,9 @@ export function validateLayout(layout: MallLayout): string[] {
       const blocked = others.find((q) => containsPoint(q.rect, px, pz, -1e-6) && !q.outdoor);
       if (blocked) problems.push(`${p.id}：门外是 ${blocked.id}，不是走廊`);
       if (floor && !containsPoint(floor.indoor, px, pz)) problems.push(`${p.id}：门开到了楼外`);
-      if (p.floor > 0 && containsPoint(layout.atrium.rect, px, pz)) problems.push(`${p.id}：门开向中庭的空洞`);
+      for (const at of layout.atriums) {
+        if (p.floor >= at.fromFloor && containsPoint(at.rect, px, pz)) problems.push(`${p.id}：门开向中庭 ${at.id} 的空洞`);
+      }
     }
   }
 

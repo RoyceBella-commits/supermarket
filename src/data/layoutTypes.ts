@@ -50,13 +50,52 @@ export type ShopCategory =
   | 'foodcourt'
   | 'cinema'
   | 'garden'
-  | 'supermarket';
+  | 'supermarket'
+  | 'stationery'
+  // 以下多用于配角店
+  | 'cards'
+  | 'plush'
+  | 'bakery'
+  | 'phoneAccessories'
+  | 'capsuleToys'
+  | 'crepes'
+  | 'drugstore'
+  | 'shoes'
+  | 'accessories'
+  | 'repair'
+  | 'eyewear'
+  | 'bags'
+  | 'cosmetics'
+  | 'kidswear'
+  | 'toys'
+  | 'photoBooth'
+  | 'karaoke'
+  | 'snacks'
+  | 'playground'
+  | 'boardGameCafe'
+  | 'escapeRoom'
+  | 'outdoor'
+  | 'bikes'
+  | 'yoga'
+  | 'golf'
+  | 'juiceBar'
+  | 'climbing'
+  | 'ramen'
+  | 'sushi'
+  | 'bubbleTea'
+  | 'italian'
+  | 'curry'
+  | 'grill'
+  | 'sweets'
+  | 'deli';
 
 /** shop：普通店铺；foodcourt：开放式美食广场；cinema：影院；outdoor：室外区域（无墙无顶）。 */
 export type ShopKind = 'shop' | 'foodcourt' | 'cinema' | 'outdoor';
 
 export interface ShopDef {
   id: string;
+  /** main：规划里的主要店铺（有店员 NPC、台词、配音）；secondary：配角店（只有店面和内部布置） */
+  tier: 'main' | 'secondary';
   /** 英文店名，招牌和 HUD 都用它 */
   name: string;
   category: ShopCategory;
@@ -144,6 +183,14 @@ export interface ElevatorDef {
   glass: boolean;
 }
 
+/** 中庭挑空：fromFloor 及以上各层的楼板在这里开洞，四周装玻璃栏杆；skylight 表示屋顶对应位置是天窗。 */
+export interface AtriumDef {
+  id: string;
+  rect: Rect;
+  fromFloor: number;
+  skylight: boolean;
+}
+
 /** 公共区域（HUD 显示用），按数组顺序优先匹配。floors 省略表示所有楼层。 */
 export interface PublicZoneDef {
   id: string;
@@ -165,7 +212,7 @@ export interface MallLayout {
     storefrontHeight: number;
     railHeight: number;
   };
-  atrium: { rect: Rect; skylight: boolean };
+  atriums: AtriumDef[];
   /** 1F 正门（开在外墙上） */
   mainEntrance: Opening;
   /** 楼外广场（只有 1F），三面有隐形边界 */

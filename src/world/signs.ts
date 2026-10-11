@@ -9,7 +9,8 @@ import { stairDoor } from './stairs.ts';
 // 阶段 4 会换成带原创 logo 的招牌。
 
 const FONT = '"Avenir Next", "PingFang SC", "Helvetica Neue", Arial, sans-serif';
-const PX_PER_M = 280;
+// 每米多少像素：招牌有六十多块，太高会占很多显存
+const PX_PER_M = 220;
 
 interface SignStyle {
   bg: string;

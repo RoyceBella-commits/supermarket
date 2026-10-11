@@ -311,6 +311,16 @@ export class Game {
       setYaw(deg: number) {
         game.player.yaw = (deg * Math.PI) / 180;
       },
+      /** 同步模拟若干秒的物理步（不依赖渲染循环，页面在后台也能测）。返回脚底位置。 */
+      simulate(forward: number, right: number, seconds: number, run = false, jump = false) {
+        const n = Math.round(seconds / FIXED_DT);
+        for (let i = 0; i < n; i++) {
+          game.player.fixedUpdate(FIXED_DT, { forward, right, run }, jump && i === 0);
+          game.physics.step(FIXED_DT);
+        }
+        const p = game.player.curr;
+        return { x: p.x, y: p.y, z: p.z, grounded: game.player.grounded };
+      },
       /** 按给定意图移动若干秒（不需要指针锁定） */
       move(forward: number, right: number, seconds: number, run = false, jump = false) {
         game.scripted = { forward, right, run, jump, until: performance.now() + seconds * 1000 };
