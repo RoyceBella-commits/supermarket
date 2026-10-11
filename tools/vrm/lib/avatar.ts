@@ -5,10 +5,11 @@ import { Document, NodeIO, type Material, type Node } from '@gltf-transform/core
 import * as THREE from 'three';
 import type { AvatarSpec } from '../../../src/data/avatars.ts';
 import { type BodyMats, buildBody } from './body.ts';
-import { type RGB, hex, lighten, linear, mix, outlineOf, shadeOf } from './colors.ts';
+import { buildAccessory, buildGlasses } from './accessories.ts';
+import { type RGB, hex, lighten, linear, mix, outlineOf, shadeOf, toHex } from './colors.ts';
 import { MORPHS, buildFace } from './face.ts';
-import { type Geo, type V3, ellipsoid, merge, mirrorX, torus, tube } from './geom.ts';
-import { buildCap, buildHair } from './hair.ts';
+import { type Geo, type V3, ellipsoid, merge, mirrorX } from './geom.ts';
+import { buildHair } from './hair.ts';
 import { HEAD, faceProject, skullGeo } from './head.ts';
 import type { Part } from './parts.ts';
 import { type JointDef, humanoidJoints } from './rig.ts';
@@ -43,15 +44,32 @@ export async function buildAvatar(spec: AvatarSpec): Promise<BuildInfo> {
   const bottomC = hex(spec.bottomColor);
   const shoeC = hex(spec.shoeColor);
   const eyeC = hex(spec.eyeColor);
+  const accStyle = spec.accessory ?? 'none';
+  const accDefault: Record<string, string> = {
+    cap: '#d9534f',
+    sunhat: '#e9d8a6',
+    chefhat: '#ffffff',
+    beret: '#c0392b',
+    headphones: '#33333a',
+    headband: '#e5534b',
+    goggles: '#33333a',
+    glasses: '#3b2a24',
+  };
+  const neckC = hex(spec.neckwearColor ?? '#c0392b');
 
   // ---------- 材质 ----------
   const mats: Record<string, MatSpec> = {
     skin: { color: skin, outline: OUTLINE },
     hair: { color: hairC, outline: OUTLINE },
     top: { color: topC, outline: OUTLINE },
-    topAccent: { color: spec.top === 'apron' ? lighten(topC, 0.85) : innerC, outline: OUTLINE },
+    topAccent: {
+      color: spec.top === 'apron' ? lighten(topC, 0.85) : spec.top === 'vest' ? (spec.neckwearColor ? neckC : innerC) : innerC,
+      outline: OUTLINE,
+    },
     string: { color: hex('#fff3dc'), outline: 0.003 },
     inner: { color: innerC, outline: OUTLINE },
+    innerAccent: { color: lighten(innerC, 0.86), outline: OUTLINE },
+    neckwear: { color: neckC, outline: 0.003 },
     bottom: { color: bottomC, outline: OUTLINE },
     bottomAccent: { color: lighten(bottomC, 0.85), outline: OUTLINE },
     shoe: { color: shoeC, outline: OUTLINE },
@@ -60,8 +78,9 @@ export async function buildAvatar(spec: AvatarSpec): Promise<BuildInfo> {
     apronTie: { color: lighten(topC, 0.82), outline: 0.003 },
     white: { color: hex('#ffffff'), outline: 0.003 },
     tie: { color: hex(spec.accessoryColor ?? '#e5534b'), outline: 0.003 },
-    accessory: { color: hex(spec.accessoryColor ?? (spec.accessory === 'glasses' ? '#3b2a24' : '#d9534f')), outline: spec.accessory === 'glasses' ? 0 : OUTLINE },
-    accessoryAccent: { color: hex('#ffffff'), outline: 0.002 },
+    accessory: { color: hex(spec.accessoryColor ?? accDefault[accStyle] ?? '#d9534f'), outline: accStyle === 'glasses' ? 0 : OUTLINE },
+    accessoryAccent: { color: hex(spec.accessoryAccent ?? '#ffffff'), outline: 0.003 },
+    glasses: { color: hex(spec.glassesColor ?? '#3b2a24'), outline: 0 },
     // 五官
     eye: { color: eyeC, outline: 0, flat: true },
     eyeLow: { color: mix(eyeC, hex('#9a6a52'), 0.35), outline: 0, flat: true },
@@ -87,28 +106,38 @@ export async function buildAvatar(spec: AvatarSpec): Promise<BuildInfo> {
     sock: 'sock',
     apronTie: 'apronTie',
     white: 'white',
+    innerAccent: 'innerAccent',
+    neckwear: 'neckwear',
   };
   const bodyRes = buildBody(spec, bodyMats);
   parts.push(...bodyRes.parts);
 
   // 头：颅骨 + 耳朵 + 小鼻子
   const h = HEAD;
-  parts.push({ geo: skullGeo(h, 40, 28), mat: 'skin', mesh: 'head', bone: 'Head' });
-  const ear = ellipsoid([h.c[0] + h.r[0] * 0.95, h.c[1] - 0.036, h.c[2] - 0.012], [0.028, 0.04, 0.03], [0, 0.25, 0.12], 20, 14);
+  parts.push({ geo: skullGeo(h, 26, 16), mat: 'skin', mesh: 'head', bone: 'Head' });
+  const ear = ellipsoid([h.c[0] + h.r[0] * 0.95, h.c[1] - 0.036, h.c[2] - 0.012], [0.028, 0.04, 0.03], [0, 0.25, 0.12], 10, 7);
   parts.push({ geo: ear, mat: 'skin', mesh: 'head', bone: 'Head' });
   parts.push({ geo: mirrorX(ear), mat: 'skin', mesh: 'head', bone: 'Head' });
   const nose = faceProject(h, 0, -0.062, -0.004);
-  parts.push({ geo: ellipsoid(nose.p, [0.011, 0.008, 0.009], [0, 0, 0], 14, 10), mat: 'skin', mesh: 'head', bone: 'Head' });
+  parts.push({ geo: ellipsoid(nose.p, [0.011, 0.008, 0.009], [0, 0, 0], 10, 6), mat: 'skin', mesh: 'head', bone: 'Head' });
 
-  const hairRes = buildHair(spec.hair, { h, hairMat: 'hair', tieMat: 'tie', shadowMat: 'hairShadow' });
+  const hairRes = buildHair(spec.hair, {
+    h,
+    hairMat: 'hair',
+    tieMat: 'tie',
+    shadowMat: 'hairShadow',
+    // 戴帽子时不长呆毛（会从帽顶戳出来）
+    ahoge: spec.ahoge ?? !['cap', 'sunhat', 'chefhat', 'beret'].includes(accStyle),
+  });
   parts.push(...hairRes.parts);
-  if (spec.accessory === 'cap') parts.push(...buildCap(h, 'accessory', 'accessoryAccent'));
-  if (spec.accessory === 'glasses') parts.push(...buildGlasses());
+  const hairLift = spec.hair === 'buzz' ? 0.035 : spec.hair === 'curly' ? 0.13 : 0.06;
+  if (accStyle !== 'none') parts.push(...buildAccessory(accStyle, h, 'accessory', 'accessoryAccent', hairLift));
+  if (spec.glasses && accStyle !== 'glasses') parts.push(...buildGlasses(h, 'glasses', spec.eyeScale ?? 1));
 
   const face = buildFace(
     h,
     { eye: 'eye', eyeLow: 'eyeLow', white: 'eyeWhite', brow: 'brow', mouth: 'mouth', blush: 'blush' },
-    spec.blush ?? 0.5,
+    { blush: spec.blush ?? 0.5, eyeScale: spec.eyeScale ?? 1, mustache: spec.mustache ?? false },
   );
 
   // ---------- 关节 ----------
@@ -122,8 +151,9 @@ export async function buildAvatar(spec: AvatarSpec): Promise<BuildInfo> {
   const jointIndex = new Map(joints.map((j, i) => [j.name, i]));
 
   // ---------- 缩放 ----------
+  // 身高按头发顶算（帽子不算）
   let topY = 0;
-  for (const p of parts) for (let i = 1; i < p.geo.pos.length; i += 3) topY = Math.max(topY, p.geo.pos[i]);
+  for (const p of parts) if (!p.noHeight) for (let i = 1; i < p.geo.pos.length; i += 3) topY = Math.max(topY, p.geo.pos[i]);
   const s = spec.height / topY;
 
   // ---------- 图元（按网格、材质分组），先算权重再缩放 ----------
@@ -136,12 +166,22 @@ export async function buildAvatar(spec: AvatarSpec): Promise<BuildInfo> {
   }
   const meshPrims: Record<'body' | 'head', Map<string, Prim>> = { body: new Map(), head: new Map() };
   const v = new THREE.Vector3();
+  // 颜色和描边都相同的材质合并成一个（少一个图元 = 少两次 draw call：本体 + 描边）
+  const canon = new Map<string, string>();
+  const canonOf = (key: string): string => {
+    const ms = mats[key];
+    if (!ms) throw new Error(`unknown material ${key}`);
+    const sig = `${toHex(ms.color)}|${ms.outline}|${ms.flat ? 1 : 0}`;
+    if (!canon.has(sig)) canon.set(sig, key);
+    return canon.get(sig)!;
+  };
   for (const p of parts) {
     const map = meshPrims[p.mesh];
-    let prim = map.get(p.mat);
+    const mk = canonOf(p.mat);
+    let prim = map.get(mk);
     if (!prim) {
-      prim = { mat: p.mat, geo: { pos: [], nrm: [], idx: [] }, joints: [], weights: [] };
-      map.set(p.mat, prim);
+      prim = { mat: mk, geo: { pos: [], nrm: [], idx: [] }, joints: [], weights: [] };
+      map.set(mk, prim);
     }
     prim.geo = merge([prim.geo, p.geo]);
     for (let i = 0; i < p.geo.pos.length; i += 3) {
@@ -226,8 +266,9 @@ export async function buildAvatar(spec: AvatarSpec): Promise<BuildInfo> {
   skinObj.setInverseBindMatrices(doc.createAccessor('IBM').setType('MAT4').setArray(ibm).setBuffer(buffer));
   skinObj.setSkeleton(nodes.get('Hips')!);
 
-  const acc = (name: string, arr: Float32Array | Uint8Array | Uint16Array | Uint32Array, type: 'SCALAR' | 'VEC3' | 'VEC4') =>
-    doc.createAccessor(name).setType(type).setArray(arr).setBuffer(buffer);
+  // 访问器不起名字（能省下几 KB JSON）
+  const acc = (_name: string, arr: Float32Array | Uint8Array | Uint16Array | Uint32Array, type: 'SCALAR' | 'VEC3' | 'VEC4') =>
+    doc.createAccessor().setType(type).setArray(arr).setBuffer(buffer);
 
   let vertexCount = 0;
   const makeMesh = (name: string, prims: Prim[], targetNames?: readonly string[]): Node => {
@@ -379,24 +420,3 @@ function packWeights(w: [string, number][], jointIndex: Map<string, number>): [n
   });
   return [joints, weights];
 }
-
-/** 眼镜：两个圆框 + 鼻梁 + 镜腿（贴着脸） */
-function buildGlasses(): Part[] {
-  const h = HEAD;
-  const parts: Part[] = [];
-  const parts2: Geo[] = [];
-  for (const side of [1, -1]) {
-    const e = faceProject(h, 0.074 * side, -0.03, 0.022);
-    parts2.push(torus(e.p, 0.035, 0.0042, [0.12 * side, 0, 1], 32, 8));
-    // 镜腿：从框外侧往后到耳朵
-    const a: V3 = [e.p[0] + 0.035 * side, e.p[1] + 0.006, e.p[2] - 0.004];
-    const b: V3 = [h.r[0] * 0.98 * side, h.c[1] - 0.012, h.c[2] - 0.02];
-    parts2.push(tube((t) => [a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t, a[2] + (b[2] - a[2]) * t], () => 0.0035, 8, 6, [0, 1, 0]));
-  }
-  const l = faceProject(h, 0.04, -0.022, 0.026).p;
-  const r = faceProject(h, -0.04, -0.022, 0.026).p;
-  parts2.push(tube((t) => [l[0] + (r[0] - l[0]) * t, l[1] + 0.004 * Math.sin(Math.PI * t), l[2] + (r[2] - l[2]) * t + 0.004 * Math.sin(Math.PI * t)], () => 0.0035, 8, 6, [0, 1, 0]));
-  parts.push({ geo: merge(parts2), mat: 'accessory', mesh: 'head', bone: 'Head' });
-  return parts;
-}
-

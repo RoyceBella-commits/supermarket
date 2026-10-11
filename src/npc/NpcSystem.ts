@@ -10,7 +10,6 @@ import type { DialogueBox } from '../ui/DialogueBox.ts';
 import { i18n } from '../ui/i18n.ts';
 
 const BASE = import.meta.env.BASE_URL;
-const FALLBACK_MODEL = `${BASE}models/staff-demo.vrm`;
 /** 与 avatars.ts 的 staffModelUrl 一致：tools/vrm 生成到 public/models/staff/<shopId>.vrm */
 const staffUrl = (shopId: string) => `${BASE}models/staff/${shopId}.vrm`;
 /** 玩家进入这个距离（米，含高差）才加载店员模型 */
@@ -163,8 +162,8 @@ export class NpcSystem {
     this.pumping = true;
     try {
       for (let n = this.queue.shift(); n; n = this.queue.shift()) {
-        let { avatar, error } = await Avatar.load(staffUrl(n.def.shopId), { firstPerson: false, quiet: true });
-        if (error) ({ avatar } = await Avatar.load(FALLBACK_MODEL, { firstPerson: false }));
+        // 模型缺失时 Avatar.load 会给一个胶囊占位
+        const { avatar } = await Avatar.load(staffUrl(n.def.shopId), { firstPerson: false });
         avatar.root.name = `npc-${n.def.shopId}`;
         avatar.root.position.copy(n.home);
         avatar.setFacing(n.facing);

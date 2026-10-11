@@ -21,19 +21,27 @@ export interface ShellSpec {
   /** 头顶额外蓬松量 */
   topBoost?: number;
   cols?: number;
+  /** 外表面行数（下垂长的发型多给一些） */
+  rows?: number;
+}
+
+/** 列的角度分布：前面（刘海）密、后面疏。t ∈ [0,1) → 弧度 */
+function colAngle(t: number): number {
+  const k = 0.45;
+  return 2 * Math.PI * (t - (k * Math.sin(2 * Math.PI * t)) / (2 * Math.PI));
 }
 
 export function hairShell(h: HeadShape, s: ShellSpec): Geo {
-  const cols = s.cols ?? 104;
-  const A = 26; // 外表面行数
-  const R = 7; // 卷边行数
-  const I = 4; // 内侧行数
+  const cols = s.cols ?? 64;
+  const A = s.rows ?? 15; // 外表面行数
+  const R = 5; // 卷边行数
+  const I = 2; // 内侧行数
   const topBoost = s.topBoost ?? 0.035;
 
   type Col = (i: number) => [number, number];
   const columns: Col[] = [];
   for (let j = 0; j < cols; j++) {
-    let deg = (j / cols) * 360;
+    let deg = (colAngle(j / cols) * 180) / Math.PI;
     if (deg > 180) deg -= 360;
     const phiE = (s.edge(deg) * Math.PI) / 180;
     const tau = s.thick(deg);
@@ -101,7 +109,7 @@ export function hairShell(h: HeadShape, s: ShellSpec): Geo {
     cols,
     (i, j) => {
       const [rho, y] = columns[j](i);
-      const th = (j / cols) * Math.PI * 2;
+      const th = colAngle(j / cols);
       return mapUnit(h, rho * Math.sin(th), y, rho * Math.cos(th));
     },
     // 行往下走、列往 +X 转：d列 × d行 指向内，所以翻转
@@ -125,6 +133,8 @@ export interface HairCtx {
   tieMat: string;
   /** 刘海在额头上的阴影（动漫常见的发影） */
   shadowMat: string;
+  /** short 发型头顶的呆毛 */
+  ahoge: boolean;
 }
 
 /**
@@ -132,8 +142,8 @@ export interface HairCtx {
  * 刘海离额头有 1 cm 左右，没有这条带时发尖下会露出一道亮缝。
  */
 function hairShadow(h: HeadShape, edge: (deg: number) => number, maxDeg: number): Geo {
-  const cols = 72;
-  const rows = 4;
+  const cols = 36;
+  const rows = 3;
   return gridSurface(
     rows,
     cols + 1,
@@ -189,15 +199,17 @@ export function buildHair(style: HairStyle, ctx: HairCtx): { parts: Part[]; tail
       topBoost: 0.045,
     };
     // 头顶一撮呆毛
-    const top = mapUnit(h, 0, 1.08, -0.2);
-    add(
-      tube(
-        bezier(top, [top[0], top[1] + 0.035, top[2] - 0.008], [top[0], top[1] + 0.06, top[2] + 0.035], [top[0], top[1] + 0.04, top[2] + 0.06]),
-        (s) => 0.0115 * Math.pow(Math.sin(Math.PI * (0.2 + 0.8 * s)), 0.7),
-        16,
-        10,
-      ),
-    );
+    if (ctx.ahoge) {
+      const top = mapUnit(h, 0, 1.08, -0.2);
+      add(
+        tube(
+          bezier(top, [top[0], top[1] + 0.035, top[2] - 0.008], [top[0], top[1] + 0.06, top[2] + 0.035], [top[0], top[1] + 0.04, top[2] + 0.06]),
+          (s) => 0.0115 * Math.pow(Math.sin(Math.PI * (0.2 + 0.8 * s)), 0.7),
+          16,
+          10,
+        ),
+      );
+    }
   } else if (style === 'buzz') {
     const base = periodic(
       [
@@ -236,7 +248,128 @@ export function buildHair(style: HairStyle, ctx: HairCtx): { parts: Part[]; tail
       drop: (d) => 0.62 * smoothstep(40, 64, Math.abs(d)),
       flare: (d) => 0.07 * smoothstep(40, 64, Math.abs(d)),
       topBoost: 0.045,
+      rows: 18,
     };
+  } else if (style === 'long') {
+    // 长直发：侧分刘海，两侧和后面垂到肩
+    const base = periodic(
+      [
+        [0, 68],
+        [-24, 64],
+        [26, 73],
+        [-48, 80],
+        [50, 84],
+        [70, 95],
+        [-70, 95],
+        [180, 96],
+      ],
+      12,
+    );
+    const fr = fringe(6, 26, 14, 46, 0.7);
+    const side = (d: number) => smoothstep(42, 66, Math.abs(d));
+    shell = {
+      edge: (d) => base(d) + fr(d),
+      thick: periodic([[0, 0.05], [60, 0.08], [90, 0.09], [180, 0.11]], 30),
+      drop: (d) => side(d) * (0.85 + 0.25 * smoothstep(90, 170, Math.abs(d))),
+      flare: (d) => 0.05 * side(d),
+      topBoost: 0.045,
+      rows: 20,
+    };
+  } else if (style === 'spiky') {
+    // 短发 + 头顶一圈翘起的尖
+    const base = periodic(
+      [
+        [0, 66],
+        [30, 70],
+        [-30, 70],
+        [52, 82],
+        [-52, 82],
+        [68, 98],
+        [-68, 98],
+        [88, 90],
+        [-88, 90],
+        [125, 108],
+        [-125, 108],
+        [180, 118],
+      ],
+      10,
+    );
+    const fr = fringe(9, 20, 0, 52, 0.45);
+    shell = {
+      edge: (d) => base(d) + fr(d),
+      thick: periodic([[0, 0.055], [90, 0.07], [180, 0.09]], 30),
+      topBoost: 0.04,
+    };
+    const spikes: [number, number, number][] = [
+      // θ（度）、φ（度）、长度（米）
+      [0, 22, 0.075],
+      [38, 30, 0.07],
+      [-38, 30, 0.07],
+      [80, 48, 0.06],
+      [-80, 48, 0.06],
+      [125, 42, 0.07],
+      [-125, 42, 0.07],
+      [180, 30, 0.08],
+    ];
+    for (const [td, pd, len] of spikes) {
+      const th = (td * Math.PI) / 180;
+      const ph = (pd * Math.PI) / 180;
+      const dir = (r: number, dphi = 0): V3 => {
+        const p2 = ph + dphi;
+        return mapUnit(h, r * Math.sin(p2) * Math.sin(th), r * Math.cos(p2), r * Math.sin(p2) * Math.cos(th));
+      };
+      const a = dir(0.98);
+      const b0 = dir(1.12);
+      // 尖朝外、略向后上方翘
+      const out: V3 = [b0[0] - h.c[0], b0[1] - h.c[1], b0[2] - h.c[2]];
+      const l = Math.hypot(...out);
+      const tip: V3 = [b0[0] + (out[0] / l) * len, b0[1] + (out[1] / l) * len + 0.02, b0[2] + (out[2] / l) * len - 0.025];
+      const mid: V3 = [(a[0] + tip[0]) / 2, (a[1] + tip[1]) / 2, (a[2] + tip[2]) / 2];
+      add(tube(bezier(a, mid, mid, tip), (t) => 0.034 * Math.pow(1 - t, 0.9) * Math.min(1, 0.4 + t * 3), 6, 8, [0, 1, 0]));
+    }
+  } else if (style === 'curly') {
+    // 蓬松卷发：厚发壳 + 一圈波浪边 + 表面几团小球打破轮廓
+    const base = periodic(
+      [
+        [0, 70],
+        [40, 76],
+        [-40, 76],
+        [65, 96],
+        [-65, 96],
+        [90, 94],
+        [-90, 94],
+        [140, 112],
+        [-140, 112],
+        [180, 116],
+      ],
+      14,
+    );
+    const wave = (d: number) => 5 * Math.pow(Math.abs(Math.cos((Math.PI * d) / 16)), 0.5);
+    shell = {
+      edge: (d) => base(d) + wave(d),
+      thick: periodic([[0, 0.09], [90, 0.13], [180, 0.15]], 30),
+      topBoost: 0.09,
+    };
+    const bumps: [number, number][] = [
+      [20, 40],
+      [-25, 42],
+      [70, 50],
+      [-70, 50],
+      [110, 62],
+      [-110, 62],
+      [155, 55],
+      [-155, 55],
+      [0, 12],
+      [120, 25],
+      [-120, 25],
+    ];
+    for (const [td, pd] of bumps) {
+      const th = (td * Math.PI) / 180;
+      const ph = (pd * Math.PI) / 180;
+      const r = 1.13 + 0.09 * Math.cos(ph) * Math.cos(ph);
+      const c = mapUnit(h, r * Math.sin(ph) * Math.sin(th), r * Math.cos(ph), r * Math.sin(ph) * Math.cos(th));
+      add(ellipsoid(c, [0.045, 0.04, 0.045], [0, th, 0], 10, 6));
+    }
   } else {
     // ponytail / bun：额头侧分刘海，两侧和后面收紧
     const base = periodic(
@@ -305,22 +438,3 @@ export function buildHair(style: HairStyle, ctx: HairCtx): { parts: Part[]; tail
   if (style !== 'buzz') parts.push({ geo: hairShadow(h, shell.edge, 78), mat: ctx.shadowMat, mesh: 'head', bone: 'Head' });
   return { parts, tail };
 }
-
-/** 帽子：用发壳函数做一个更大的壳当帽身，前面一片帽檐 */
-export function buildCap(h: HeadShape, mat: string, accentMat: string): Part[] {
-  const parts: Part[] = [];
-  const crown = hairShell(h, {
-    edge: periodic([[0, 62], [90, 84], [180, 96]], 40),
-    thick: () => 0.17,
-    topBoost: 0.0,
-    cols: 96,
-  });
-  parts.push({ geo: crown, mat, mesh: 'head', bone: 'Head' });
-  const front = mapUnit(h, 0, Math.cos((66 * Math.PI) / 180) * 1.17, Math.sin((66 * Math.PI) / 180) * 1.17);
-  const brim = ellipsoid([front[0], front[1] - 0.012, front[2] + 0.05], [0.13, 0.011, 0.095], [0.32, 0, 0], 32, 12);
-  parts.push({ geo: brim, mat, mesh: 'head', bone: 'Head' });
-  const top = mapUnit(h, 0, 1.17, 0);
-  parts.push({ geo: ellipsoid([top[0], top[1], top[2]], [0.014, 0.008, 0.014]), mat: accentMat, mesh: 'head', bone: 'Head' });
-  return parts;
-}
-

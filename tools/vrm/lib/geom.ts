@@ -254,7 +254,7 @@ export function trs(t: V3, r: V3 = [0, 0, 0], s: V3 = [1, 1, 1], order: THREE.Eu
   );
 }
 
-export function ellipsoid(c: V3, r: V3, rot: V3 = [0, 0, 0], ws = 22, hs = 14): Geo {
+export function ellipsoid(c: V3, r: V3, rot: V3 = [0, 0, 0], ws = 16, hs = 10): Geo {
   return transform(sphere(ws, hs), trs(c, rot, r));
 }
 
@@ -267,7 +267,7 @@ export function alignY(g: Geo, a: V3, b: V3): Geo {
 }
 
 /** 两端半径可不同的胶囊（锥台 + 两个半球），从 a 到 b */
-export function capsule(a: V3, b: V3, ra: number, rb = ra, segs = 20, capRows = 5): Geo {
+export function capsule(a: V3, b: V3, ra: number, rb = ra, segs = 14, capRows = 4): Geo {
   const len = Math.hypot(b[0] - a[0], b[1] - a[1], b[2] - a[2]);
   const profile: [number, number][] = [];
   // 锥台侧面与两端球面相切：用简单近似，侧面直接连接两个半球赤道
@@ -285,7 +285,7 @@ export function capsule(a: V3, b: V3, ra: number, rb = ra, segs = 20, capRows = 
 }
 
 /** 圆环：中心 c，主半径 R，管半径 r，所在平面的法线 axis，kz/ky 压扁 */
-export function torus(c: V3, R: number, r: number, axis: V3 = [0, 1, 0], segs = 32, tubeSegs = 12, scale: V3 = [1, 1, 1]): Geo {
+export function torus(c: V3, R: number, r: number, axis: V3 = [0, 1, 0], segs = 24, tubeSegs = 8, scale: V3 = [1, 1, 1]): Geo {
   const g = gridSurface(
     tubeSegs,
     segs,
@@ -314,27 +314,36 @@ export function torus(c: V3, R: number, r: number, axis: V3 = [0, 1, 0], segs = 
  * 沿曲线扫掠的管子（马尾、抽绳）。path(s) s∈[0,1]，radius(s)；两端半径为 0 时收成尖。
  * up 用来确定截面起始方向（与曲线不平行即可）。
  */
-export function tube(path: (s: number) => V3, radius: (s: number) => number, rows = 24, segs = 16, up: V3 = [1, 0, 0]): Geo {
+export function tube(
+  path: (s: number) => V3,
+  radius: (s: number) => number,
+  rows = 24,
+  segs = 16,
+  up: V3 = [1, 0, 0],
+  closed = false,
+): Geo {
   const pts: THREE.Vector3[] = [];
-  for (let i = 0; i <= rows; i++) pts.push(new THREE.Vector3(...path(i / rows)));
+  // closed：首尾相接的环（发带）；最后一行不重复第一行
+  const n = closed ? rows : rows + 1;
+  for (let i = 0; i < n; i++) pts.push(new THREE.Vector3(...path(i / rows)));
   const tangents = pts.map((_, i) => {
-    const a = pts[Math.max(0, i - 1)];
-    const b = pts[Math.min(rows, i + 1)];
+    const a = closed ? pts[(i - 1 + n) % n] : pts[Math.max(0, i - 1)];
+    const b = closed ? pts[(i + 1) % n] : pts[Math.min(n - 1, i + 1)];
     return b.clone().sub(a).normalize();
   });
   // 平行移动标架
   const normals: THREE.Vector3[] = [];
-  let n = new THREE.Vector3(...up);
-  n.sub(tangents[0].clone().multiplyScalar(n.dot(tangents[0]))).normalize();
-  for (let i = 0; i <= rows; i++) {
+  let nv = new THREE.Vector3(...up);
+  nv.sub(tangents[0].clone().multiplyScalar(nv.dot(tangents[0]))).normalize();
+  for (let i = 0; i < n; i++) {
     const t = tangents[i];
-    n = n.clone().sub(t.clone().multiplyScalar(n.dot(t))).normalize();
-    normals.push(n);
+    nv = nv.clone().sub(t.clone().multiplyScalar(nv.dot(t))).normalize();
+    normals.push(nv);
   }
   const r0 = radius(0);
   const r1 = radius(1);
   const g = gridSurface(
-    rows + 1,
+    n,
     segs,
     (i, j) => {
       const a = (j / segs) * Math.PI * 2;
@@ -345,10 +354,33 @@ export function tube(path: (s: number) => V3, radius: (s: number) => number, row
       const p = pts[i].clone().add(nn.clone().multiplyScalar(Math.cos(a) * r)).add(bb.clone().multiplyScalar(Math.sin(a) * r));
       return [p.x, p.y, p.z];
     },
-    { wrap: true, poleStart: r0 < 1e-6, poleEnd: r1 < 1e-6 },
+    { wrap: true, poleStart: !closed && r0 < 1e-6, poleEnd: !closed && r1 < 1e-6 },
   );
-  // 方向检查：中间一圈的法线应背离中心线
-  orientAway(g, pts[Math.floor(rows / 2)], tangents[Math.floor(rows / 2)]);
+  if (closed) {
+    // 最后一圈连回第一圈
+    const last = (n - 1) * segs;
+    for (let j = 0; j < segs; j++) {
+      const j2 = (j + 1) % segs;
+      g.idx.push(last + j, last + j2, j, last + j2, j2, j);
+    }
+    computeNormals(g);
+  }
+  // 方向检查：每一圈的法线应背离该圈的中心点（极点行跳过）
+  let score = 0;
+  const startRow = !closed && r0 < 1e-6 ? 1 : 0;
+  for (let i = 0; i < n; i++) {
+    if ((i === 0 && startRow === 1) || (!closed && i === n - 1 && r1 < 1e-6)) continue;
+    for (let j = 0; j < segs; j++) {
+      const k = (startRow === 1 ? 1 + (i - 1) * segs + j : i * segs + j) * 3;
+      if (k + 2 >= g.pos.length) continue;
+      score +=
+        (g.pos[k] - pts[i].x) * g.nrm[k] + (g.pos[k + 1] - pts[i].y) * g.nrm[k + 1] + (g.pos[k + 2] - pts[i].z) * g.nrm[k + 2];
+    }
+  }
+  if (score < 0) {
+    flipWinding(g);
+    for (let i = 0; i < g.nrm.length; i++) g.nrm[i] = -g.nrm[i];
+  }
   return g;
 }
 

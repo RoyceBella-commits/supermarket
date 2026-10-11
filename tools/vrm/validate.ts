@@ -10,7 +10,7 @@ import * as THREE from 'three';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import { type VRM, type VRMHumanBoneName, VRMLoaderPlugin } from '@pixiv/three-vrm';
 import validator from 'gltf-validator';
-import { type AvatarSpec, avatars } from '../../src/data/avatars.ts';
+import { type AvatarSpec, avatarModelUrl, avatars } from '../../src/data/avatars.ts';
 import { variantSpecs } from './variants.ts';
 
 const here = dirname(fileURLToPath(import.meta.url));
@@ -34,11 +34,29 @@ const files = args.filter((a) => !a.startsWith('--'));
 const targets: Target[] = files.length
   ? files.map((f) => ({ file: f }))
   : [
-      ...avatars.map((a) => ({ file: join(root, 'public', 'models', `${a.id}.vrm`), spec: a })),
+      ...avatars.map((a) => ({ file: join(root, 'public', avatarModelUrl(a)), spec: a })),
       ...(args.includes('--variants') ? variantSpecs().map((a) => ({ file: join(here, 'work', `${a.id}.vrm`), spec: a })) : []),
     ];
 
 let failures = 0;
+const sizes: number[] = [];
+
+// 店员和 mallLayout 里的主要店铺一一对应
+if (!files.length) {
+  try {
+    const { mallLayout } = (await import('../../src/data/mallLayout.ts')) as { mallLayout: { shops: { id: string; tier: string; name: string }[] } };
+    const main = mallLayout.shops.filter((s) => s.tier === 'main');
+    const staffIds = new Set(avatars.filter((a) => a.shopId).map((a) => a.shopId));
+    const missing = main.filter((s) => !staffIds.has(s.id)).map((s) => s.id);
+    const extra = [...staffIds].filter((id) => !main.some((s) => s.id === id));
+    if (missing.length || extra.length) {
+      console.log(`✗ staff ↔ main shops mismatch: missing ${missing.join(', ') || '-'}; unknown ${extra.join(', ') || '-'}`);
+      failures++;
+    } else console.log(`✓ ${main.length} main shops, each has a staff avatar`);
+  } catch (e) {
+    console.log(`(skipped shop cross-check: ${(e as Error).message})`);
+  }
+}
 
 function check(ok: boolean, msg: string, problems: string[]): void {
   if (!ok) problems.push(msg);
@@ -83,6 +101,7 @@ for (const t of targets) {
     continue;
   }
   const bytes = new Uint8Array(readFileSync(t.file));
+  sizes.push(bytes.byteLength);
 
   // ---------- 1. glTF Validator ----------
   const report = await validator.validateBytes(bytes, { maxIssues: 200, ignoredIssues: ['UNSUPPORTED_EXTENSION'] });
@@ -148,7 +167,12 @@ for (const t of targets) {
     // 尺寸
     const box = geometryBox(scene);
     const height = box.max.y - box.min.y;
-    if (t.spec) check(Math.abs(height - t.spec.height) < 0.01, `height ${height.toFixed(3)} != spec ${t.spec.height}`, problems);
+    if (t.spec) {
+      // 身高按头发顶算；戴帽子/耳机时包围盒会比 spec 高一点
+      const hat = !!t.spec.accessory && t.spec.accessory !== 'none' && t.spec.accessory !== 'glasses';
+      const ok = hat ? height > t.spec.height - 0.01 && height < t.spec.height + 0.3 : Math.abs(height - t.spec.height) < 0.01;
+      check(ok, `height ${height.toFixed(3)} != spec ${t.spec.height}`, problems);
+    }
     check(Math.abs(box.min.y) < 0.005, `feet not on y=0 (min y ${box.min.y.toFixed(4)})`, problems);
 
     // 朝向：脸（Face 网格）在头骨前方（+Z），左眼在 +X
@@ -253,6 +277,10 @@ for (const t of targets) {
   }
 }
 
+if (sizes.length > 1) {
+  const kb = sizes.map((b) => b / 1024);
+  console.log(`\nsizes: min ${Math.min(...kb).toFixed(0)} KB, max ${Math.max(...kb).toFixed(0)} KB, total ${(kb.reduce((a, b) => a + b, 0) / 1024).toFixed(2)} MB`);
+}
 if (failures) {
   console.log(`\n${failures} file(s) failed`);
   process.exit(1);

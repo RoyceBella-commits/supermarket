@@ -1,12 +1,14 @@
 // VRM 角色预览页：http://127.0.0.1:5173/tools/vrm/preview.html
 //   ?variants  额外加载 tools/vrm/work/ 下的测试组合（先运行 node tools/vrm/build.ts --variants）
-//   ?only=id   只看一个角色
+//   ?only=id[,id…]  只看这几个角色（id 或 shopId）
+//   ?staff     只看店员，按行排开并标上店名
 
 import * as THREE from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
+import { CSS2DObject, CSS2DRenderer } from 'three/examples/jsm/renderers/CSS2DRenderer.js';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import { type VRM, type VRMHumanBoneName, VRMLoaderPlugin } from '@pixiv/three-vrm';
-import { avatars } from '../../src/data/avatars.ts';
+import { avatarModelUrl, avatars } from '../../src/data/avatars.ts';
 import { variantSpecs } from './variants.ts';
 
 const params = new URLSearchParams(location.search);
@@ -17,6 +19,11 @@ const renderer = new THREE.WebGLRenderer({ antialias: true, preserveDrawingBuffe
 renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
 renderer.setSize(innerWidth, innerHeight);
 document.getElementById('app')!.appendChild(renderer.domElement);
+// 名字标签（HTML 叠在画布上）
+const labelRenderer = new CSS2DRenderer();
+labelRenderer.setSize(innerWidth, innerHeight);
+Object.assign(labelRenderer.domElement.style, { position: 'fixed', inset: '0', pointerEvents: 'none' });
+document.getElementById('app')!.appendChild(labelRenderer.domElement);
 
 const scene = new THREE.Scene();
 scene.background = new THREE.Color('#f4efe6');
@@ -37,20 +44,43 @@ scene.add(floor);
 
 interface Entry {
   id: string;
+  index: number;
   vrm: VRM;
   root: THREE.Group;
 }
 const entries: Entry[] = [];
 
-const list: { id: string; url: string }[] = avatars.map((a) => ({ id: a.id, url: `/models/${a.id}.vrm` }));
-if (params.has('variants')) for (const v of variantSpecs()) list.push({ id: v.id, url: `/tools/vrm/work/${v.id}.vrm` });
-const only = params.get('only');
-const shown = only ? list.filter((e) => e.id === only) : list;
+interface Item {
+  id: string;
+  url: string;
+  label: string;
+  shopId?: string;
+  height: number;
+}
+const staffOnly = params.has('staff');
+const list: Item[] = avatars
+  .filter((a) => !staffOnly || a.shopId)
+  .map((a) => ({ id: a.id, url: `/${avatarModelUrl(a)}`, label: a.displayName.en.replace(/ Staff$/, ''), shopId: a.shopId, height: a.height }));
+if (params.has('variants')) for (const v of variantSpecs()) list.push({ id: v.id, url: `/tools/vrm/work/${v.id}.vrm`, label: v.id, height: v.height });
+// ?only=a,b,c：只看这几个（id 或 shopId）
+const only = params.get('only')?.split(',');
+const shown = only ? list.filter((e) => only.includes(e.id) || (!!e.shopId && only.includes(e.shopId))) : list;
+
+// 排布：人多时按行排（每行 7 个），后面的行往后错开
+const perRow = shown.length > 8 ? 7 : Math.max(1, shown.length);
+const rowCount = Math.ceil(shown.length / perRow);
+const rowGap = 1.6;
+const spacing = shown.length > 8 ? 0.95 : 1.1;
+function slot(i: number): THREE.Vector3 {
+  const r = Math.floor(i / perRow);
+  const c = i % perRow;
+  const n = Math.min(perRow, shown.length - r * perRow);
+  return new THREE.Vector3((c - (n - 1) / 2) * spacing + (r % 2) * spacing * 0.5, 0, -r * rowGap);
+}
 
 const loader = new GLTFLoader();
 loader.register((parser) => new VRMLoaderPlugin(parser));
 
-const spacing = 1.1;
 async function loadAll(): Promise<void> {
   const results = await Promise.allSettled(
     shown.map(async (e, i) => {
@@ -59,8 +89,23 @@ async function loadAll(): Promise<void> {
       vrm.scene.traverse((o) => (o.frustumCulled = false));
       const root = new THREE.Group();
       root.add(vrm.scene);
-      root.position.x = (i - (shown.length - 1) / 2) * spacing;
+      root.position.copy(slot(i));
       scene.add(root);
+      if (shown.length > 1) {
+        const div = document.createElement('div');
+        div.textContent = e.label;
+        Object.assign(div.style, {
+          font: '600 12px system-ui, sans-serif',
+          color: '#3a3330',
+          background: 'rgba(255,255,255,0.82)',
+          padding: '1px 7px',
+          borderRadius: '8px',
+          whiteSpace: 'nowrap',
+        });
+        const label = new CSS2DObject(div);
+        label.position.set(0, e.height + 0.16, 0);
+        root.add(label);
+      }
       // 摆好位置后重置 spring bone，否则一开始会因为"瞬移"甩一下
       root.updateMatrixWorld(true);
       vrm.springBoneManager?.setInitState();
@@ -73,7 +118,8 @@ async function loadAll(): Promise<void> {
       blob.rotation.x = -Math.PI / 2;
       blob.position.y = 0.002;
       root.add(blob);
-      entries.push({ id: e.id, vrm, root });
+      entries.push({ id: e.id, index: i, vrm, root });
+      entries.sort((a, b) => a.index - b.index);
     }),
   );
   const failed = results.filter((r) => r.status === 'rejected') as PromiseRejectedResult[];
@@ -180,24 +226,32 @@ function setView(v: View, focus = 0): void {
     camera.updateProjectionMatrix();
     return;
   }
-  const w = Math.max(1, shown.length) * spacing;
-  const fx = entries.length && focus >= 0 ? (focus - (shown.length - 1) / 2) * spacing : 0;
-  const dist = Math.max(3.2, w * 1.9);
+  // 让一整行刚好放进画面
+  const w = Math.min(perRow, Math.max(1, shown.length)) * spacing + 0.6;
+  const zc = (-(rowCount - 1) * rowGap) / 2;
+  const fit = w / (2 * Math.tan(THREE.MathUtils.degToRad(camera.fov / 2)) * camera.aspect);
+  const dist = Math.max(3.2, fit) + (rowCount - 1) * rowGap * 0.5;
+  const lift = (rowCount - 1) * 1.4;
+  const f = slot(Math.max(0, Math.min(shown.length - 1, focus)));
+  if (scene.fog instanceof THREE.Fog) {
+    scene.fog.near = dist + 4;
+    scene.fog.far = dist + 16;
+  }
   if (v === 'front') {
-    controls.target.set(0, 0.78, 0);
-    camera.position.set(0, 1.0, dist);
+    controls.target.set(0, 0.75, zc);
+    camera.position.set(0, 1.0 + lift, zc + dist);
   } else if (v === 'back') {
-    controls.target.set(0, 0.78, 0);
-    camera.position.set(0, 1.0, -dist);
+    controls.target.set(0, 0.75, zc);
+    camera.position.set(0, 1.0 + lift, zc - dist);
   } else if (v === 'side') {
-    controls.target.set(0, 0.78, 0);
-    camera.position.set(dist, 1.0, 0.0001);
+    controls.target.set(0, 0.75, zc);
+    camera.position.set(dist, 1.0 + lift, zc + 0.0001);
   } else if (v === 'top') {
-    controls.target.set(0, 0.6, 0);
-    camera.position.set(0, dist * 1.1, dist * 0.6);
+    controls.target.set(0, 0.6, zc);
+    camera.position.set(0, dist * 1.1, zc + dist * 0.6);
   } else {
-    controls.target.set(fx, 1.2, 0);
-    camera.position.set(fx + 0.25, 1.28, 1.3);
+    controls.target.set(f.x, 1.2, f.z);
+    camera.position.set(f.x + 0.25, 1.28, f.z + 1.3);
   }
   camera.updateProjectionMatrix();
   controls.update();
@@ -309,6 +363,7 @@ function frame(): void {
   }
   if (controls.enabled) controls.update();
   renderer.render(scene, camera);
+  labelRenderer.render(scene, camera);
   requestAnimationFrame(frame);
 }
 
@@ -316,6 +371,7 @@ addEventListener('resize', () => {
   camera.aspect = innerWidth / innerHeight;
   camera.updateProjectionMatrix();
   renderer.setSize(innerWidth, innerHeight);
+  labelRenderer.setSize(innerWidth, innerHeight);
 });
 
 // 给自动化检查用的钩子

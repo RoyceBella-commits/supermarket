@@ -104,8 +104,16 @@ export const FACE = {
   blushY: -0.073,
 };
 
-export function buildFace(h: HeadShape, mats: FaceColors, blush: number): { prims: FacePrim[]; eyeCenter: V3 } {
-  const F = FACE;
+export interface FaceOptions {
+  blush: number;
+  /** 眼睛大小倍数 */
+  eyeScale: number;
+  mustache: boolean;
+}
+
+export function buildFace(h: HeadShape, mats: FaceColors, opts: FaceOptions): { prims: FacePrim[]; eyeCenter: V3 } {
+  const F = { ...FACE, eyeW: FACE.eyeW * opts.eyeScale, eyeH: FACE.eyeH * opts.eyeScale };
+  const blush = opts.blush;
   const features: Feature[] = [];
 
   for (const side of [1, -1]) {
@@ -125,7 +133,7 @@ export function buildFace(h: HeadShape, mats: FaceColors, blush: number): { prim
       lookUp: { cy: F.eyeY + 0.006 },
       lookDown: { cy: F.eyeY - 0.006 },
     };
-    features.push({ mat: mats.eye, lift: 0.0012, side, base: eye, states: eyeStates, nr: 5, ns: 30 });
+    features.push({ mat: mats.eye, lift: 0.0012, side, base: eye, states: eyeStates, nr: 3, ns: 20 });
 
     // 眼睛下半部的浅色（让眼睛有点层次），和两个高光：位置由眼睛参数线性推出
     const derive = (k: { ox: number; oy: number; rx: number; ry: number; keep: (s: MorphName) => number }) => {
@@ -150,11 +158,11 @@ export function buildFace(h: HeadShape, mats: FaceColors, blush: number): { prim
     };
     const closing = (s: MorphName) => (s === blinkSelf || s === 'happy' || s === 'relaxed' ? 0 : 1);
     const low = derive({ ox: 0, oy: -0.46, rx: 0.66, ry: 0.42, keep: closing });
-    features.push({ mat: mats.eyeLow, lift: 0.0017, side, base: low.base, states: low.states, nr: 4, ns: 24 });
+    features.push({ mat: mats.eyeLow, lift: 0.0017, side, base: low.base, states: low.states, nr: 2, ns: 16 });
     const hl1 = derive({ ox: 0.3 * side * 0 + 0.3, oy: 0.4, rx: 0.4, ry: 0.3, keep: closing });
-    features.push({ mat: mats.white, lift: 0.0023, side, base: hl1.base, states: hl1.states, nr: 3, ns: 20 });
+    features.push({ mat: mats.white, lift: 0.0023, side, base: hl1.base, states: hl1.states, nr: 2, ns: 12 });
     const hl2 = derive({ ox: -0.34, oy: -0.5, rx: 0.2, ry: 0.15, keep: closing });
-    features.push({ mat: mats.white, lift: 0.0023, side, base: hl2.base, states: hl2.states, nr: 2, ns: 14 });
+    features.push({ mat: mats.white, lift: 0.0023, side, base: hl2.base, states: hl2.states, nr: 1, ns: 8 });
 
     // 眉毛：细长弯片
     const bx = 0.077 * side;
@@ -164,8 +172,8 @@ export function buildFace(h: HeadShape, mats: FaceColors, blush: number): { prim
       lift: 0.0012,
       side,
       base: brow,
-      nr: 3,
-      ns: 24,
+      nr: 2,
+      ns: 16,
       states: {
         [blinkSelf]: { cy: F.browY - 0.003 },
         happy: { cy: F.browY + 0.004, curve: 0.006 },
@@ -184,8 +192,8 @@ export function buildFace(h: HeadShape, mats: FaceColors, blush: number): { prim
         lift: 0.0008,
         side,
         base: bl,
-        nr: 4,
-        ns: 28,
+        nr: 2,
+        ns: 16,
         states: {
           happy: { sx: bl.sx * 1.15, su: bl.su * 1.15, sd: bl.sd * 1.15, cy: F.blushY + 0.003 },
         },
@@ -201,8 +209,8 @@ export function buildFace(h: HeadShape, mats: FaceColors, blush: number): { prim
     lift: 0.0012,
     side: 1,
     base: mouth,
-    nr: 4,
-    ns: 32,
+    nr: 3,
+    ns: 20,
     states: {
       happy: { sx: 0.025, curve: -0.008, su: 0.0025, sd: 0.012, cy: my + 0.003 },
       relaxed: { sx: 0.019, curve: -0.0065 },
@@ -216,6 +224,21 @@ export function buildFace(h: HeadShape, mats: FaceColors, blush: number): { prim
       oh: { sx: 0.013, curve: 0, su: 0.009, sd: 0.011, cy: my - 0.002 },
     },
   });
+
+  // 小胡子：鼻子下面两撇（用眉毛的颜色），不跟表情动
+  if (opts.mustache) {
+    for (const side of [1, -1]) {
+      features.push({
+        mat: mats.brow,
+        lift: 0.0013,
+        side,
+        base: E({ cx: 0.016 * side, cy: -0.079, sx: 0.017, su: 0.0055, sd: 0.0045, curve: 0.0035, tilt: -0.003 }),
+        states: {},
+        nr: 2,
+        ns: 14,
+      });
+    }
+  }
 
   // 按材质分组成图元
   const byMat = new Map<string, FacePrim>();

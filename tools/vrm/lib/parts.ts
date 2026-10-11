@@ -15,6 +15,8 @@ export interface Part {
   mesh: 'body' | 'head';
   /** 刚性绑定的关节名，或按顶点位置算权重的函数 */
   bone: string | WeightFn;
+  /** 不参与身高计算（帽子等），身高按头发顶算 */
+  noHeight?: boolean;
 }
 
 /** 沿 y 方向在几个关节之间线性过渡（躯干用：Hips → Spine → Chest） */
