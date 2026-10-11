@@ -45,6 +45,8 @@ export interface AnimInput {
   vy: number;
   /** 坐着 */
   sit?: boolean;
+  /** 坐在卡丁车里（sit 同时为 true） */
+  kart?: boolean;
   /** 头相对身体的偏转（弧度，正 = 向角色左边转），用于看向玩家 */
   lookYaw?: number;
   /** 正在说话：嘴巴开合 */
@@ -147,7 +149,10 @@ export class ProceduralAnimator {
     set('leftLowerArm', rot(Y, -p.elbow));
     set('rightLowerArm', rot(Y, p.elbow));
 
-    if (this.sitW > 0.001) this.applySit(this.sitW);
+    if (this.sitW > 0.001) {
+      if (input.kart) this.applyKart(this.sitW);
+      else this.applySit(this.sitW);
+    }
     this.updateMouth(dt, !!input.talking);
     this.updateBlink(dt);
   }
@@ -171,6 +176,27 @@ export class ProceduralAnimator {
     blend('rightUpperArm', rot(X, -0.5).multiply(rot(Z, 1.3)));
     blend('leftLowerArm', rot(Y, -0.7));
     blend('rightLowerArm', rot(Y, 0.7));
+  }
+
+  /** 卡丁车坐姿：坐得很低，腿几乎伸直往前，两手往前握方向盘 */
+  private applyKart(w: number) {
+    const blend = (name: VRMHumanBoneName, target: THREE.Quaternion) => {
+      const b = this.bones.get(name);
+      if (b) b.quaternion.slerp(target, w);
+    };
+    const rot = (axis: THREE.Vector3, a: number) => new THREE.Quaternion().setFromAxisAngle(axis, a);
+    blend('leftUpperLeg', rot(X, -1.38).multiply(rot(Z, -0.1)));
+    blend('rightUpperLeg', rot(X, -1.38).multiply(rot(Z, 0.1)));
+    blend('leftLowerLeg', rot(X, 0.35));
+    blend('rightLowerLeg', rot(X, 0.35));
+    blend('leftFoot', rot(X, -0.35));
+    blend('rightFoot', rot(X, -0.35));
+    blend('spine', rot(X, -0.12));
+    blend('chest', rot(X, 0.04));
+    blend('leftUpperArm', rot(X, -1.05).multiply(rot(Z, -1.2)));
+    blend('rightUpperArm', rot(X, -1.05).multiply(rot(Z, 1.2)));
+    blend('leftLowerArm', rot(Y, -0.45));
+    blend('rightLowerArm', rot(Y, 0.45));
   }
 
   /** 说话时嘴巴开合（'aa' 表情），节奏带一点随机 */

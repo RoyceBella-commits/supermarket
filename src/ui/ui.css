@@ -929,3 +929,89 @@ body.dropping::after {
   flex: 1;
   min-width: 0;
 }
+
+/* ---------- 卡丁车 ---------- */
+.kart-hud {
+  position: fixed;
+  top: 16px;
+  left: 50%;
+  transform: translateX(-50%);
+  min-width: 380px;
+  background: var(--ui-bg);
+  border-radius: var(--ui-radius);
+  padding: 10px 16px 8px;
+  backdrop-filter: blur(6px);
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.18);
+  pointer-events: none;
+  user-select: none;
+  font-variant-numeric: tabular-nums;
+  z-index: 55;
+}
+
+.kart-hud.hidden,
+.kart-count.hidden {
+  display: none;
+}
+
+.kh-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 16px;
+}
+
+.kh-lap {
+  font-weight: 700;
+  font-size: 16px;
+  color: var(--ui-accent);
+}
+
+.kh-speed {
+  font-weight: 700;
+  font-size: 22px;
+}
+
+.kh-speed small,
+.kh-times small {
+  font-size: 11px;
+  color: var(--ui-muted);
+  font-weight: 500;
+}
+
+.kh-times {
+  display: flex;
+  gap: 18px;
+  margin-top: 4px;
+  font-size: 17px;
+  font-weight: 600;
+}
+
+.kh-times span {
+  display: flex;
+  flex-direction: column;
+}
+
+.kh-best {
+  color: #fcbf49;
+}
+
+.kh-help {
+  margin-top: 6px;
+  font-size: 12px;
+  color: var(--ui-muted);
+  white-space: pre;
+}
+
+.kart-count {
+  position: fixed;
+  top: 32%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  font-size: 120px;
+  font-weight: 800;
+  color: #fcbf49;
+  text-shadow: 0 6px 0 #d62828, 0 12px 30px rgba(0, 0, 0, 0.4);
+  pointer-events: none;
+  user-select: none;
+  z-index: 56;
+}

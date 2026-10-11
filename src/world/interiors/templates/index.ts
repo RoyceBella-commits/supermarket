@@ -6,9 +6,7 @@ import * as retail from './retail.ts';
 import * as sports from './sports.ts';
 import { garden } from './garden.ts';
 import { cinema } from './cinema.ts';
-
-/** 阶段 5 再做（影院、空中花园、卡丁车场）：先不放东西 */
-const later: Template = () => {};
+import { karting } from './karting.ts';
 
 export const TEMPLATES: Record<ShopCategory, Template> = {
   supermarket: retail.supermarket,
@@ -64,7 +62,7 @@ export const TEMPLATES: Record<ShopCategory, Template> = {
   golf: sports.golf,
   yoga: sports.yoga,
   climbing: sports.climbing,
-  karting: later,
+  karting,
   cinema,
   garden,
 };

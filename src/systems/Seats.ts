@@ -11,6 +11,8 @@ export interface Seat {
   z: number;
   yaw: number;
   floor: number;
+  /** 坐姿：普通椅子，或卡丁车（腿往前伸、手握方向盘） */
+  pose?: 'chair' | 'kart';
 }
 
 /** 所有座位的登记表：长椅、餐椅、店内休息椅……生成场景时登记进来。 */

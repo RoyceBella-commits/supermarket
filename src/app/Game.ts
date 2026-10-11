@@ -35,6 +35,8 @@ import { NightGlow } from '../world/nightGlow.ts';
 import { getProductMaterial } from '../world/interiors/kit.ts';
 import { CinemaSystem } from '../systems/cinema/CinemaSystem.ts';
 import { CinemaPanel } from '../ui/CinemaPanel.ts';
+import { KartSystem } from '../systems/karting/KartSystem.ts';
+import { KartHud } from '../ui/KartHud.ts';
 
 const FIXED_DT = 1 / 60;
 const MAX_STEPS = 5;
@@ -83,6 +85,10 @@ export class Game {
   private cinema: CinemaSystem | null = null;
   private cinemaPanel: CinemaPanel | null = null;
   private seated: Seat | null = null;
+  private karts: KartSystem | null = null;
+  private readonly kartHud = new KartHud();
+  /** 玩家当前所在楼层（每帧更新，电脑车只在附近楼层时才跑） */
+  private floorNow = 0;
 
   constructor(container: HTMLElement) {
     this.renderer = new Renderer(container, { postFx: !devFlags.nofx });
@@ -110,6 +116,13 @@ export class Game {
       if (screenSpot) {
         this.cinema = new CinemaSystem(screenSpot, this.audio);
         built.products.add(this.cinema.screen);
+      }
+      // 卡丁车场：赛道、电脑车、排行榜屏
+      const trackSpot = built.specials.find((s) => s.kind === 'kartTrack');
+      if (trackSpot) {
+        const spot = (kind: string) => built.specials.find((s) => s.kind === kind);
+        this.karts = new KartSystem(trackSpot, spot('kartBoard'), spot('kartRent'), this.audio);
+        built.products.add(this.karts.group);
       }
       // 夜灯（花园灯笼等）：跟商品一样按楼层显示
       const glow = new NightGlow(built.glows);
@@ -140,6 +153,7 @@ export class Game {
     if (this.layout) this.setupCirculation(this.layout);
     this.setupSeating();
     this.setupCinema();
+    this.setupKarting();
     if (this.layout) {
       this.npcs = new NpcSystem(this.layout, this.renderer.scene, this.physics, this.interaction, this.voice, this.dialogue, this.npcSpots);
       void this.voice.loadManifest();
@@ -176,6 +190,9 @@ export class Game {
     });
     this.input.bind('KeyP', () => {
       if (this.started && this.cinema && this.cinema.inside(this.player.curr)) this.cinema.toggle();
+    });
+    this.input.bind('KeyR', () => {
+      if (this.started) this.karts?.resetToTrack();
     });
     this.input.onWheel((dy) => this.cameraRig.zoom(dy));
     this.input.bind('Escape', () => {
@@ -282,6 +299,7 @@ export class Game {
     const mouse = this.input.consumeMouse();
     const [minPitch, maxPitch] = this.cameraRig.pitchLimits;
     this.player.look(mouse.dx, mouse.dy, minPitch, maxPitch);
+    if (this.karts?.driving) this.followKart(dt);
 
     this.acc += dt;
     let steps = 0;
@@ -304,8 +322,10 @@ export class Game {
     if (steps === MAX_STEPS) this.acc = 0;
     const alpha = this.acc / FIXED_DT;
 
-    const feet = this.player.feetPosition(alpha, this.tmp);
+    const feet = this.currentFeet(alpha, this.tmp);
     this.updateDynamicWorld(dt, feet);
+    this.karts?.render(alpha, dt, feet);
+    if (this.karts) this.kartHud.update(this.karts.hud, now);
     this.updateAvatar(dt, feet);
     const camDist = this.cameraRig.update(dt, this.player, alpha, this.seatedView());
     this.avatar.setVisible(this.cameraRig.mode === 'first' || camDist > CAMERA.hideAvatarBelow);
@@ -315,6 +335,7 @@ export class Game {
       floor = zone.floor;
       this.hud.setZone(zone);
     }
+    this.floorNow = floor;
     this.updateFloorVisibility(floor);
 
     if (this.debugLines) {
@@ -345,6 +366,16 @@ export class Game {
 
   /** 一个固定物理步：电梯 → 扶梯输送 → 角色 → 物理世界。 */
   private fixedStep(move: MoveIntent, jump: boolean) {
+    // 卡丁车：电脑车一直跑（玩家在附近楼层时）；玩家在开车时角色不动，由车带着走
+    const karts = this.karts;
+    if (karts) {
+      karts.fixedUpdate(karts.driving ? move : null, Math.abs(this.floorNow - karts.floor) <= 1);
+      if (karts.driving) {
+        for (const el of this.elevators) el.fixedUpdate(FIXED_DT, this.player.curr);
+        this.physics.step(FIXED_DT);
+        return;
+      }
+    }
     // 坐着：一走动或起跳就站起来，否则角色不动
     if (this.seated) {
       if (move.forward !== 0 || move.right !== 0 || jump) this.standUp();
@@ -403,9 +434,10 @@ export class Game {
 
   /** 坐着时的镜头注视点和第一人称眼睛位置 */
   private seatedView(): { pivot: THREE.Vector3; eye: THREE.Vector3 } | null {
-    const s = this.seated;
+    const s = this.karts?.driving ? this.karts.seat : this.seated;
     if (!s) return null;
-    const lift = this.avatar.height * 0.86 - this.avatar.hipsHeight;
+    // 开车时注视点高一些，追尾镜头能越过车手看到前方赛道
+    const lift = this.avatar.height * 0.86 - this.avatar.hipsHeight + (s.pose === 'kart' ? 0.45 : 0);
     const eyeLift = this.avatar.eyeHeight - this.avatar.hipsHeight;
     return { pivot: new THREE.Vector3(s.x, s.y + lift, s.z), eye: new THREE.Vector3(s.x, s.y + eyeLift, s.z) };
   }
@@ -435,6 +467,62 @@ export class Game {
       isAvailable: () => this.seated !== null,
       interact: () => this.standUp(),
     });
+  }
+
+  /** 脚底位置：开车时是车的位置 */
+  private currentFeet(alpha: number, out: THREE.Vector3): THREE.Vector3 {
+    return this.karts?.driving ? this.karts.feet(alpha, out) : this.player.feetPosition(alpha, out);
+  }
+
+  private setupKarting() {
+    const karts = this.karts;
+    if (!karts) return;
+    this.interaction.add({
+      id: 'kart-rent',
+      prompt: () => i18n.t('kart.rent'),
+      position: () => karts.rentPoint,
+      radius: 1.6,
+      isAvailable: () => !karts.driving && !this.seated,
+      interact: () => this.enterKart(),
+    });
+    this.interaction.add({
+      id: 'kart-exit',
+      prompt: () => i18n.t('kart.exit'),
+      position: () => karts.feet(1, new THREE.Vector3()),
+      radius: 50,
+      priority: 10,
+      isAvailable: () => karts.driving,
+      interact: () => this.leaveKart(),
+    });
+  }
+
+  /** 租车：车出现在发车格，镜头转到车后方 */
+  private enterKart() {
+    const karts = this.karts;
+    if (!karts) return;
+    karts.start();
+    this.player.vel.set(0, 0, 0);
+    this.player.moveVel.set(0, 0, 0);
+    this.player.yaw = karts.heading + Math.PI;
+    this.player.pitch = this.cameraRig.mode === 'third' ? -0.24 : -0.08;
+    this.cameraRig.reset();
+  }
+
+  /** 下车：回到登记机前 */
+  private leaveKart() {
+    const karts = this.karts;
+    if (!karts) return;
+    karts.stop();
+    const p = karts.rentPoint;
+    this.teleportTo(new THREE.Vector3(p.x, p.y + 0.05, p.z), karts.rentYaw + Math.PI);
+  }
+
+  /** 开车时镜头慢慢回到车后方（鼠标可以临时转头看） */
+  private followKart(dt: number) {
+    const want = this.karts!.heading + Math.PI;
+    let d = want - this.player.yaw;
+    d = Math.atan2(Math.sin(d), Math.cos(d));
+    this.player.yaw += d * (1 - Math.exp(-3.5 * dt));
   }
 
   private setupCirculation(layout: MallLayout) {
@@ -530,7 +618,7 @@ export class Game {
       this.cameraRig.mode === 'first' ? p.moveVel.clone().multiplyScalar(0) : p.moveVel,
       { speed: p.horizontalSpeed, grounded: p.grounded, vy: p.vy },
       groundY,
-      this.seated,
+      this.karts?.driving ? this.karts.seat : this.seated,
     );
   }
 
@@ -685,11 +773,34 @@ export class Game {
       get seated() {
         return game.seated;
       },
+      get karts() {
+        return game.karts;
+      },
+      enterKart() {
+        game.enterKart();
+      },
+      leaveKart() {
+        game.leaveKart();
+      },
+      /** 开车若干秒（同步模拟）：每步可以用 drive(t) 返回 {forward, right} 控制 */
+      drive(seconds: number, ctrl: (t: number) => { forward: number; right: number }) {
+        const n = Math.round(seconds / FIXED_DT);
+        for (let i = 0; i < n; i++) {
+          const c = ctrl(i * FIXED_DT);
+          game.fixedStep({ forward: c.forward, right: c.right, run: false }, false);
+        }
+        return game.karts?.hud ?? null;
+      },
       /** 立即按当前状态渲染一帧（浏览器面板隐藏、渲染循环暂停时截图用） */
       renderOnce(dt = 1 / 60) {
-        const feet = game.player.feetPosition(1, new THREE.Vector3());
-        if (game.zones) game.updateFloorVisibility(game.zones.locate(feet.x, feet.y, feet.z).floor);
+        const feet = game.currentFeet(1, new THREE.Vector3());
+        if (game.zones) {
+          game.floorNow = game.zones.locate(feet.x, feet.y, feet.z).floor;
+          game.updateFloorVisibility(game.floorNow);
+        }
         game.updateDynamicWorld(dt, feet);
+        game.karts?.render(1, dt, feet);
+        if (game.karts) game.kartHud.update(game.karts.hud, performance.now());
         game.updateAvatar(dt, feet);
         const d = game.cameraRig.update(dt, game.player, 1, game.seatedView());
         game.avatar.setVisible(game.cameraRig.mode === 'first' || d > CAMERA.hideAvatarBelow);

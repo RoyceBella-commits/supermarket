@@ -108,7 +108,7 @@ export class Avatar {
       this.root.position.set(seat.x, seat.y - this.hipsHeight + 0.03, seat.z);
       this.facing = seat.yaw;
       this.root.rotation.y = seat.yaw;
-      input = { ...input, speed: 0, grounded: true, sit: true };
+      input = { ...input, speed: 0, grounded: true, sit: true, kart: seat.pose === 'kart' };
       groundY = seat.y - 0.46;
       feet = this.root.position;
     } else {
