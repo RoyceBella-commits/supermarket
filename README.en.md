@@ -268,6 +268,10 @@ docs/          interior design references, screenshots
 - The decorative illustrations were generated for this project and contain no text, trademarks or real brands.
 - Full asset sources are listed in [CREDITS.md](./CREDITS.md) (in Chinese).
 
+## License
+
+Released under the [MIT License](./LICENSE) — feel free to learn from it, modify it and reuse it. Third-party assets (such as the CC0 *Goldberg Variations* recordings) keep their own licenses; see [CREDITS.md](./CREDITS.md).
+
 ---
 
 <div align="center">
