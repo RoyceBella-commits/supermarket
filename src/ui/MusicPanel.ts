@@ -3,6 +3,7 @@ import type { PlaylistItem } from '../systems/audio/Playlist.ts';
 import { AUDIO_ACCEPT } from '../systems/audio/formatSupport.ts';
 import { i18n } from './i18n.ts';
 import type { AnnouncementSystem } from '../systems/audio/Announcements.ts';
+import { bindMouseSlider, mouseSliderHtml } from './settings.ts';
 import type { DayCycle } from '../render/DayCycle.ts';
 
 /**
@@ -115,6 +116,7 @@ export class MusicPanel {
           <button type="button" data-act="announce" class="mp-chip">${this.announcer.isEnabled ? t('announce.on') : t('announce.off')}</button></div>`
             : ''
         }
+        ${mouseSliderHtml(t('settings.mouse'))}
       </div>`
           : ''
       }
@@ -126,6 +128,7 @@ export class MusicPanel {
         <div class="mp-hint">${t('music.dropHint')}</div>
         <div class="mp-note">${t('music.importNote')}</div>
       </div>`;
+    bindMouseSlider(this.root);
     this.updateProgress();
   }
 

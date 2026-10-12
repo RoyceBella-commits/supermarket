@@ -47,6 +47,8 @@ export interface ExternalMotion {
 export class PlayerController {
   yaw = 0;
   pitch = 0;
+  /** 鼠标灵敏度倍数（玩家设置，1 = 默认） */
+  sensitivity = 1;
   grounded = false;
   readonly prev = new THREE.Vector3();
   readonly curr = new THREE.Vector3();
@@ -123,8 +125,9 @@ export class PlayerController {
   }
 
   look(dx: number, dy: number, minPitch = -89, maxPitch = 89) {
-    this.yaw -= dx * PLAYER.mouseSensitivity;
-    this.pitch -= dy * PLAYER.mouseSensitivity;
+    const k = PLAYER.mouseSensitivity * this.sensitivity;
+    this.yaw -= dx * k;
+    this.pitch -= dy * k;
     this.pitch = THREE.MathUtils.clamp(this.pitch, (minPitch * Math.PI) / 180, (maxPitch * Math.PI) / 180);
   }
 

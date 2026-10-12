@@ -1060,3 +1060,40 @@ body.kart-driving .announce-caption {
     transform: translate(-50%, 0);
   }
 }
+
+/* ---------- 鼠标灵敏度（开始 / 暂停界面、音乐面板） ---------- */
+.mouse-sens {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 13px;
+  color: var(--ui-muted);
+  white-space: nowrap;
+}
+
+.mouse-sens input {
+  flex: 1;
+  min-width: 80px;
+  accent-color: var(--ui-accent);
+  cursor: pointer;
+}
+
+.mouse-sens-value {
+  min-width: 3.2em;
+  text-align: right;
+  color: var(--ui-fg);
+  font-variant-numeric: tabular-nums;
+}
+
+.overlay-setting {
+  max-width: 340px;
+  margin: -6px auto 18px;
+  padding: 10px 14px;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.06);
+  cursor: default;
+}
+
+.mp-time .mouse-sens {
+  margin-top: 8px;
+}

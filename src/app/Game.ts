@@ -17,6 +17,7 @@ import { StartOverlay } from '../ui/StartOverlay.ts';
 import { DebugOverlay } from '../ui/DebugOverlay.ts';
 import { toast } from '../ui/Toast.ts';
 import { i18n } from '../ui/i18n.ts';
+import { settings } from '../ui/settings.ts';
 import { devFlags } from './devFlags.ts';
 import { AudioEngine } from '../systems/audio/AudioEngine.ts';
 import { MusicDirector } from '../systems/audio/MusicDirector.ts';
@@ -169,6 +170,8 @@ export class Game {
     }
 
     this.player = new PlayerController(this.physics);
+    this.player.sensitivity = settings.mouseSensitivity;
+    settings.onChange(() => (this.player.sensitivity = settings.mouseSensitivity));
     const spawn = this.spawnPoint();
     this.player.setSpawn(spawn.pos, spawn.yaw);
     this.player.teleport(spawn.pos, spawn.yaw);

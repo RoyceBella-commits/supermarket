@@ -114,6 +114,8 @@ The light turns warm at sunset, and the lanterns come on after dark.
 
 Inside the elevator, press `E` for the floor panel, or press `1`–`5` or `B` to pick a floor directly.
 
+Camera turning too fast or too slow? Press `Esc` and drag **Mouse sensitivity** on the pause screen (it's also in the `M` music panel). The setting is saved automatically.
+
 ---
 
 ## Music, announcements and time
@@ -151,6 +153,12 @@ After you click the game, the mouse controls the camera. Press `Esc` to release 
 </details>
 
 <details>
+<summary><b>The camera turns too fast / too slow.</b></summary>
+
+Press `Esc` and drag the **Mouse sensitivity** slider on the pause screen (20%–200%, default 100%). It's also in the `M` music panel, and it's saved in your browser.
+</details>
+
+<details>
 <summary><b>It runs slowly.</b></summary>
 
 - Close other tabs or programs that use the graphics card
@@ -167,7 +175,7 @@ The first visit downloads models, textures and music, so give it a moment on a s
 <details>
 <summary><b>Where is my progress saved?</b></summary>
 
-Your language, game clock, best lap, announcement setting and so on are stored in your own browser — no account needed. Another browser, or clearing site data, starts fresh.
+Your language, mouse sensitivity, game clock, best lap, announcement setting and so on are stored in your own browser — no account needed. Another browser, or clearing site data, starts fresh.
 </details>
 
 <details>

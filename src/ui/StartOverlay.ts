@@ -1,4 +1,5 @@
 import { i18n } from './i18n.ts';
+import { bindMouseSlider, mouseSliderHtml } from './settings.ts';
 
 type Mode = 'loading' | 'start' | 'paused' | 'hidden';
 
@@ -7,13 +8,21 @@ export class StartOverlay {
   private readonly root: HTMLDivElement;
   private mode: Mode = 'loading';
   private note = '';
+  /** 正在拖灵敏度滑块：松手时的 click 不算“点击开始” */
+  private adjusting = false;
   onActivate: () => void = () => {};
 
   constructor() {
     this.root = document.createElement('div');
     this.root.className = 'overlay';
+    this.root.addEventListener('pointerdown', (e) => {
+      this.adjusting = !!(e.target as HTMLElement).closest('.mouse-sens');
+    });
     this.root.addEventListener('click', (e) => {
-      if ((e.target as HTMLElement).closest('.lang-toggle')) return;
+      if ((e.target as HTMLElement).closest('.lang-toggle, .mouse-sens') || this.adjusting) {
+        this.adjusting = false;
+        return;
+      }
       if (this.mode === 'start' || this.mode === 'paused') this.onActivate();
     });
     document.body.appendChild(this.root);
@@ -59,6 +68,7 @@ export class StartOverlay {
           <div>${k('L')}</div><div>${t('controls.lang')}</div>
           <div>${k('Esc')}</div><div>${t('controls.pause')}</div>
         </div>
+        ${this.mode === 'loading' ? '' : `<div class="overlay-setting">${mouseSliderHtml(t('settings.mouse'))}</div>`}
         <div class="overlay-cta">${cta}</div>
         <div class="overlay-note">${this.note}</div>
       </div>`;
@@ -66,5 +76,6 @@ export class StartOverlay {
       e.stopPropagation();
       i18n.toggle();
     });
+    bindMouseSlider(this.root);
   }
 }
